@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  estadisticas-bardina:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: estadisticas-bardina
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - NODE_ENV=production
+    volumes:
+      # Volumen para logs de Nginx
+      - ./logs:/var/log/nginx
+      # Volumen para certificados SSL (si usas Let's Encrypt)
+      - ./ssl:/etc/nginx/ssl:ro
+    networks:
+      - bardina-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Servicio opcional para renovación automática de certificados SSL
+  certbot:
+    image: certbot/certbot
+    container_name: certbot-bardina
+    restart: unless-stopped
+    volumes:
+      - ./ssl:/etc/letsencrypt
+      - ./certbot-webroot:/var/www/certbot
+    command: certbot renew --quiet --webroot --webroot-path=/var/www/certbot
+    depends_on:
+      - estadisticas-bardina
+    networks:
+      - bardina-network
+
+networks:
+  bardina-network:
+    driver: bridge
+
+volumes:
+  nginx-logs:
+    driver: local
+  ssl-certs:
+    driver: local

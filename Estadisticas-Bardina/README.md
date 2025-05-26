@@ -1,158 +1,320 @@
-# Aplicación de Estadísticas de Compra y Venta
+# Despliegue con Docker - Estadísticas Bardina
 
-Una aplicación web moderna desarrollada con React 19 para visualizar estadísticas de compras y ventas conectada a una API REST.
+Esta guía te ayudará a desplegar la aplicación de Estadísticas Bardina usando Docker en tu dominio `bardina.cperp.es`.
 
-## Características
+## 📋 Requisitos Previos
 
-- **Dashboard interactivo** con resumen de ventas, compras y balance
-- **Estadísticas detalladas de ventas** con filtros y gráficos
-- **Estadísticas detalladas de compras** con filtros y gráficos
-- **Visualizaciones** con gráficos de barras, líneas y circulares
-- **Tablas de datos** con paginación
-- **Filtros avanzados** para analizar información específica
-- **Diseño responsivo** para móviles y escritorio
+- **Servidor con Docker instalado** (Ubuntu 20.04+ recomendado)
+- **Docker Compose** versión 1.27+
+- **Dominio configurado**: `bardina.cperp.es` apuntando a tu servidor
+- **Puertos abiertos**: 80 (HTTP) y 443 (HTTPS)
+- **Acceso SSH** al servidor
 
-## Tecnologías utilizadas
+## 🚀 Instalación Rápida
 
-- **React 19** - La última versión del framework
-- **Recharts** - Para visualizaciones de datos
-- **Vite** - Para desarrollo rápido y construcción optimizada
-- **Fetch API** - Para comunicación con el backend
-- **CSS moderno** - Con variables CSS para temas y diseño responsivo
-- **Font Awesome** - Para iconos
-
-## Requisitos
-
-- Node.js 18.0 o superior
-- NPM 8.0 o superior
-
-## Instalación
-
-1. Clona el repositorio:
+### 1. Preparar el servidor
 
 ```bash
-git clone https://github.com/tu-usuario/estadisticas-compra-venta.git
-cd estadisticas-compra-venta
+# Actualizar el sistema
+sudo apt update && sudo apt upgrade -y
+
+# Instalar Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# Instalar Docker Compose
+sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
+# Verificar instalación
+docker --version
+docker-compose --version
 ```
 
-2. Instala las dependencias:
+### 2. Clonar y configurar el proyecto
 
 ```bash
-npm install
+# Crear directorio para el proyecto
+sudo mkdir -p /opt/bardina-estadisticas
+cd /opt/bardina-estadisticas
+
+# Copiar todos los archivos del proyecto aquí
+# (puedes usar scp, rsync o git clone)
+
+# Dar permisos de ejecución al script de despliegue
+chmod +x deploy.sh
 ```
 
-3. Configura las variables de entorno:
-
-Crea un archivo `.env` en la raíz del proyecto con el siguiente contenido:
-
-```
-VITE_API_URL=https://s5.consultoraprincipado.com/bardina/CP_Erp_V1_dat_dat
-VITE_API_KEY=XWjaumCm
-```
-
-## Ejecución
-
-### Desarrollo
+### 3. Desplegar la aplicación
 
 ```bash
-npm run dev
+# Ejecutar el script de despliegue
+sudo ./deploy.sh production
 ```
 
-Esto iniciará el servidor de desarrollo en `http://localhost:3000`.
+El script automáticamente:
+- ✅ Construye la imagen Docker
+- ✅ Inicia los contenedores
+- ✅ Configura Nginx
+- ✅ Obtiene certificados SSL de Let's Encrypt
+- ✅ Configura renovación automática de certificados
 
-### Producción
+## 📁 Estructura de Archivos
 
-```bash
-npm run build
-```
-
-Esto generará los archivos optimizados para producción en la carpeta `dist`.
-
-Para servir los archivos de producción:
-
-```bash
-npm run serve
-```
-
-## Estructura del proyecto
+Asegúrate de tener estos archivos en tu servidor:
 
 ```
-/
-├── public/                  # Archivos estáticos
+/opt/bardina-estadisticas/
+├── Dockerfile
+├── docker-compose.yml
+├── nginx.conf (o nginx-ssl.conf para HTTPS)
+├── deploy.sh
+├── .dockerignore
+├── .env.production
+├── package.json
+├── vite.config.js
 ├── src/
-│   ├── components/          # Componentes React
-│   │   ├── Dashboard.jsx    # Dashboard principal
-│   │   ├── EstadisticasVentas.jsx  # Página de ventas
-│   │   ├── EstadisticasCompras.jsx # Página de compras
-│   │   ├── LoadingSpinner.jsx      # Componente de carga
-│   │   ├── ErrorMessage.jsx        # Componente de error
-│   │   ├── DataCard.jsx            # Tarjeta de datos
-│   │   ├── ChartContainer.jsx      # Contenedor de gráficos
-│   │   ├── DataTable.jsx           # Tabla de datos
-│   │   ├── FilterBar.jsx           # Barra de filtros
-│   │   └── index.js                # Exportación de componentes
-│   ├── services/            # Servicios para comunicación con API
-│   │   └── api.js           # Cliente API
-│   ├── utils/               # Utilidades
-│   │   └── formatters.js    # Funciones de formato
-│   ├── App.jsx              # Componente principal
-│   ├── index.jsx            # Punto de entrada
-│   └── styles.css           # Estilos globales
-├── .env                     # Variables de entorno
-├── package.json             # Dependencias y scripts
-├── vite.config.js           # Configuración de Vite
-└── README.md                # Documentación
+│   ├── components/
+│   ├── services/
+│   ├── utils/
+│   └── ...
+├── public/
+├── logs/ (se crea automáticamente)
+├── ssl/ (se crea automáticamente)
+└── certbot-webroot/ (se crea automáticamente)
 ```
 
-## API
+## 🔧 Configuración Manual
 
-La aplicación se conecta a la API de Consultoría Principado para obtener datos de compras y ventas. La documentación de la API está disponible en:
+### Variables de Entorno
 
+Edita el archivo `.env.production` si necesitas cambiar alguna configuración:
+
+```bash
+sudo nano .env.production
 ```
-https://s5.consultoraprincipado.com/bardina/CP_Erp_V1_dat_dat/swagger?api_key=XWjaumCm
+
+### Configuración de Nginx
+
+Para HTTPS personalizado, edita `nginx.conf`:
+
+```bash
+sudo nano nginx.conf
 ```
 
-### Endpoints principales
+## 🔍 Comandos Útiles
 
-- `/fac_t` - Facturas de venta
-- `/com_alb_g` - Albaranes de compra
+```bash
+# Ver estado de los contenedores
+docker-compose ps
 
-## Personalización
+# Ver logs en tiempo real
+docker-compose logs -f
 
-### Temas
+# Ver logs de un servicio específico
+docker-compose logs -f estadisticas-bardina
 
-Los colores de la aplicación se pueden personalizar editando las variables CSS en `src/styles.css`:
+# Reiniciar la aplicación
+docker-compose restart
 
-```css
-:root {
-  --primary-color: #1976d2;
-  --primary-light: #e3f2fd;
-  --primary-dark: #0d47a1;
-  /* ... */
+# Parar la aplicación
+docker-compose down
+
+# Actualizar la aplicación
+sudo ./deploy.sh production
+
+# Entrar al contenedor
+docker-compose exec estadisticas-bardina sh
+```
+
+## 🔒 SSL/HTTPS
+
+El script de despliegue automáticamente:
+
+1. **Obtiene certificados SSL** de Let's Encrypt
+2. **Configura HTTPS** en Nginx
+3. **Redirecciona HTTP a HTTPS**
+4. **Programa renovación automática**
+
+### Verificar SSL
+
+```bash
+# Verificar certificado
+openssl s_client -connect bardina.cperp.es:443 -servername bardina.cperp.es
+
+# Ver fecha de expiración
+echo | openssl s_client -connect bardina.cperp.es:443 2>/dev/null | openssl x509 -dates -noout
+```
+
+### Renovar SSL manualmente
+
+```bash
+docker-compose exec certbot certbot renew --quiet
+docker-compose restart estadisticas-bardina
+```
+
+## 🔧 Solución de Problemas
+
+### La aplicación no carga
+
+```bash
+# Verificar que el contenedor está corriendo
+docker-compose ps
+
+# Ver logs de errores
+docker-compose logs estadisticas-bardina
+
+# Verificar conectividad
+curl -I http://localhost/health
+```
+
+### Problemas de SSL
+
+```bash
+# Verificar certificados
+ls -la ssl/live/bardina.cperp.es/
+
+# Regenerar certificados
+docker run --rm \
+  -v $(pwd)/ssl:/etc/letsencrypt \
+  -v $(pwd)/certbot-webroot:/var/www/certbot \
+  certbot/certbot certonly \
+  --webroot --webroot-path=/var/www/certbot \
+  --email admin@bardina.cperp.es --agree-tos \
+  -d bardina.cperp.es -d www.bardina.cperp.es
+```
+
+### API no funciona
+
+```bash
+# Verificar conectividad a la API
+curl -I https://s5.consultoraprincipado.com/bardina/CP_Erp_V1_dat_dat/v1/fac_t?api_key=XWjaumCm
+
+# Verificar proxy de Nginx
+docker-compose exec estadisticas-bardina nginx -t
+```
+
+## 📊 Monitoreo
+
+### Verificar salud de la aplicación
+
+```bash
+# Health check HTTP
+curl http://bardina.cperp.es/health
+
+# Health check HTTPS
+curl https://bardina.cperp.es/health
+```
+
+### Ver métricas de uso
+
+```bash
+# Uso de recursos
+docker stats estadisticas-bardina
+
+# Espacio en disco
+df -h
+du -sh /opt/bardina-estadisticas/
+```
+
+## 🔄 Actualización
+
+Para actualizar la aplicación:
+
+```bash
+# 1. Parar la aplicación actual
+docker-compose down
+
+# 2. Actualizar código fuente
+# (subir nuevos archivos o hacer git pull)
+
+# 3. Redesplegar
+sudo ./deploy.sh production
+```
+
+## 🗃 Backup
+
+### Crear backup
+
+```bash
+# Backup completo
+sudo tar -czf bardina-backup-$(date +%Y%m%d).tar.gz \
+  /opt/bardina-estadisticas/ \
+  --exclude=node_modules \
+  --exclude=logs
+
+# Backup solo configuración
+sudo tar -czf bardina-config-$(date +%Y%m%d).tar.gz \
+  /opt/bardina-estadisticas/*.yml \
+  /opt/bardina-estadisticas/*.conf \
+  /opt/bardina-estadisticas/.env* \
+  /opt/bardina-estadisticas/ssl/
+```
+
+### Restaurar backup
+
+```bash
+# Extraer backup
+sudo tar -xzf bardina-backup-YYYYMMDD.tar.gz -C /
+
+# Reiniciar servicios
+cd /opt/bardina-estadisticas
+sudo ./deploy.sh production
+```
+
+## 🔧 Configuración Avanzada
+
+### Rate Limiting
+
+Para limitar las solicitudes por IP, agrega a `nginx.conf`:
+
+```nginx
+http {
+    limit_req_zone $binary_remote_addr zone=api:10m rate=10r/m;
+    
+    server {
+        location /api/ {
+            limit_req zone=api burst=20 nodelay;
+            # ... resto de configuración
+        }
+    }
 }
 ```
 
-## Despliegue
+### Logs Personalizados
 
-### Netlify
+```bash
+# Configurar rotación de logs
+sudo nano /etc/logrotate.d/bardina-nginx
 
-1. Crea una cuenta en [Netlify](https://www.netlify.com/)
-2. Conecta tu repositorio de GitHub
-3. Configura las variables de entorno en la configuración del sitio
-4. Configura el comando de construcción como `npm run build`
-5. Configura el directorio de publicación como `dist`
+# Contenido del archivo:
+/opt/bardina-estadisticas/logs/*.log {
+    daily
+    missingok
+    rotate 52
+    compress
+    delaycompress
+    notifempty
+    create 644 www-data www-data
+    postrotate
+        docker-compose exec estadisticas-bardina nginx -s reload
+    endscript
+}
+```
 
-### Vercel
+## 📞 Soporte
 
-1. Crea una cuenta en [Vercel](https://vercel.com/)
-2. Importa tu repositorio de GitHub
-3. Configura las variables de entorno
-4. Despliega
+Si tienes problemas:
 
-## Licencia
+1. **Revisa los logs**: `docker-compose logs -f`
+2. **Verifica la configuración**: `docker-compose config`
+3. **Comprueba la conectividad**: `curl -I https://bardina.cperp.es/health`
+4. **Consulta la documentación de la API**: https://s5.consultoraprincipado.com/bardina/CP_Erp_V1_dat_dat/swagger
 
-Este proyecto está licenciado bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles.
+## 🎉 ¡Listo!
 
-## Soporte
+Tu aplicación debería estar disponible en:
+- **HTTP**: http://bardina.cperp.es (redirige a HTTPS)
+- **HTTPS**: https://bardina.cperp.es
 
-Para soporte o preguntas, contacta a [tu-email@ejemplo.com](mailto:tu-email@ejemplo.com).
+¡La aplicación de Estadísticas Bardina está ahora corriendo en producción con Docker! 🚀
