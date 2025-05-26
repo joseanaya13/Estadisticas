@@ -1,6 +1,5 @@
 // components/FilterBar.jsx
 import React from 'react';
-import { obtenerNombreMes } from '../utils/formatters';
 
 const FilterBar = ({ filters, onChange, onReset }) => {
   const handleChange = (e, filterId) => {

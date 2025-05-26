@@ -1,4 +1,4 @@
-// components/EstadisticasVentas.jsx (filtros corregidos)
+// components/EstadisticasVentas.jsx - Actualizado con nombres de clientes
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import { ChartContainer, DataCard, LoadingSpinner, ErrorMessage, FilterBar, DataTable } from './index';
 import { formatCurrency, formatDate, obtenerNombreMes } from '../utils/formatters';
-import { ventasService, empresasService } from '../services/api';
+import { ventasService, empresasService, contactosService } from '../services/api';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
@@ -24,25 +24,45 @@ const EstadisticasVentas = ({ data }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [empresas, setEmpresas] = useState([]);
+  const [contactos, setContactos] = useState([]);
   const [loadingEmpresas, setLoadingEmpresas] = useState(true);
+  const [loadingContactos, setLoadingContactos] = useState(true);
+  const [mapaContactos, setMapaContactos] = useState({});
   
-  // Cargar empresas al montar el componente
+  // Cargar empresas y contactos al montar el componente
   useEffect(() => {
-    const loadEmpresas = async () => {
+    const loadData = async () => {
       try {
         setLoadingEmpresas(true);
-        const empresasData = await empresasService.getEmpresas();
+        setLoadingContactos(true);
+        
+        // Cargar empresas y contactos en paralelo
+        const [empresasData, contactosData] = await Promise.all([
+          empresasService.getEmpresas(),
+          contactosService.getContactos()
+        ]);
+        
         setEmpresas(empresasData.emp_m || []);
-        console.log('Empresas cargadas:', empresasData.emp_m);
+        setContactos(contactosData.ent_m || []);
+        
+        // Crear mapa de contactos para búsquedas rápidas
+        const mapa = contactosService.crearMapaNombres(contactosData.ent_m || []);
+        setMapaContactos(mapa);
+        
+        console.log('Datos cargados:', {
+          empresas: empresasData.emp_m?.length || 0,
+          contactos: contactosData.ent_m?.length || 0
+        });
       } catch (err) {
-        console.error('Error al cargar empresas:', err);
-        setError(err.message || 'Error al cargar las empresas');
+        console.error('Error al cargar datos:', err);
+        setError(err.message || 'Error al cargar empresas y contactos');
       } finally {
         setLoadingEmpresas(false);
+        setLoadingContactos(false);
       }
     };
     
-    loadEmpresas();
+    loadData();
   }, []);
   
   // Debug: Verificar tipos de datos al cargar
@@ -53,10 +73,12 @@ const EstadisticasVentas = ({ data }) => {
         tipoMes: typeof data.fac_t[0].mes,
         valorMes: data.fac_t[0].mes,
         tipoAño: typeof data.fac_t[0].eje,
-        valorAño: data.fac_t[0].eje
+        valorAño: data.fac_t[0].eje,
+        cliente: data.fac_t[0].clt,
+        nombreCliente: mapaContactos[data.fac_t[0].clt]
       });
     }
-  }, [data]);
+  }, [data, mapaContactos]);
   
   // Obtener años únicos de los datos
   const añosDisponibles = useMemo(() => {
@@ -99,13 +121,11 @@ const EstadisticasVentas = ({ data }) => {
   const opcionesTienda = useMemo(() => {
     if (!empresas.length) return [{ value: 'todas', label: 'Cargando tiendas...' }];
     
-    // Obtener todas las divisiones (es_emp === false) y empresas principales
     const tiendas = empresas.filter(emp => !emp.es_emp || emp.es_emp === false);
     const empresasPrincipales = empresas.filter(emp => emp.es_emp === true);
     
     const opciones = [{ value: 'todas', label: 'Todas las tiendas' }];
     
-    // Agregar empresas principales
     empresasPrincipales.forEach(emp => {
       opciones.push({
         value: `emp_${emp.id}`,
@@ -113,7 +133,6 @@ const EstadisticasVentas = ({ data }) => {
       });
     });
     
-    // Agregar divisiones/tiendas
     tiendas.forEach(tienda => {
       opciones.push({
         value: `div_${tienda.id}`,
@@ -123,27 +142,38 @@ const EstadisticasVentas = ({ data }) => {
     
     return opciones;
   }, [empresas]);
-  // Opciones para el filtro de cliente
+  
+  // Opciones para el filtro de cliente - CON NOMBRES
   const opcionesCliente = useMemo(() => {
-    if (!data || !data.fac_t) return [];
+    if (!data || !data.fac_t || !contactos.length) {
+      return [{ value: 'todos', label: 'Cargando clientes...' }];
+    }
     
-    const clientes = new Set();
+    const clientesEnVentas = new Set();
     data.fac_t.forEach(item => {
       if (item.clt) {
-        clientes.add(item.clt);
+        clientesEnVentas.add(item.clt);
       }
     });
     
-    return [
-      { value: 'todos', label: 'Todos los clientes' },
-      ...Array.from(clientes)
-        .sort((a, b) => a - b)
-        .map(cliente => ({
-          value: cliente.toString(),
-          label: `Cliente ${cliente}`
-        }))
-    ];
-  }, [data]);
+    const opciones = [{ value: 'todos', label: 'Todos los clientes' }];
+    
+    Array.from(clientesEnVentas)
+      .sort((a, b) => {
+        const nombreA = mapaContactos[a] || `Cliente ${a}`;
+        const nombreB = mapaContactos[b] || `Cliente ${b}`;
+        return nombreA.localeCompare(nombreB);
+      })
+      .forEach(clienteId => {
+        const nombreCliente = mapaContactos[clienteId] || `Cliente ${clienteId}`;
+        opciones.push({
+          value: clienteId.toString(),
+          label: nombreCliente
+        });
+      });
+    
+    return opciones;
+  }, [data, contactos, mapaContactos]);
   
   // Configuración de filtros
   const filterConfig = [
@@ -201,7 +231,6 @@ const EstadisticasVentas = ({ data }) => {
     try {
       let filtered = [...data.fac_t];
       
-      // Debug: Log inicial
       console.log('Aplicando filtros a ventas:', filtros);
       console.log(`Total registros iniciales: ${filtered.length}`);
       
@@ -221,7 +250,6 @@ const EstadisticasVentas = ({ data }) => {
         const mes = parseInt(filtros.mes);
         const antes = filtered.length;
         filtered = filtered.filter(item => {
-          // Asegurarse de comparar números con números
           const itemMes = typeof item.mes === 'string' ? parseInt(item.mes) : item.mes;
           return itemMes === mes;
         });
@@ -233,14 +261,12 @@ const EstadisticasVentas = ({ data }) => {
         const antes = filtered.length;
         
         if (filtros.tienda.startsWith('emp_')) {
-          // Filtrar por empresa principal
           const empresaId = filtros.tienda.replace('emp_', '');
           filtered = filtered.filter(item => {
             const itemEmp = typeof item.emp === 'string' ? item.emp : item.emp?.toString();
             return itemEmp === empresaId;
           });
         } else if (filtros.tienda.startsWith('div_')) {
-          // Filtrar por división específica
           const divisionId = filtros.tienda.replace('div_', '');
           filtered = filtered.filter(item => {
             const itemDiv = typeof item.emp_div === 'string' ? item.emp_div : item.emp_div?.toString();
@@ -253,19 +279,19 @@ const EstadisticasVentas = ({ data }) => {
       
       // Filtrar por cliente
       if (filtros.cliente !== 'todos') {
-        const cliente = parseInt(filtros.cliente);
+        const clienteId = filtros.cliente;
         const antes = filtered.length;
         filtered = filtered.filter(item => {
-          const itemCliente = typeof item.clt === 'string' ? parseInt(item.clt) : item.clt;
-          return itemCliente === cliente;
+          const itemCliente = typeof item.clt === 'string' ? item.clt : item.clt?.toString();
+          return itemCliente === clienteId;
         });
-        console.log(`Filtro cliente ${cliente}: ${antes} -> ${filtered.length} registros`);
+        console.log(`Filtro cliente ${clienteId}: ${antes} -> ${filtered.length} registros`);
       }
       
       // Filtrar por rango de fechas
       if (filtros.fechaDesde) {
         const fechaDesde = new Date(filtros.fechaDesde);
-        fechaDesde.setHours(0, 0, 0, 0); // Inicio del día
+        fechaDesde.setHours(0, 0, 0, 0);
         
         const antes = filtered.length;
         filtered = filtered.filter(item => {
@@ -278,7 +304,7 @@ const EstadisticasVentas = ({ data }) => {
       
       if (filtros.fechaHasta) {
         const fechaHasta = new Date(filtros.fechaHasta);
-        fechaHasta.setHours(23, 59, 59, 999); // Fin del día
+        fechaHasta.setHours(23, 59, 59, 999);
         
         const antes = filtered.length;
         filtered = filtered.filter(item => {
@@ -290,18 +316,6 @@ const EstadisticasVentas = ({ data }) => {
       }
       
       console.log(`Total registros después de filtros: ${filtered.length}`);
-      
-      // Debug: Mostrar algunos registros filtrados
-      if (filtered.length > 0 && filtered.length < 10) {
-        console.log('Registros filtrados:', filtered.map(v => ({ 
-          id: v.id, 
-          mes: v.mes, 
-          año: v.eje, 
-          cliente: v.clt, 
-          fecha: v.fch, 
-          total: v.tot 
-        })));
-      }
       
       setFilteredData(filtered);
     } catch (err) {
@@ -339,7 +353,6 @@ const EstadisticasVentas = ({ data }) => {
     
     const tiendas = {};
     filteredData.forEach(item => {
-      // Usar emp_div si existe, sino usar emp
       const tiendaId = item.emp_div || item.emp;
       if (tiendaId) {
         tiendas[tiendaId] = (tiendas[tiendaId] || 0) + (item.tot || 0);
@@ -356,29 +369,37 @@ const EstadisticasVentas = ({ data }) => {
         };
       })
       .sort((a, b) => b.total - a.total)
-      .slice(0, 5); // Top 5 tiendas
+      .slice(0, 5);
   }, [filteredData, empresas]);
-  // Calcular ventas por cliente
+  
+  // Calcular ventas por cliente - CON NOMBRES (excluyendo clientes problemáticos)
   const ventasPorCliente = useMemo(() => {
     if (!filteredData.length) return [];
     
     const clientes = {};
     filteredData.forEach(item => {
-      const cliente = typeof item.clt === 'string' ? parseInt(item.clt) : item.clt;
-      if (cliente) {
-        clientes[cliente] = (clientes[cliente] || 0) + (item.tot || 0);
+      const clienteId = typeof item.clt === 'string' ? item.clt : item.clt?.toString();
+      
+      // Filtrar clientes problemáticos o sin asignar
+      if (clienteId && 
+          clienteId !== '0' && 
+          clienteId !== 'null' && 
+          clienteId !== 'undefined' &&
+          item.tot > 0) { // Solo incluir ventas con importe positivo
+        clientes[clienteId] = (clientes[clienteId] || 0) + (item.tot || 0);
       }
     });
     
     return Object.entries(clientes)
-      .map(([cliente, total]) => ({
-        cliente: parseInt(cliente),
-        nombreCliente: `Cliente ${cliente}`,
+      .map(([clienteId, total]) => ({
+        clienteId,
+        nombreCliente: mapaContactos[clienteId] || `Cliente ${clienteId}`,
         total
       }))
+      .filter(cliente => cliente.total > 100) // Filtrar importes muy pequeños
       .sort((a, b) => b.total - a.total)
-      .slice(0, 5); // Top 5 clientes
-  }, [filteredData]);
+      .slice(0, 5);
+  }, [filteredData, mapaContactos]);
   
   // Calcular ventas por forma de pago
   const ventasPorFormaPago = useMemo(() => {
@@ -410,11 +431,16 @@ const EstadisticasVentas = ({ data }) => {
     return { total, cantidad, promedio };
   }, [filteredData]);
   
-  // Configuración de columnas para la tabla
+  // Configuración de columnas para la tabla - CON NOMBRES DE CLIENTES
   const columnasTabla = [
     { key: 'id', label: 'ID', format: 'number' },
     { key: 'fch', label: 'Fecha', format: 'date' },
-    { key: 'clt', label: 'Cliente', format: 'number' },
+    { 
+      key: 'clt', 
+      label: 'Cliente', 
+      format: 'custom',
+      formatter: (value) => mapaContactos[value] || `Cliente ${value}`
+    },
     { key: 'alm', label: 'Almacén' },
     { key: 'bas_tot', label: 'Base', format: 'currency' },
     { key: 'tot', label: 'Total', format: 'currency' }
@@ -422,7 +448,7 @@ const EstadisticasVentas = ({ data }) => {
   
   // Manejar cambios en los filtros
   const handleFilterChange = (id, value) => {
-    console.log(`Cambiando filtro ventas ${id} a:`, value, `(tipo: ${typeof value})`);
+    console.log(`Cambiando filtro ventas ${id} a:`, value);
     
     setFiltros(prev => ({
       ...prev,
@@ -442,8 +468,8 @@ const EstadisticasVentas = ({ data }) => {
     });
   };
   
-  if (loadingEmpresas) {
-    return <LoadingSpinner text="Cargando información de tiendas..." />;
+  if (loadingEmpresas || loadingContactos) {
+    return <LoadingSpinner text="Cargando información de tiendas y clientes..." />;
   }
   
   if (!data || !data.fac_t) {
@@ -476,7 +502,9 @@ const EstadisticasVentas = ({ data }) => {
               filtros.tienda
             }</span>
           )}
-          {filtros.cliente !== 'todos' && <span>Cliente: {filtros.cliente}</span>}
+          {filtros.cliente !== 'todos' && (
+            <span>Cliente: {mapaContactos[filtros.cliente] || `Cliente ${filtros.cliente}`}</span>
+          )}
           {filtros.fechaDesde && <span>Desde: {formatDate(filtros.fechaDesde)}</span>}
           {filtros.fechaHasta && <span>Hasta: {formatDate(filtros.fechaHasta)}</span>}
         </div>
@@ -538,7 +566,7 @@ const EstadisticasVentas = ({ data }) => {
             <BarChart data={ventasPorCliente} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis type="number" />
-              <YAxis dataKey="nombreCliente" type="category" width={100} />
+              <YAxis dataKey="nombreCliente" type="category" width={150} />
               <Tooltip formatter={(value) => formatCurrency(value)} />
               <Legend />
               <Bar dataKey="total" fill="#FFBB28" name="Ventas" />

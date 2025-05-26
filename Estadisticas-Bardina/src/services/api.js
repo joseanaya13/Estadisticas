@@ -448,7 +448,7 @@ export const dashboardService = {
    * @param {Object} filters - Filtros a aplicar
    * @returns {Object} Datos procesados para el dashboard
    */
-  processDashboardData: (ventasData, comprasData, filters = {}) => {
+  processDashboardData: (ventasData, comprasData = {}) => {
     // Esta función procesa los datos ya cargados sin hacer nuevas llamadas a la API
     // Útil cuando ya tienes los datos y solo quieres aplicar filtros localmente
     
@@ -499,10 +499,84 @@ export const empresasService = {
   }
 };
 
+export const contactosService = {
+  /**
+   * Obtiene todos los contactos (con paginación completa)
+   * @param {Object} params - Parámetros de filtrado
+   * @returns {Promise} Promesa con los datos
+   */
+  getContactos: (params = {}) => {
+    const queryParams = new URLSearchParams();
+    
+    // Añadir parámetros de filtrado si existen
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, value);
+      }
+    });
+    
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return apiClient.getAllPaginated(`/ent_m${query}`, 'ent_m');
+  },
+  
+  /**
+   * Obtiene un contacto por ID
+   * @param {number} id - ID del contacto
+   * @returns {Promise} Promesa con los datos
+   */
+  getContacto: (id) => {
+    return apiClient.get(`/ent_m/${id}`);
+  },
+  
+  /**
+   * Obtiene el nombre de un contacto por su ID
+   * @param {string|number} id - ID del contacto
+   * @param {Array} contactosList - Lista de contactos (opcional)
+   * @returns {string} Nombre del contacto
+   */
+  getNombreContacto: (id, contactosList = []) => {
+    if (!id) return 'Sin cliente';
+    
+    const contacto = contactosList.find(c => c.id === id || c.id === id.toString());
+    return contacto ? contacto.name : `Cliente ${id}`;
+  },
+  
+  /**
+   * Busca contactos por nombre
+   * @param {string} nombre - Nombre a buscar
+   * @param {Array} contactosList - Lista de contactos
+   * @returns {Array} Array de contactos que coinciden
+   */
+  buscarPorNombre: (nombre, contactosList = []) => {
+    if (!nombre) return [];
+    
+    const nombreLower = nombre.toLowerCase();
+    return contactosList.filter(contacto => 
+      contacto.name && contacto.name.toLowerCase().includes(nombreLower)
+    );
+  },
+  
+  /**
+   * Crea un mapa ID -> Nombre para búsquedas rápidas
+   * @param {Array} contactosList - Lista de contactos
+   * @returns {Object} Mapa de ID a nombre
+   */
+  crearMapaNombres: (contactosList = []) => {
+    const mapa = {};
+    contactosList.forEach(contacto => {
+      if (contacto.id && contacto.name) {
+        mapa[contacto.id] = contacto.name;
+      }
+    });
+    return mapa;
+  }
+};
+
 // Exportación por defecto de todos los servicios
 export default {
   ventas: ventasService,
   compras: comprasService,
   dashboard: dashboardService,
-  empresas: empresasService
+  empresas: empresasService,
+  contactos: contactosService
 };

@@ -1,4 +1,3 @@
-// components/DataTable.jsx
 import React, { useState } from 'react';
 import { formatCurrency, formatDate } from '../utils/formatters';
 
@@ -10,10 +9,16 @@ const DataTable = ({ data, columns, title = '', itemsPerPage = 10 }) => {
   const endIndex = Math.min(startIndex + itemsPerPage, data.length);
   const currentData = data.slice(startIndex, endIndex);
   
-  const formatCellValue = (value, format) => {
+  const formatCellValue = (value, column) => {
     if (value === undefined || value === null) return '-';
     
-    switch (format) {
+    // Si la columna tiene un formateador personalizado, usarlo
+    if (column.format === 'custom' && column.formatter) {
+      return column.formatter(value);
+    }
+    
+    // Usar formateadores estándar
+    switch (column.format) {
       case 'currency':
         return formatCurrency(value);
       case 'date':
@@ -27,7 +32,7 @@ const DataTable = ({ data, columns, title = '', itemsPerPage = 10 }) => {
   
   return (
     <div className="data-table-container">
-      {title && <h3>{title}</h3>}
+      {title && <h3><i className="fas fa-table"></i> {title}</h3>}
       
       <div className="table-responsive">
         <table>
@@ -45,7 +50,7 @@ const DataTable = ({ data, columns, title = '', itemsPerPage = 10 }) => {
               <tr key={item.id || index}>
                 {columns.map((column) => (
                   <td key={`${item.id || index}-${column.key}`} style={column.style}>
-                    {formatCellValue(item[column.key], column.format)}
+                    {formatCellValue(item[column.key], column)}
                   </td>
                 ))}
               </tr>
@@ -60,6 +65,7 @@ const DataTable = ({ data, columns, title = '', itemsPerPage = 10 }) => {
             className="pagination-button"
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(1)}
+            title="Primera página"
           >
             <i className="fas fa-angle-double-left"></i>
           </button>
@@ -67,6 +73,7 @@ const DataTable = ({ data, columns, title = '', itemsPerPage = 10 }) => {
             className="pagination-button"
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(currentPage - 1)}
+            title="Página anterior"
           >
             <i className="fas fa-angle-left"></i>
           </button>
@@ -79,6 +86,7 @@ const DataTable = ({ data, columns, title = '', itemsPerPage = 10 }) => {
             className="pagination-button"
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(currentPage + 1)}
+            title="Página siguiente"
           >
             <i className="fas fa-angle-right"></i>
           </button>
@@ -86,6 +94,7 @@ const DataTable = ({ data, columns, title = '', itemsPerPage = 10 }) => {
             className="pagination-button"
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage(totalPages)}
+            title="Última página"
           >
             <i className="fas fa-angle-double-right"></i>
           </button>
@@ -94,6 +103,9 @@ const DataTable = ({ data, columns, title = '', itemsPerPage = 10 }) => {
       
       <div className="table-info">
         Mostrando {startIndex + 1}-{endIndex} de {data.length} registros
+        {data.length > 0 && (
+          <span> | Total: {formatCurrency(data.reduce((sum, item) => sum + (item.tot || item.tot_alb || 0), 0))}</span>
+        )}
       </div>
     </div>
   );
