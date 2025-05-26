@@ -1,12 +1,12 @@
-// components/EstadisticasVentas.jsx - Sin filtro de clientes ni tabla
+// components/EstadisticasVentas.jsx - Actualizado con nombres de clientes
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell 
 } from 'recharts';
-import { ChartContainer, DataCard, LoadingSpinner, ErrorMessage, FilterBar } from './index';
+import { ChartContainer, DataCard, LoadingSpinner, ErrorMessage, FilterBar, DataTable } from './index';
 import { formatCurrency, formatDate, obtenerNombreMes } from '../utils/formatters';
-import { ventasService, empresasService } from '../services/api';
+import { ventasService, empresasService, contactosService } from '../services/api';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
@@ -14,6 +14,7 @@ const EstadisticasVentas = ({ data }) => {
   const [filtros, setFiltros] = useState({
     año: 'todos',
     mes: 'todos',
+    cliente: 'todos',
     tienda: 'todas',
     fechaDesde: '',
     fechaHasta: ''
@@ -23,26 +24,45 @@ const EstadisticasVentas = ({ data }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [empresas, setEmpresas] = useState([]);
+  const [contactos, setContactos] = useState([]);
   const [loadingEmpresas, setLoadingEmpresas] = useState(true);
+  const [loadingContactos, setLoadingContactos] = useState(true);
+  const [mapaContactos, setMapaContactos] = useState({});
   
-  // Cargar empresas al montar el componente
+  // Cargar empresas y contactos al montar el componente
   useEffect(() => {
-    const loadEmpresas = async () => {
+    const loadData = async () => {
       try {
         setLoadingEmpresas(true);
-        const empresasData = await empresasService.getEmpresas();
-        setEmpresas(empresasData.emp_m || []);
+        setLoadingContactos(true);
         
-        console.log('Empresas cargadas:', empresasData.emp_m?.length || 0);
+        // Cargar empresas y contactos en paralelo
+        const [empresasData, contactosData] = await Promise.all([
+          empresasService.getEmpresas(),
+          contactosService.getContactos()
+        ]);
+        
+        setEmpresas(empresasData.emp_m || []);
+        setContactos(contactosData.ent_m || []);
+        
+        // Crear mapa de contactos para búsquedas rápidas
+        const mapa = contactosService.crearMapaNombres(contactosData.ent_m || []);
+        setMapaContactos(mapa);
+        
+        console.log('Datos cargados:', {
+          empresas: empresasData.emp_m?.length || 0,
+          contactos: contactosData.ent_m?.length || 0
+        });
       } catch (err) {
-        console.error('Error al cargar empresas:', err);
-        setError(err.message || 'Error al cargar empresas');
+        console.error('Error al cargar datos:', err);
+        setError(err.message || 'Error al cargar empresas y contactos');
       } finally {
         setLoadingEmpresas(false);
+        setLoadingContactos(false);
       }
     };
     
-    loadEmpresas();
+    loadData();
   }, []);
   
   // Debug: Verificar tipos de datos al cargar
@@ -53,10 +73,12 @@ const EstadisticasVentas = ({ data }) => {
         tipoMes: typeof data.fac_t[0].mes,
         valorMes: data.fac_t[0].mes,
         tipoAño: typeof data.fac_t[0].eje,
-        valorAño: data.fac_t[0].eje
+        valorAño: data.fac_t[0].eje,
+        cliente: data.fac_t[0].clt,
+        nombreCliente: mapaContactos[data.fac_t[0].clt]
       });
     }
-  }, [data]);
+  }, [data, mapaContactos]);
   
   // Obtener años únicos de los datos
   const añosDisponibles = useMemo(() => {
@@ -121,7 +143,39 @@ const EstadisticasVentas = ({ data }) => {
     return opciones;
   }, [empresas]);
   
-  // Configuración de filtros (sin cliente)
+  // Opciones para el filtro de cliente - CON NOMBRES
+  const opcionesCliente = useMemo(() => {
+    if (!data || !data.fac_t || !contactos.length) {
+      return [{ value: 'todos', label: 'Cargando clientes...' }];
+    }
+    
+    const clientesEnVentas = new Set();
+    data.fac_t.forEach(item => {
+      if (item.clt) {
+        clientesEnVentas.add(item.clt);
+      }
+    });
+    
+    const opciones = [{ value: 'todos', label: 'Todos los clientes' }];
+    
+    Array.from(clientesEnVentas)
+      .sort((a, b) => {
+        const nombreA = mapaContactos[a] || `Cliente ${a}`;
+        const nombreB = mapaContactos[b] || `Cliente ${b}`;
+        return nombreA.localeCompare(nombreB);
+      })
+      .forEach(clienteId => {
+        const nombreCliente = mapaContactos[clienteId] || `Cliente ${clienteId}`;
+        opciones.push({
+          value: clienteId.toString(),
+          label: nombreCliente
+        });
+      });
+    
+    return opciones;
+  }, [data, contactos, mapaContactos]);
+  
+  // Configuración de filtros
   const filterConfig = [
     {
       id: 'año',
@@ -146,6 +200,13 @@ const EstadisticasVentas = ({ data }) => {
       type: 'select',
       value: filtros.tienda,
       options: opcionesTienda
+    },
+    {
+      id: 'cliente',
+      label: 'Cliente',
+      type: 'select',
+      value: filtros.cliente,
+      options: opcionesCliente
     },
     {
       id: 'fechaDesde',
@@ -214,6 +275,17 @@ const EstadisticasVentas = ({ data }) => {
         }
         
         console.log(`Filtro tienda ${filtros.tienda}: ${antes} -> ${filtered.length} registros`);
+      }
+      
+      // Filtrar por cliente
+      if (filtros.cliente !== 'todos') {
+        const clienteId = filtros.cliente;
+        const antes = filtered.length;
+        filtered = filtered.filter(item => {
+          const itemCliente = typeof item.clt === 'string' ? item.clt : item.clt?.toString();
+          return itemCliente === clienteId;
+        });
+        console.log(`Filtro cliente ${clienteId}: ${antes} -> ${filtered.length} registros`);
       }
       
       // Filtrar por rango de fechas
@@ -300,6 +372,35 @@ const EstadisticasVentas = ({ data }) => {
       .slice(0, 5);
   }, [filteredData, empresas]);
   
+  // Calcular ventas por cliente - CON NOMBRES (excluyendo clientes problemáticos)
+  const ventasPorCliente = useMemo(() => {
+    if (!filteredData.length) return [];
+    
+    const clientes = {};
+    filteredData.forEach(item => {
+      const clienteId = typeof item.clt === 'string' ? item.clt : item.clt?.toString();
+      
+      // Filtrar clientes problemáticos o sin asignar
+      if (clienteId && 
+          clienteId !== '0' && 
+          clienteId !== 'null' && 
+          clienteId !== 'undefined' &&
+          item.tot > 0) { // Solo incluir ventas con importe positivo
+        clientes[clienteId] = (clientes[clienteId] || 0) + (item.tot || 0);
+      }
+    });
+    
+    return Object.entries(clientes)
+      .map(([clienteId, total]) => ({
+        clienteId,
+        nombreCliente: mapaContactos[clienteId] || `Cliente ${clienteId}`,
+        total
+      }))
+      .filter(cliente => cliente.total > 100) // Filtrar importes muy pequeños
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
+  }, [filteredData, mapaContactos]);
+  
   // Calcular ventas por forma de pago
   const ventasPorFormaPago = useMemo(() => {
     if (!filteredData.length) return [];
@@ -330,6 +431,21 @@ const EstadisticasVentas = ({ data }) => {
     return { total, cantidad, promedio };
   }, [filteredData]);
   
+  // Configuración de columnas para la tabla - CON NOMBRES DE CLIENTES
+  const columnasTabla = [
+    { key: 'id', label: 'ID', format: 'number' },
+    { key: 'fch', label: 'Fecha', format: 'date' },
+    { 
+      key: 'clt', 
+      label: 'Cliente', 
+      format: 'custom',
+      formatter: (value) => mapaContactos[value] || `Cliente ${value}`
+    },
+    { key: 'alm', label: 'Almacén' },
+    { key: 'bas_tot', label: 'Base', format: 'currency' },
+    { key: 'tot', label: 'Total', format: 'currency' }
+  ];
+  
   // Manejar cambios en los filtros
   const handleFilterChange = (id, value) => {
     console.log(`Cambiando filtro ventas ${id} a:`, value);
@@ -345,14 +461,15 @@ const EstadisticasVentas = ({ data }) => {
     setFiltros({
       año: 'todos',
       mes: 'todos',
+      cliente: 'todos',
       tienda: 'todas',
       fechaDesde: '',
       fechaHasta: ''
     });
   };
   
-  if (loadingEmpresas) {
-    return <LoadingSpinner text="Cargando información de tiendas..." />;
+  if (loadingEmpresas || loadingContactos) {
+    return <LoadingSpinner text="Cargando información de tiendas y clientes..." />;
   }
   
   if (!data || !data.fac_t) {
@@ -372,7 +489,7 @@ const EstadisticasVentas = ({ data }) => {
       />
       
       {/* Información de filtros activos */}
-      {(filtros.año !== 'todos' || filtros.mes !== 'todos' || 
+      {(filtros.año !== 'todos' || filtros.mes !== 'todos' || filtros.cliente !== 'todos' || 
         filtros.tienda !== 'todas' || filtros.fechaDesde || filtros.fechaHasta) && (
         <div className="filtros-activos-info">
           <i className="fas fa-info-circle"></i>
@@ -384,6 +501,9 @@ const EstadisticasVentas = ({ data }) => {
               empresas.find(e => e.id === filtros.tienda.replace('emp_', '').replace('div_', ''))?.name || 
               filtros.tienda
             }</span>
+          )}
+          {filtros.cliente !== 'todos' && (
+            <span>Cliente: {mapaContactos[filtros.cliente] || `Cliente ${filtros.cliente}`}</span>
           )}
           {filtros.fechaDesde && <span>Desde: {formatDate(filtros.fechaDesde)}</span>}
           {filtros.fechaHasta && <span>Hasta: {formatDate(filtros.fechaHasta)}</span>}
@@ -441,6 +561,19 @@ const EstadisticasVentas = ({ data }) => {
           </ResponsiveContainer>
         </ChartContainer>
 
+        <ChartContainer title="Top 5 Clientes">
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={ventasPorCliente} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" />
+              <YAxis dataKey="nombreCliente" type="category" width={150} />
+              <Tooltip formatter={(value) => formatCurrency(value)} />
+              <Legend />
+              <Bar dataKey="total" fill="#FFBB28" name="Ventas" />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartContainer>
+
         <ChartContainer title="Ventas por Forma de Pago">
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
@@ -464,6 +597,13 @@ const EstadisticasVentas = ({ data }) => {
           </ResponsiveContainer>
         </ChartContainer>
       </div>
+
+      <DataTable 
+        data={filteredData} 
+        columns={columnasTabla} 
+        title="Listado de Facturas"
+        itemsPerPage={10}
+      />
     </div>
   );
 };
