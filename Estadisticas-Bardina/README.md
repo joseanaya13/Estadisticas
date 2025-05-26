@@ -1,175 +1,310 @@
-# Despliegue con Docker - Estadísticas Bardina
+# 📊 Estadísticas Bardina
 
-Esta guía te ayudará a desplegar la aplicación de Estadísticas Bardina usando Docker en tu dominio `bardina.cperp.es`.
+**Aplicación web moderna para visualización y análisis de datos de ventas y compras**
 
-## 📋 Requisitos Previos
+[![React](https://img.shields.io/badge/React-19.1.0-61DAFB?style=flat&logo=react)](https://reactjs.org)
+[![Vite](https://img.shields.io/badge/Vite-6.3.5-646CFF?style=flat&logo=vite)](https://vitejs.dev)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat&logo=docker)](https://docker.com)
+[![Nginx](https://img.shields.io/badge/Nginx-Proxy-009639?style=flat&logo=nginx)](https://nginx.org)
 
-- **Servidor con Docker instalado** (Ubuntu 20.04+ recomendado)
-- **Docker Compose** versión 1.27+
-- **Dominio configurado**: `bardina.cperp.es` apuntando a tu servidor
-- **Puertos abiertos**: 80 (HTTP) y 443 (HTTPS)
-- **Acceso SSH** al servidor
+## 🚀 Características Principales
 
-## 🚀 Instalación Rápida
+- **📈 Dashboard Interactivo**: Visualización en tiempo real de métricas de ventas y compras
+- **🔍 Filtrado Avanzado**: Filtros por fecha, empresa, cliente, proveedor y más
+- **📊 Gráficos Dinámicos**: Barras, líneas, circulares y estadísticas comparativas
+- **📱 Responsive**: Diseño adaptable para desktop, tablet y móvil
+- **⚡ Rendimiento**: Carga rápida con paginación automática y lazy loading
+- **🔒 Seguro**: Configuración SSL/HTTPS y headers de seguridad
+- **🐳 Docker Ready**: Despliegue simplificado con Docker y Docker Compose
 
-### 1. Preparar el servidor
+## 🛠️ Tecnologías
+
+### Frontend
+- **React 19.1.0** - Framework de JavaScript
+- **Vite 6.3.5** - Build tool y dev server
+- **Recharts 2.10.0** - Librería de gráficos
+- **CSS3** - Estilos personalizados con variables CSS
+
+### Backend/API
+- **REST API** - Integración con ERP de Consultoría Principado
+- **Fetch API** - Cliente HTTP nativo
+- **Paginación automática** - Manejo eficiente de grandes datasets
+
+### Despliegue
+- **Docker** - Contenerización
+- **Nginx** - Servidor web y proxy reverso
+- **Let's Encrypt** - Certificados SSL gratuitos
+- **Docker Compose** - Orquestación de servicios
+
+## 📁 Estructura del Proyecto
+
+```
+Estadisticas-Bardina/
+├── 📂 src/
+│   ├── 📂 components/           # Componentes React
+│   │   ├── Dashboard.jsx        # Dashboard principal
+│   │   ├── EstadisticasVentas.jsx
+│   │   ├── EstadisticasCompras.jsx
+│   │   ├── LoadingSpinner.jsx
+│   │   ├── ErrorMessage.jsx
+│   │   ├── DataCard.jsx
+│   │   ├── ChartContainer.jsx
+│   │   ├── DataTable.jsx
+│   │   ├── FilterBar.jsx
+│   │   └── index.js
+│   ├── 📂 services/             # Servicios API
+│   │   ├── api.js              # Cliente API principal
+│   │   └── empresasServices.js  # Servicio de empresas
+│   ├── 📂 utils/               # Utilidades
+│   │   └── formatters.js       # Formateadores de datos
+│   ├── App.jsx                 # Componente principal
+│   ├── main.jsx               # Punto de entrada
+│   └── styles.css             # Estilos globales
+├── 📂 public/                  # Archivos estáticos
+├── 📄 Dockerfile              # Configuración Docker
+├── 📄 docker-compose.yml      # Orquestación Docker
+├── 📄 nginx.conf              # Configuración Nginx HTTP
+├── 📄 nginx-ssl.conf          # Configuración Nginx HTTPS
+├── 📄 deploy.sh               # Script de despliegue
+├── 📄 vite.config.js          # Configuración Vite
+├── 📄 package.json            # Dependencias Node.js
+└── 📄 README.md               # Este archivo
+```
+
+## 🎯 Funcionalidades
+
+### Dashboard Principal
+- **Métricas generales**: Totales de ventas, compras y balance
+- **Gráficos comparativos**: Ventas vs compras por mes
+- **Tendencias**: Análisis de crecimiento y patrones
+- **Filtros temporales**: Por año, mes y rango de fechas
+
+### Estadísticas de Ventas
+- **Análisis por cliente**: Top clientes y distribución
+- **Análisis por tienda**: Rendimiento por sucursal
+- **Formas de pago**: Distribución de métodos de pago
+- **Tabla detallada**: Listado completo de facturas
+
+### Estadísticas de Compras
+- **Análisis por proveedor**: Top proveedores
+- **Análisis por categoría**: Distribución por series
+- **Tabla detallada**: Listado completo de albaranes
+- **Métricas de compra**: Promedios y totales
+
+### Filtros Avanzados
+- **Filtros temporales**: Año, mes, rango de fechas
+- **Filtros de entidad**: Cliente, proveedor, empresa
+- **Filtros de ubicación**: Tienda, almacén, división
+- **Reseteo rápido**: Limpieza de filtros con un clic
+
+## ⚙️ Configuración y Desarrollo
+
+### Requisitos Previos
+- **Node.js** 18+ 
+- **npm** o **yarn**
+- **Docker** (opcional, para despliegue)
+
+### Instalación Local
 
 ```bash
-# Actualizar el sistema
-sudo apt update && sudo apt upgrade -y
+# Clonar el repositorio
+git clone <repository-url>
+cd Estadisticas-Bardina
 
-# Instalar Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
+# Instalar dependencias
+npm install
 
-# Instalar Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
+# Configurar variables de entorno
+cp .env.example .env
+# Editar .env con tus configuraciones
 
-# Verificar instalación
-docker --version
-docker-compose --version
+# Iniciar servidor de desarrollo
+npm run dev
 ```
-
-### 2. Clonar y configurar el proyecto
-
-```bash
-# Crear directorio para el proyecto
-sudo mkdir -p /opt/bardina-estadisticas
-cd /opt/bardina-estadisticas
-
-# Copiar todos los archivos del proyecto aquí
-# (puedes usar scp, rsync o git clone)
-
-# Dar permisos de ejecución al script de despliegue
-chmod +x deploy.sh
-```
-
-### 3. Desplegar la aplicación
-
-```bash
-# Ejecutar el script de despliegue
-sudo ./deploy.sh production
-```
-
-El script automáticamente:
-- ✅ Construye la imagen Docker
-- ✅ Inicia los contenedores
-- ✅ Configura Nginx
-- ✅ Obtiene certificados SSL de Let's Encrypt
-- ✅ Configura renovación automática de certificados
-
-## 📁 Estructura de Archivos
-
-Asegúrate de tener estos archivos en tu servidor:
-
-```
-/opt/bardina-estadisticas/
-├── Dockerfile
-├── docker-compose.yml
-├── nginx.conf (o nginx-ssl.conf para HTTPS)
-├── deploy.sh
-├── .dockerignore
-├── .env.production
-├── package.json
-├── vite.config.js
-├── src/
-│   ├── components/
-│   ├── services/
-│   ├── utils/
-│   └── ...
-├── public/
-├── logs/ (se crea automáticamente)
-├── ssl/ (se crea automáticamente)
-└── certbot-webroot/ (se crea automáticamente)
-```
-
-## 🔧 Configuración Manual
 
 ### Variables de Entorno
 
-Edita el archivo `.env.production` si necesitas cambiar alguna configuración:
-
-```bash
-sudo nano .env.production
+```env
+# .env
+VITE_API_URL=https://s5.consultoraprincipado.com/bardina/CP_Erp_V1_dat_dat/v1
+VITE_API_KEY=XWjaumCm
 ```
 
-### Configuración de Nginx
-
-Para HTTPS personalizado, edita `nginx.conf`:
+### Scripts Disponibles
 
 ```bash
-sudo nano nginx.conf
+# Desarrollo
+npm run dev          # Servidor de desarrollo
+npm run build        # Build de producción
+npm run preview      # Preview del build
+npm run lint         # Linting con ESLint
 ```
 
-## 🔍 Comandos Útiles
+## 🐳 Despliegue con Docker
+
+### Despliegue Rápido
 
 ```bash
-# Ver estado de los contenedores
+# 1. Clonar el proyecto en tu servidor
+git clone <repository-url>
+cd Estadisticas-Bardina
+
+# 2. Configurar variables de producción
+cp .env.production.example .env.production
+# Editar .env.production según tus necesidades
+
+# 3. Ejecutar script de despliegue
+chmod +x deploy.sh
+sudo ./deploy.sh production
+```
+
+### Despliegue Manual
+
+```bash
+# Construir y ejecutar
+docker-compose up -d --build
+
+# Ver logs
+docker-compose logs -f
+
+# Parar servicios
+docker-compose down
+```
+
+### Configuración SSL Automática
+
+El script `deploy.sh` automáticamente:
+1. ✅ Obtiene certificados SSL de Let's Encrypt
+2. ✅ Configura Nginx para HTTPS
+3. ✅ Programa renovación automática
+4. ✅ Redirecciona HTTP a HTTPS
+
+## 📊 API y Endpoints
+
+### Base URL
+```
+https://s5.consultoraprincipado.com/bardina/CP_Erp_V1_dat_dat/v1
+```
+
+### Endpoints Principales
+- **`/fac_t`** - Facturas de venta
+- **`/com_alb_g`** - Albaranes de compra  
+- **`/emp_m`** - Empresas y divisiones
+
+### Características de la API
+- **Paginación automática**: Manejo eficiente de grandes datasets
+- **Filtrado avanzado**: Múltiples parámetros de filtrado
+- **Manejo de errores**: Retry automático y fallbacks
+- **Rate limiting**: Protección contra abuso
+
+## 🔧 Comandos Útiles
+
+### Docker
+```bash
+# Ver estado de contenedores
 docker-compose ps
 
 # Ver logs en tiempo real
-docker-compose logs -f
-
-# Ver logs de un servicio específico
 docker-compose logs -f estadisticas-bardina
 
-# Reiniciar la aplicación
+# Reiniciar servicios
 docker-compose restart
-
-# Parar la aplicación
-docker-compose down
-
-# Actualizar la aplicación
-sudo ./deploy.sh production
 
 # Entrar al contenedor
 docker-compose exec estadisticas-bardina sh
+
+# Actualizar aplicación
+./deploy.sh production
 ```
 
-## 🔒 SSL/HTTPS
+### Nginx
+```bash
+# Verificar configuración
+docker-compose exec estadisticas-bardina nginx -t
 
-El script de despliegue automáticamente:
+# Recargar configuración
+docker-compose exec estadisticas-bardina nginx -s reload
 
-1. **Obtiene certificados SSL** de Let's Encrypt
-2. **Configura HTTPS** en Nginx
-3. **Redirecciona HTTP a HTTPS**
-4. **Programa renovación automática**
+# Ver logs de acceso
+tail -f logs/access.log
+```
 
-### Verificar SSL
-
+### SSL/Certificados
 ```bash
 # Verificar certificado
 openssl s_client -connect bardina.cperp.es:443 -servername bardina.cperp.es
+
+# Renovar certificados manualmente
+docker-compose exec certbot certbot renew --quiet
+docker-compose restart estadisticas-bardina
 
 # Ver fecha de expiración
 echo | openssl s_client -connect bardina.cperp.es:443 2>/dev/null | openssl x509 -dates -noout
 ```
 
-### Renovar SSL manualmente
+## 🔍 Monitoreo y Mantenimiento
 
+### Health Check
 ```bash
-docker-compose exec certbot certbot renew --quiet
-docker-compose restart estadisticas-bardina
+# Verificar estado de la aplicación
+curl https://bardina.cperp.es/health
+
+# Verificar respuesta de la API
+curl -I "https://s5.consultoraprincipado.com/bardina/CP_Erp_V1_dat_dat/v1/fac_t?api_key=XWjaumCm"
 ```
 
-## 🔧 Solución de Problemas
-
-### La aplicación no carga
-
+### Logs y Debugging
 ```bash
-# Verificar que el contenedor está corriendo
+# Ver logs de la aplicación
+docker-compose logs --tail=100 estadisticas-bardina
+
+# Ver logs de Nginx
+tail -f logs/access.log
+tail -f logs/error.log
+
+# Monitorear recursos
+docker stats estadisticas-bardina
+```
+
+### Backup
+```bash
+# Backup completo
+sudo tar -czf bardina-backup-$(date +%Y%m%d).tar.gz \
+  /opt/bardina-estadisticas/ \
+  --exclude=node_modules \
+  --exclude=logs
+
+# Backup solo configuración
+sudo tar -czf bardina-config-$(date +%Y%m%d).tar.gz \
+  *.yml *.conf .env* ssl/
+```
+
+## 🐛 Solución de Problemas
+
+### Problemas Comunes
+
+#### La aplicación no carga
+```bash
+# 1. Verificar contenedores
 docker-compose ps
 
-# Ver logs de errores
+# 2. Ver logs de errores
 docker-compose logs estadisticas-bardina
 
-# Verificar conectividad
+# 3. Verificar conectividad
 curl -I http://localhost/health
 ```
 
-### Problemas de SSL
+#### Problemas de API
+```bash
+# Verificar conectividad a la API
+curl -I "https://s5.consultoraprincipado.com/bardina/CP_Erp_V1_dat_dat/v1/fac_t?api_key=XWjaumCm"
 
+# Verificar configuración de proxy
+docker-compose exec estadisticas-bardina nginx -t
+```
+
+#### Problemas de SSL
 ```bash
 # Verificar certificados
 ls -la ssl/live/bardina.cperp.es/
@@ -184,137 +319,79 @@ docker run --rm \
   -d bardina.cperp.es -d www.bardina.cperp.es
 ```
 
-### API no funciona
+## 🔒 Seguridad
 
-```bash
-# Verificar conectividad a la API
-curl -I https://s5.consultoraprincipado.com/bardina/CP_Erp_V1_dat_dat/v1/fac_t?api_key=XWjaumCm
-
-# Verificar proxy de Nginx
-docker-compose exec estadisticas-bardina nginx -t
-```
-
-## 📊 Monitoreo
-
-### Verificar salud de la aplicación
-
-```bash
-# Health check HTTP
-curl http://bardina.cperp.es/health
-
-# Health check HTTPS
-curl https://bardina.cperp.es/health
-```
-
-### Ver métricas de uso
-
-```bash
-# Uso de recursos
-docker stats estadisticas-bardina
-
-# Espacio en disco
-df -h
-du -sh /opt/bardina-estadisticas/
-```
-
-## 🔄 Actualización
-
-Para actualizar la aplicación:
-
-```bash
-# 1. Parar la aplicación actual
-docker-compose down
-
-# 2. Actualizar código fuente
-# (subir nuevos archivos o hacer git pull)
-
-# 3. Redesplegar
-sudo ./deploy.sh production
-```
-
-## 🗃 Backup
-
-### Crear backup
-
-```bash
-# Backup completo
-sudo tar -czf bardina-backup-$(date +%Y%m%d).tar.gz \
-  /opt/bardina-estadisticas/ \
-  --exclude=node_modules \
-  --exclude=logs
-
-# Backup solo configuración
-sudo tar -czf bardina-config-$(date +%Y%m%d).tar.gz \
-  /opt/bardina-estadisticas/*.yml \
-  /opt/bardina-estadisticas/*.conf \
-  /opt/bardina-estadisticas/.env* \
-  /opt/bardina-estadisticas/ssl/
-```
-
-### Restaurar backup
-
-```bash
-# Extraer backup
-sudo tar -xzf bardina-backup-YYYYMMDD.tar.gz -C /
-
-# Reiniciar servicios
-cd /opt/bardina-estadisticas
-sudo ./deploy.sh production
-```
-
-## 🔧 Configuración Avanzada
+### Headers de Seguridad
+- **HSTS**: Forzar HTTPS
+- **X-Frame-Options**: Prevenir clickjacking
+- **X-Content-Type-Options**: Prevenir MIME sniffing
+- **CSP**: Content Security Policy
+- **Referrer Policy**: Control de referencias
 
 ### Rate Limiting
+- **API**: Limitación de requests por minuto
+- **SSL**: Protección contra fuerza bruta
+- **Proxy**: Protección DDoS básica
 
-Para limitar las solicitudes por IP, agrega a `nginx.conf`:
+### Certificados SSL
+- **Let's Encrypt**: Certificados gratuitos
+- **Renovación automática**: Cada 3 meses
+- **Redirección HTTPS**: Forzar conexiones seguras
 
-```nginx
-http {
-    limit_req_zone $binary_remote_addr zone=api:10m rate=10r/m;
-    
-    server {
-        location /api/ {
-            limit_req zone=api burst=20 nodelay;
-            # ... resto de configuración
-        }
-    }
-}
-```
+## 🚀 Roadmap y Mejoras Futuras
 
-### Logs Personalizados
+- [ ] **Autenticación**: Sistema de login y usuarios
+- [ ] **Exportación**: PDF, Excel, CSV
+- [ ] **Alertas**: Notificaciones por email/SMS
+- [ ] **Caché**: Redis para mejorar rendimiento
+- [ ] **PWA**: Aplicación web progresiva
+- [ ] **Modo oscuro**: Tema dark/light
+- [ ] **Internacionalización**: Múltiples idiomas
+- [ ] **API GraphQL**: Alternativa REST
+- [ ] **Microservicios**: Arquitectura distribuida
+- [ ] **Kubernetes**: Orquestación avanzada
 
-```bash
-# Configurar rotación de logs
-sudo nano /etc/logrotate.d/bardina-nginx
+## 🤝 Contribución
 
-# Contenido del archivo:
-/opt/bardina-estadisticas/logs/*.log {
-    daily
-    missingok
-    rotate 52
-    compress
-    delaycompress
-    notifempty
-    create 644 www-data www-data
-    postrotate
-        docker-compose exec estadisticas-bardina nginx -s reload
-    endscript
-}
-```
+¿Quieres contribuir? ¡Genial! Sigue estos pasos:
 
-## 📞 Soporte
+1. **Fork** el proyecto
+2. **Crea** una rama para tu feature (`git checkout -b feature/nueva-funcionalidad`)
+3. **Commit** tus cambios (`git commit -am 'Añadir nueva funcionalidad'`)
+4. **Push** a la rama (`git push origin feature/nueva-funcionalidad`)
+5. **Abre** un Pull Request
 
-Si tienes problemas:
+### Estándares de Código
+- **ESLint**: Linting automático
+- **Prettier**: Formateo de código
+- **Conventional Commits**: Formato de commits
+- **Semantic Versioning**: Versionado semántico
 
-1. **Revisa los logs**: `docker-compose logs -f`
-2. **Verifica la configuración**: `docker-compose config`
-3. **Comprueba la conectividad**: `curl -I https://bardina.cperp.es/health`
-4. **Consulta la documentación de la API**: https://s5.consultoraprincipado.com/bardina/CP_Erp_V1_dat_dat/swagger
+## 📞 Soporte y Contacto
 
-## 🎉 ¡Listo!
+- **Documentación**: [Wiki del proyecto](docs/)
+- **Issues**: [GitHub Issues](issues/)
+- **API Docs**: [Swagger UI](https://s5.consultoraprincipado.com/bardina/CP_Erp_V1_dat_dat/swagger)
+- **Email**: admin@bardina.cperp.es
 
-Tu aplicación debería estar disponible en:
-- **HTTP**: http://bardina.cperp.es (redirige a HTTPS)
-- **HTTPS**: https://bardina.cperp.es
+## 📄 Licencia
 
-¡La aplicación de Estadísticas Bardina está ahora corriendo en producción con Docker! 🚀
+Este proyecto está bajo la licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.
+
+## 🎉 Agradecimientos
+
+- **Consultoría Principado** - Por proporcionar la API y datos
+- **React Team** - Por el increíble framework
+- **Recharts** - Por la librería de gráficos
+- **Docker** - Por simplificar el despliegue
+- **Let's Encrypt** - Por certificados SSL gratuitos
+
+---
+
+<div align="center">
+
+**Desarrollado con ❤️ para Consultoría Principado**
+
+[🌐 Sitio Web](https://bardina.cperp.es) • [📊 Dashboard](https://bardina.cperp.es) • [📚 Documentación](docs/)
+
+</div>
