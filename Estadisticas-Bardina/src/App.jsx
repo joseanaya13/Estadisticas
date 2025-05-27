@@ -1,7 +1,7 @@
-// App.jsx - Actualizado con servicio de contactos
+// App.jsx - Actualizado con servicio de usuarios/vendedores
 import React, { useState, useEffect } from 'react';
 import { Dashboard, EstadisticasVentas, EstadisticasCompras, LoadingSpinner, ErrorMessage } from './components';
-import { ventasService, comprasService, contactosService } from './services/api';
+import { ventasService, comprasService, contactosService, usuariosService } from './services/api';
 import './styles.css';
 
 function App() {
@@ -9,6 +9,7 @@ function App() {
   const [ventasData, setVentasData] = useState(null);
   const [comprasData, setComprasData] = useState(null);
   const [contactosData, setContactosData] = useState(null);
+  const [usuariosData, setUsuariosData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -22,25 +23,28 @@ function App() {
         
         console.log('Iniciando carga de datos...');
         
-        // Obtener datos en paralelo - incluir contactos
-        setLoadingProgress(25);
-        const [ventasResponse, comprasResponse, contactosResponse] = await Promise.all([
+        // Obtener datos en paralelo - incluir contactos y usuarios
+        setLoadingProgress(20);
+        const [ventasResponse, comprasResponse, contactosResponse, usuariosResponse] = await Promise.all([
           ventasService.getFacturas(),
           comprasService.getAlbaranes(),
-          contactosService.getContactos()
+          contactosService.getContactos(),
+          usuariosService.getUsuarios()
         ]);
         
-        setLoadingProgress(75);
+        setLoadingProgress(80);
         
         console.log('Datos cargados:', {
           ventas: ventasResponse.fac_t?.length || 0,
           compras: comprasResponse.com_alb_g?.length || 0,
-          contactos: contactosResponse.ent_m?.length || 0
+          contactos: contactosResponse.ent_m?.length || 0,
+          usuarios: usuariosResponse.usr_m?.length || 0
         });
         
         setVentasData(ventasResponse);
         setComprasData(comprasResponse);
         setContactosData(contactosResponse);
+        setUsuariosData(usuariosResponse);
         
         setLoadingProgress(100);
       } catch (err) {
@@ -86,7 +90,13 @@ function App() {
       case 'dashboard':
         return <Dashboard ventasData={ventasData} comprasData={comprasData} />;
       case 'ventas':
-        return <EstadisticasVentas data={ventasData} contactos={contactosData} />;
+        return (
+          <EstadisticasVentas 
+            data={ventasData} 
+            contactos={contactosData} 
+            usuarios={usuariosData}
+          />
+        );
       case 'compras':
         return <EstadisticasCompras data={comprasData} />;
       default:
@@ -132,6 +142,7 @@ function App() {
             {ventasData && ` ${ventasData.fac_t?.length || 0} facturas`}
             {comprasData && ` • ${comprasData.com_alb_g?.length || 0} albaranes`}
             {contactosData && ` • ${contactosData.ent_m?.length || 0} contactos`}
+            {usuariosData && ` • ${usuariosData.usr_m?.length || 0} usuarios`}
           </small>
         </p>
       </footer>

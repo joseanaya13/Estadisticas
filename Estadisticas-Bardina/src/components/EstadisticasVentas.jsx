@@ -4,13 +4,13 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell 
 } from 'recharts';
-import { ChartContainer, DataCard, LoadingSpinner, ErrorMessage, FilterBar, DataTable } from './index';
+import { ChartContainer, DataCard, LoadingSpinner, ErrorMessage, FilterBar } from './index';
 import { formatCurrency, formatDate, obtenerNombreMes } from '../utils/formatters';
-import { ventasService, empresasService, contactosService, usuariosService } from '../services/api';
+import { empresasService, contactosService, usuariosService } from '../services/api';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
-const EstadisticasVentas = ({ data }) => {
+const EstadisticasVentas = ({ data, contactos, usuarios }) => {
   const [filtros, setFiltros] = useState({
     año: 'todos',
     mes: 'todos',
@@ -25,62 +25,43 @@ const EstadisticasVentas = ({ data }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [empresas, setEmpresas] = useState([]);
-  const [contactos, setContactos] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
   const [loadingEmpresas, setLoadingEmpresas] = useState(true);
-  const [loadingContactos, setLoadingContactos] = useState(true);
-  const [loadingUsuarios, setLoadingUsuarios] = useState(true);
-  const [mapaContactos, setMapaContactos] = useState({});
-  const [mapaUsuarios, setMapaUsuarios] = useState({});
   
-  // Cargar empresas, contactos y usuarios al montar el componente
+  // Crear mapas para búsquedas rápidas usando los datos pasados como props
+  const mapaContactos = useMemo(() => {
+    if (!contactos || !contactos.ent_m) return {};
+    return contactosService.crearMapaNombres(contactos.ent_m);
+  }, [contactos]);
+  
+  const mapaUsuarios = useMemo(() => {
+    if (!usuarios || !usuarios.usr_m) return {};
+    return usuariosService.crearMapaNombres(usuarios.usr_m);
+  }, [usuarios]);
+  
+  // Cargar empresas al montar el componente
   useEffect(() => {
-    const loadData = async () => {
+    const loadEmpresas = async () => {
       try {
         setLoadingEmpresas(true);
-        setLoadingContactos(true);
-        setLoadingUsuarios(true);
-        
-        // Cargar empresas, contactos y usuarios en paralelo
-        const [empresasData, contactosData, usuariosData] = await Promise.all([
-          empresasService.getEmpresas(),
-          contactosService.getContactos(),
-          usuariosService.getUsuarios()
-        ]);
-        
+        const empresasData = await empresasService.getEmpresas();
         setEmpresas(empresasData.emp_m || []);
-        setContactos(contactosData.ent_m || []);
-        setUsuarios(usuariosData.usr_m || []);
         
-        // Crear mapas para búsquedas rápidas
-        const mapaContactosData = contactosService.crearMapaNombres(contactosData.ent_m || []);
-        const mapaUsuariosData = usuariosService.crearMapaNombres(usuariosData.usr_m || []);
-        
-        setMapaContactos(mapaContactosData);
-        setMapaUsuarios(mapaUsuariosData);
-        
-        console.log('Datos cargados:', {
-          empresas: empresasData.emp_m?.length || 0,
-          contactos: contactosData.ent_m?.length || 0,
-          usuarios: usuariosData.usr_m?.length || 0
-        });
+        console.log('Empresas cargadas:', empresasData.emp_m?.length || 0);
       } catch (err) {
-        console.error('Error al cargar datos:', err);
-        setError(err.message || 'Error al cargar empresas, contactos y usuarios');
+        console.error('Error al cargar empresas:', err);
+        setError(err.message || 'Error al cargar empresas');
       } finally {
         setLoadingEmpresas(false);
-        setLoadingContactos(false);
-        setLoadingUsuarios(false);
       }
     };
     
-    loadData();
+    loadEmpresas();
   }, []);
   
   // Debug: Verificar tipos de datos al cargar
   useEffect(() => {
     if (data && data.fac_t.length > 0) {
-      console.log('Tipo de datos en ventas:', {
+      console.log('Datos de ventas cargados:', {
         primerRegistro: data.fac_t[0],
         tipoMes: typeof data.fac_t[0].mes,
         valorMes: data.fac_t[0].mes,
@@ -159,7 +140,7 @@ const EstadisticasVentas = ({ data }) => {
   
   // Opciones para el filtro de cliente - CON NOMBRES
   const opcionesCliente = useMemo(() => {
-    if (!data || !data.fac_t || !contactos.length) {
+    if (!data || !data.fac_t || !contactos || !contactos.ent_m) {
       return [{ value: 'todos', label: 'Cargando clientes...' }];
     }
     
@@ -189,9 +170,9 @@ const EstadisticasVentas = ({ data }) => {
     return opciones;
   }, [data, contactos, mapaContactos]);
   
-  // NUEVO: Opciones para el filtro de vendedor - CON NOMBRES
+  // Opciones para el filtro de vendedor - CON NOMBRES
   const opcionesVendedor = useMemo(() => {
-    if (!data || !data.fac_t || !usuarios.length) {
+    if (!data || !data.fac_t || !usuarios || !usuarios.usr_m) {
       return [{ value: 'todos', label: 'Cargando vendedores...' }];
     }
     
@@ -341,7 +322,7 @@ const EstadisticasVentas = ({ data }) => {
         console.log(`Filtro cliente ${clienteId}: ${antes} -> ${filtered.length} registros`);
       }
       
-      // NUEVO: Filtrar por vendedor
+      // Filtrar por vendedor
       if (filtros.vendedor !== 'todos') {
         const vendedorId = parseInt(filtros.vendedor);
         const antes = filtered.length;
@@ -465,7 +446,7 @@ const EstadisticasVentas = ({ data }) => {
       .slice(0, 5);
   }, [filteredData, mapaContactos]);
   
-  // NUEVO: Calcular ventas por vendedor - CON NOMBRES
+  // Calcular ventas por vendedor - CON NOMBRES
   const ventasPorVendedor = useMemo(() => {
     if (!filteredData.length) return [];
     
@@ -572,8 +553,8 @@ const EstadisticasVentas = ({ data }) => {
     });
   };
   
-  if (loadingEmpresas || loadingContactos || loadingUsuarios) {
-    return <LoadingSpinner text="Cargando información de tiendas, clientes y vendedores..." />;
+  if (loadingEmpresas) {
+    return <LoadingSpinner text="Cargando información de tiendas..." />;
   }
   
   if (!data || !data.fac_t) {
@@ -751,14 +732,8 @@ const EstadisticasVentas = ({ data }) => {
         </ChartContainer>
       </div>
 
-      <DataTable 
-        data={filteredData} 
-        columns={columnasTabla} 
-        title="Listado de Facturas"
-        itemsPerPage={10}
-      />
     </div>
   );
 };
 
-export default EstadisticasVentas;
+export default EstadisticasVentas;3
