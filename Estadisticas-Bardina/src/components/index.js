@@ -7,7 +7,6 @@ import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 import DataCard from './DataCard';
 import ChartContainer from './ChartContainer';
-import DataTable from './DataTable';
 import FilterBar from './FilterBar';
 
 export {
@@ -18,6 +17,5 @@ export {
   ErrorMessage,
   DataCard,
   ChartContainer,
-  DataTable,
   FilterBar
 };

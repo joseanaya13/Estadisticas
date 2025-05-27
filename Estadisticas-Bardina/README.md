@@ -49,7 +49,6 @@ Estadisticas-Bardina/
 │   │   ├── ErrorMessage.jsx
 │   │   ├── DataCard.jsx
 │   │   ├── ChartContainer.jsx
-│   │   ├── DataTable.jsx
 │   │   ├── FilterBar.jsx
 │   │   └── index.js
 │   ├── 📂 services/             # Servicios API

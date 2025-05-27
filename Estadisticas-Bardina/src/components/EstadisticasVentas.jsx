@@ -1,4 +1,4 @@
-// components/EstadisticasVentas.jsx - Actualizado con nombres de clientes
+// components/EstadisticasVentas.jsx - Actualizado con vendedores
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -6,9 +6,9 @@ import {
 } from 'recharts';
 import { ChartContainer, DataCard, LoadingSpinner, ErrorMessage, FilterBar, DataTable } from './index';
 import { formatCurrency, formatDate, obtenerNombreMes } from '../utils/formatters';
-import { ventasService, empresasService, contactosService } from '../services/api';
+import { ventasService, empresasService, contactosService, usuariosService } from '../services/api';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
 const EstadisticasVentas = ({ data }) => {
   const [filtros, setFiltros] = useState({
@@ -16,6 +16,7 @@ const EstadisticasVentas = ({ data }) => {
     mes: 'todos',
     cliente: 'todos',
     tienda: 'todas',
+    vendedor: 'todos',
     fechaDesde: '',
     fechaHasta: ''
   });
@@ -25,40 +26,51 @@ const EstadisticasVentas = ({ data }) => {
   const [error, setError] = useState(null);
   const [empresas, setEmpresas] = useState([]);
   const [contactos, setContactos] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
   const [loadingEmpresas, setLoadingEmpresas] = useState(true);
   const [loadingContactos, setLoadingContactos] = useState(true);
+  const [loadingUsuarios, setLoadingUsuarios] = useState(true);
   const [mapaContactos, setMapaContactos] = useState({});
+  const [mapaUsuarios, setMapaUsuarios] = useState({});
   
-  // Cargar empresas y contactos al montar el componente
+  // Cargar empresas, contactos y usuarios al montar el componente
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoadingEmpresas(true);
         setLoadingContactos(true);
+        setLoadingUsuarios(true);
         
-        // Cargar empresas y contactos en paralelo
-        const [empresasData, contactosData] = await Promise.all([
+        // Cargar empresas, contactos y usuarios en paralelo
+        const [empresasData, contactosData, usuariosData] = await Promise.all([
           empresasService.getEmpresas(),
-          contactosService.getContactos()
+          contactosService.getContactos(),
+          usuariosService.getUsuarios()
         ]);
         
         setEmpresas(empresasData.emp_m || []);
         setContactos(contactosData.ent_m || []);
+        setUsuarios(usuariosData.usr_m || []);
         
-        // Crear mapa de contactos para búsquedas rápidas
-        const mapa = contactosService.crearMapaNombres(contactosData.ent_m || []);
-        setMapaContactos(mapa);
+        // Crear mapas para búsquedas rápidas
+        const mapaContactosData = contactosService.crearMapaNombres(contactosData.ent_m || []);
+        const mapaUsuariosData = usuariosService.crearMapaNombres(usuariosData.usr_m || []);
+        
+        setMapaContactos(mapaContactosData);
+        setMapaUsuarios(mapaUsuariosData);
         
         console.log('Datos cargados:', {
           empresas: empresasData.emp_m?.length || 0,
-          contactos: contactosData.ent_m?.length || 0
+          contactos: contactosData.ent_m?.length || 0,
+          usuarios: usuariosData.usr_m?.length || 0
         });
       } catch (err) {
         console.error('Error al cargar datos:', err);
-        setError(err.message || 'Error al cargar empresas y contactos');
+        setError(err.message || 'Error al cargar empresas, contactos y usuarios');
       } finally {
         setLoadingEmpresas(false);
         setLoadingContactos(false);
+        setLoadingUsuarios(false);
       }
     };
     
@@ -75,10 +87,12 @@ const EstadisticasVentas = ({ data }) => {
         tipoAño: typeof data.fac_t[0].eje,
         valorAño: data.fac_t[0].eje,
         cliente: data.fac_t[0].clt,
-        nombreCliente: mapaContactos[data.fac_t[0].clt]
+        nombreCliente: mapaContactos[data.fac_t[0].clt],
+        vendedor: data.fac_t[0].alt_usr,
+        nombreVendedor: mapaUsuarios[data.fac_t[0].alt_usr]
       });
     }
-  }, [data, mapaContactos]);
+  }, [data, mapaContactos, mapaUsuarios]);
   
   // Obtener años únicos de los datos
   const añosDisponibles = useMemo(() => {
@@ -175,7 +189,39 @@ const EstadisticasVentas = ({ data }) => {
     return opciones;
   }, [data, contactos, mapaContactos]);
   
-  // Configuración de filtros
+  // NUEVO: Opciones para el filtro de vendedor - CON NOMBRES
+  const opcionesVendedor = useMemo(() => {
+    if (!data || !data.fac_t || !usuarios.length) {
+      return [{ value: 'todos', label: 'Cargando vendedores...' }];
+    }
+    
+    const vendedoresEnVentas = new Set();
+    data.fac_t.forEach(item => {
+      if (item.alt_usr !== undefined && item.alt_usr !== null) {
+        vendedoresEnVentas.add(item.alt_usr);
+      }
+    });
+    
+    const opciones = [{ value: 'todos', label: 'Todos los vendedores' }];
+    
+    Array.from(vendedoresEnVentas)
+      .sort((a, b) => {
+        const nombreA = mapaUsuarios[a] || `Vendedor ${a}`;
+        const nombreB = mapaUsuarios[b] || `Vendedor ${b}`;
+        return nombreA.localeCompare(nombreB);
+      })
+      .forEach(vendedorId => {
+        const nombreVendedor = mapaUsuarios[vendedorId] || `Vendedor ${vendedorId}`;
+        opciones.push({
+          value: vendedorId.toString(),
+          label: nombreVendedor
+        });
+      });
+    
+    return opciones;
+  }, [data, usuarios, mapaUsuarios]);
+  
+  // Configuración de filtros actualizada
   const filterConfig = [
     {
       id: 'año',
@@ -209,6 +255,13 @@ const EstadisticasVentas = ({ data }) => {
       options: opcionesCliente
     },
     {
+      id: 'vendedor',
+      label: 'Vendedor',
+      type: 'select',
+      value: filtros.vendedor,
+      options: opcionesVendedor
+    },
+    {
       id: 'fechaDesde',
       label: 'Desde',
       type: 'date',
@@ -222,7 +275,7 @@ const EstadisticasVentas = ({ data }) => {
     }
   ];
   
-  // Aplicar filtros a los datos
+  // Aplicar filtros a los datos (actualizado con vendedor)
   useEffect(() => {
     if (!data || !data.fac_t) return;
     
@@ -286,6 +339,17 @@ const EstadisticasVentas = ({ data }) => {
           return itemCliente === clienteId;
         });
         console.log(`Filtro cliente ${clienteId}: ${antes} -> ${filtered.length} registros`);
+      }
+      
+      // NUEVO: Filtrar por vendedor
+      if (filtros.vendedor !== 'todos') {
+        const vendedorId = parseInt(filtros.vendedor);
+        const antes = filtered.length;
+        filtered = filtered.filter(item => {
+          const itemVendedor = typeof item.alt_usr === 'string' ? parseInt(item.alt_usr) : item.alt_usr;
+          return itemVendedor === vendedorId;
+        });
+        console.log(`Filtro vendedor ${vendedorId}: ${antes} -> ${filtered.length} registros`);
       }
       
       // Filtrar por rango de fechas
@@ -401,6 +465,39 @@ const EstadisticasVentas = ({ data }) => {
       .slice(0, 5);
   }, [filteredData, mapaContactos]);
   
+  // NUEVO: Calcular ventas por vendedor - CON NOMBRES
+  const ventasPorVendedor = useMemo(() => {
+    if (!filteredData.length) return [];
+    
+    const vendedores = {};
+    filteredData.forEach(item => {
+      const vendedorId = item.alt_usr;
+      
+      if (vendedorId !== undefined && vendedorId !== null && item.tot > 0) {
+        if (!vendedores[vendedorId]) {
+          vendedores[vendedorId] = {
+            vendedorId,
+            nombreVendedor: mapaUsuarios[vendedorId] || `Vendedor ${vendedorId}`,
+            totalVentas: 0,
+            cantidadFacturas: 0
+          };
+        }
+        
+        vendedores[vendedorId].totalVentas += (item.tot || 0);
+        vendedores[vendedorId].cantidadFacturas += 1;
+      }
+    });
+    
+    return Object.values(vendedores)
+      .map(vendedor => ({
+        ...vendedor,
+        promedioFactura: vendedor.cantidadFacturas > 0 ? 
+          vendedor.totalVentas / vendedor.cantidadFacturas : 0
+      }))
+      .sort((a, b) => b.totalVentas - a.totalVentas)
+      .slice(0, 5);
+  }, [filteredData, mapaUsuarios]);
+  
   // Calcular ventas por forma de pago
   const ventasPorFormaPago = useMemo(() => {
     if (!filteredData.length) return [];
@@ -431,7 +528,7 @@ const EstadisticasVentas = ({ data }) => {
     return { total, cantidad, promedio };
   }, [filteredData]);
   
-  // Configuración de columnas para la tabla - CON NOMBRES DE CLIENTES
+  // Configuración de columnas para la tabla - CON NOMBRES DE CLIENTES Y VENDEDORES
   const columnasTabla = [
     { key: 'id', label: 'ID', format: 'number' },
     { key: 'fch', label: 'Fecha', format: 'date' },
@@ -440,6 +537,12 @@ const EstadisticasVentas = ({ data }) => {
       label: 'Cliente', 
       format: 'custom',
       formatter: (value) => mapaContactos[value] || `Cliente ${value}`
+    },
+    { 
+      key: 'alt_usr', 
+      label: 'Vendedor', 
+      format: 'custom',
+      formatter: (value) => mapaUsuarios[value] || `Vendedor ${value}`
     },
     { key: 'alm', label: 'Almacén' },
     { key: 'bas_tot', label: 'Base', format: 'currency' },
@@ -463,13 +566,14 @@ const EstadisticasVentas = ({ data }) => {
       mes: 'todos',
       cliente: 'todos',
       tienda: 'todas',
+      vendedor: 'todos',
       fechaDesde: '',
       fechaHasta: ''
     });
   };
   
-  if (loadingEmpresas || loadingContactos) {
-    return <LoadingSpinner text="Cargando información de tiendas y clientes..." />;
+  if (loadingEmpresas || loadingContactos || loadingUsuarios) {
+    return <LoadingSpinner text="Cargando información de tiendas, clientes y vendedores..." />;
   }
   
   if (!data || !data.fac_t) {
@@ -490,7 +594,7 @@ const EstadisticasVentas = ({ data }) => {
       
       {/* Información de filtros activos */}
       {(filtros.año !== 'todos' || filtros.mes !== 'todos' || filtros.cliente !== 'todos' || 
-        filtros.tienda !== 'todas' || filtros.fechaDesde || filtros.fechaHasta) && (
+        filtros.tienda !== 'todas' || filtros.vendedor !== 'todos' || filtros.fechaDesde || filtros.fechaHasta) && (
         <div className="filtros-activos-info">
           <i className="fas fa-info-circle"></i>
           <span>Filtros activos:</span>
@@ -504,6 +608,9 @@ const EstadisticasVentas = ({ data }) => {
           )}
           {filtros.cliente !== 'todos' && (
             <span>Cliente: {mapaContactos[filtros.cliente] || `Cliente ${filtros.cliente}`}</span>
+          )}
+          {filtros.vendedor !== 'todos' && (
+            <span>Vendedor: {mapaUsuarios[filtros.vendedor] || `Vendedor ${filtros.vendedor}`}</span>
           )}
           {filtros.fechaDesde && <span>Desde: {formatDate(filtros.fechaDesde)}</span>}
           {filtros.fechaHasta && <span>Hasta: {formatDate(filtros.fechaHasta)}</span>}
@@ -531,6 +638,13 @@ const EstadisticasVentas = ({ data }) => {
           format="currency" 
           icon="calculator"
           type="primary"
+        />
+        <DataCard 
+          title="Vendedores Activos" 
+          value={ventasPorVendedor.length} 
+          format="number" 
+          icon="users"
+          type="warning"
         />
       </div>
 
@@ -574,6 +688,26 @@ const EstadisticasVentas = ({ data }) => {
           </ResponsiveContainer>
         </ChartContainer>
 
+        <ChartContainer title="Top 5 Vendedores">
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={ventasPorVendedor} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" />
+              <YAxis dataKey="nombreVendedor" type="category" width={150} />
+              <Tooltip 
+                formatter={(value, name) => {
+                  if (name === 'totalVentas') return formatCurrency(value);
+                  if (name === 'cantidadFacturas') return `${value} facturas`;
+                  if (name === 'promedioFactura') return formatCurrency(value);
+                  return value;
+                }}
+              />
+              <Legend />
+              <Bar dataKey="totalVentas" fill="#FF8042" name="Ventas Totales" />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartContainer>
+
         <ChartContainer title="Ventas por Forma de Pago">
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
@@ -594,6 +728,25 @@ const EstadisticasVentas = ({ data }) => {
               </Pie>
               <Tooltip formatter={(value) => formatCurrency(value)} />
             </PieChart>
+          </ResponsiveContainer>
+        </ChartContainer>
+
+        <ChartContainer title="Estadísticas por Vendedor">
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={ventasPorVendedor}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="nombreVendedor" angle={-45} textAnchor="end" height={80} />
+              <YAxis />
+              <Tooltip 
+                formatter={(value, name) => {
+                  if (name === 'promedioFactura') return formatCurrency(value);
+                  return value;
+                }}
+              />
+              <Legend />
+              <Bar dataKey="cantidadFacturas" fill="#82ca9d" name="Cantidad Facturas" />
+              <Bar dataKey="promedioFactura" fill="#ffc658" name="Promedio por Factura" />
+            </BarChart>
           </ResponsiveContainer>
         </ChartContainer>
       </div>

@@ -1,4 +1,4 @@
-// services/api.js
+// services/api.js - Actualización con servicio de usuarios
 const API_KEY = 'XWjaumCm';
 const API_BASE_URL = 'https://s5.consultoraprincipado.com/bardina/CP_Erp_V1_dat_dat/v1';
 const PAGE_SIZE = 1000; // Tamaño máximo de página que permite la API
@@ -572,11 +572,123 @@ export const contactosService = {
   }
 };
 
+// NUEVO: Servicio para usuarios
+export const usuariosService = {
+  /**
+   * Obtiene todos los usuarios (con paginación completa)
+   * @param {Object} params - Parámetros de filtrado
+   * @returns {Promise} Promesa con los datos
+   */
+  getUsuarios: (params = {}) => {
+    const queryParams = new URLSearchParams();
+    
+    // Añadir parámetros de filtrado si existen
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, value);
+      }
+    });
+    
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return apiClient.getAllPaginated(`/usr_m${query}`, 'usr_m');
+  },
+  
+  /**
+   * Obtiene un usuario por ID
+   * @param {number} id - ID del usuario
+   * @returns {Promise} Promesa con los datos
+   */
+  getUsuario: (id) => {
+    return apiClient.get(`/usr_m/${id}`);
+  },
+  
+  /**
+   * Obtiene el nombre de un usuario por su ID
+   * @param {string|number} id - ID del usuario
+   * @param {Array} usuariosList - Lista de usuarios (opcional)
+   * @returns {string} Nombre del usuario
+   */
+  getNombreUsuario: (id, usuariosList = []) => {
+    if (!id) return 'Sin vendedor';
+    
+    const usuario = usuariosList.find(u => u.id === id || u.id === id.toString());
+    return usuario ? usuario.name : `Vendedor ${id}`;
+  },
+  
+  /**
+   * Busca usuarios por nombre
+   * @param {string} nombre - Nombre a buscar
+   * @param {Array} usuariosList - Lista de usuarios
+   * @returns {Array} Array de usuarios que coinciden
+   */
+  buscarPorNombre: (nombre, usuariosList = []) => {
+    if (!nombre) return [];
+    
+    const nombreLower = nombre.toLowerCase();
+    return usuariosList.filter(usuario => 
+      usuario.name && usuario.name.toLowerCase().includes(nombreLower)
+    );
+  },
+  
+  /**
+   * Crea un mapa ID -> Nombre para búsquedas rápidas
+   * @param {Array} usuariosList - Lista de usuarios
+   * @returns {Object} Mapa de ID a nombre
+   */
+  crearMapaNombres: (usuariosList = []) => {
+    const mapa = {};
+    usuariosList.forEach(usuario => {
+      if (usuario.id !== undefined && usuario.name) {
+        mapa[usuario.id] = usuario.name;
+      }
+    });
+    return mapa;
+  },
+  
+  /**
+   * Obtiene estadísticas de ventas por vendedor
+   * @param {Array} ventasData - Datos de ventas
+   * @param {Array} usuariosList - Lista de usuarios
+   * @returns {Array} Estadísticas por vendedor
+   */
+  getEstadisticasVendedores: (ventasData = [], usuariosList = []) => {
+    const ventasPorVendedor = {};
+    
+    ventasData.forEach(venta => {
+      const vendedorId = venta.alt_usr;
+      if (vendedorId !== undefined && vendedorId !== null) {
+        if (!ventasPorVendedor[vendedorId]) {
+          ventasPorVendedor[vendedorId] = {
+            vendedorId,
+            nombreVendedor: usuariosService.getNombreUsuario(vendedorId, usuariosList),
+            totalVentas: 0,
+            cantidadFacturas: 0,
+            promedioFactura: 0
+          };
+        }
+        
+        ventasPorVendedor[vendedorId].totalVentas += (venta.tot || 0);
+        ventasPorVendedor[vendedorId].cantidadFacturas += 1;
+      }
+    });
+    
+    // Calcular promedios y ordenar
+    return Object.values(ventasPorVendedor)
+      .map(vendedor => ({
+        ...vendedor,
+        promedioFactura: vendedor.cantidadFacturas > 0 ? 
+          vendedor.totalVentas / vendedor.cantidadFacturas : 0
+      }))
+      .sort((a, b) => b.totalVentas - a.totalVentas);
+  }
+};
+
 // Exportación por defecto de todos los servicios
 export default {
   ventas: ventasService,
   compras: comprasService,
   dashboard: dashboardService,
   empresas: empresasService,
-  contactos: contactosService
+  contactos: contactosService,
+  usuarios: usuariosService
 };

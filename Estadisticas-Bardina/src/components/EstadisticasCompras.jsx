@@ -4,9 +4,8 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell 
 } from 'recharts';
-import { ChartContainer, DataCard, LoadingSpinner, ErrorMessage, FilterBar, DataTable } from './index';
-import { formatCurrency, formatDate, obtenerNombreMes } from '../utils/formatters';
-import { comprasService } from '../services/api';
+import { ChartContainer, DataCard, LoadingSpinner, ErrorMessage, FilterBar } from './index';
+import { formatCurrency, obtenerNombreMes } from '../utils/formatters';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
@@ -181,16 +180,6 @@ const EstadisticasCompras = ({ data }) => {
     return { total, cantidad, promedio };
   }, [filteredData]);
   
-  // Configuración de columnas para la tabla
-  const columnasTabla = [
-    { key: 'id', label: 'ID', format: 'number' },
-    { key: 'fch', label: 'Fecha', format: 'date' },
-    { key: 'prv', label: 'Proveedor', format: 'number' },
-    { key: 'alm', label: 'Almacén' },
-    { key: 'bas_tot', label: 'Base', format: 'currency' },
-    { key: 'tot_alb', label: 'Total', format: 'currency' }
-  ];
-  
   // Manejar cambios en los filtros
   const handleFilterChange = (id, value) => {
     setFiltros(prev => ({
@@ -298,12 +287,6 @@ const EstadisticasCompras = ({ data }) => {
         </ChartContainer>
       </div>
 
-      <DataTable 
-        data={filteredData} 
-        columns={columnasTabla} 
-        title="Listado de Albaranes"
-        itemsPerPage={10}
-      />
     </div>
   );
 };
