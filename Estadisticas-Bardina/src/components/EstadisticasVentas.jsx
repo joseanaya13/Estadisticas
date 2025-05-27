@@ -1,8 +1,8 @@
-// components/EstadisticasVentas.jsx - Actualizado con vendedores
+// components/EstadisticasVentas.jsx - Mejorado con gráficos adaptativos
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell 
+  Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area 
 } from 'recharts';
 import { ChartContainer, DataCard, LoadingSpinner, ErrorMessage, FilterBar } from './index';
 import { formatCurrency, formatDate, obtenerNombreMes } from '../utils/formatters';
@@ -10,7 +10,7 @@ import { empresasService, contactosService, usuariosService } from '../services/
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
 
-const EstadisticasVentas = ({ data, contactos, usuarios }) => {
+const EstadisticasVentas = ({ data }) => {
   const [filtros, setFiltros] = useState({
     año: 'todos',
     mes: 'todos',
@@ -25,55 +25,55 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [empresas, setEmpresas] = useState([]);
+  const [contactos, setContactos] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
   const [loadingEmpresas, setLoadingEmpresas] = useState(true);
+  const [loadingContactos, setLoadingContactos] = useState(true);
+  const [loadingUsuarios, setLoadingUsuarios] = useState(true);
+  const [mapaContactos, setMapaContactos] = useState({});
+  const [mapaUsuarios, setMapaUsuarios] = useState({});
   
-  // Crear mapas para búsquedas rápidas usando los datos pasados como props
-  const mapaContactos = useMemo(() => {
-    if (!contactos || !contactos.ent_m) return {};
-    return contactosService.crearMapaNombres(contactos.ent_m);
-  }, [contactos]);
-  
-  const mapaUsuarios = useMemo(() => {
-    if (!usuarios || !usuarios.usr_m) return {};
-    return usuariosService.crearMapaNombres(usuarios.usr_m);
-  }, [usuarios]);
-  
-  // Cargar empresas al montar el componente
+  // Cargar empresas, contactos y usuarios al montar el componente
   useEffect(() => {
-    const loadEmpresas = async () => {
+    const loadData = async () => {
       try {
         setLoadingEmpresas(true);
-        const empresasData = await empresasService.getEmpresas();
-        setEmpresas(empresasData.emp_m || []);
+        setLoadingContactos(true);
+        setLoadingUsuarios(true);
         
-        console.log('Empresas cargadas:', empresasData.emp_m?.length || 0);
+        const [empresasData, contactosData, usuariosData] = await Promise.all([
+          empresasService.getEmpresas(),
+          contactosService.getContactos(),
+          usuariosService.getUsuarios()
+        ]);
+        
+        setEmpresas(empresasData.emp_m || []);
+        setContactos(contactosData.ent_m || []);
+        setUsuarios(usuariosData.usr_m || []);
+        
+        const mapaContactosData = contactosService.crearMapaNombres(contactosData.ent_m || []);
+        const mapaUsuariosData = usuariosService.crearMapaNombres(usuariosData.usr_m || []);
+        
+        setMapaContactos(mapaContactosData);
+        setMapaUsuarios(mapaUsuariosData);
+        
+        console.log('Datos cargados:', {
+          empresas: empresasData.emp_m?.length || 0,
+          contactos: contactosData.ent_m?.length || 0,
+          usuarios: usuariosData.usr_m?.length || 0
+        });
       } catch (err) {
-        console.error('Error al cargar empresas:', err);
-        setError(err.message || 'Error al cargar empresas');
+        console.error('Error al cargar datos:', err);
+        setError(err.message || 'Error al cargar empresas, contactos y usuarios');
       } finally {
         setLoadingEmpresas(false);
+        setLoadingContactos(false);
+        setLoadingUsuarios(false);
       }
     };
     
-    loadEmpresas();
+    loadData();
   }, []);
-  
-  // Debug: Verificar tipos de datos al cargar
-  useEffect(() => {
-    if (data && data.fac_t.length > 0) {
-      console.log('Datos de ventas cargados:', {
-        primerRegistro: data.fac_t[0],
-        tipoMes: typeof data.fac_t[0].mes,
-        valorMes: data.fac_t[0].mes,
-        tipoAño: typeof data.fac_t[0].eje,
-        valorAño: data.fac_t[0].eje,
-        cliente: data.fac_t[0].clt,
-        nombreCliente: mapaContactos[data.fac_t[0].clt],
-        vendedor: data.fac_t[0].alt_usr,
-        nombreVendedor: mapaUsuarios[data.fac_t[0].alt_usr]
-      });
-    }
-  }, [data, mapaContactos, mapaUsuarios]);
   
   // Obtener años únicos de los datos
   const añosDisponibles = useMemo(() => {
@@ -90,7 +90,7 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
     }));
   }, [data]);
   
-  // Opciones para el filtro de mes
+  // Opciones para filtros (código existente...)
   const opcionesMes = useMemo(() => {
     if (!data || !data.fac_t) return [];
     
@@ -112,7 +112,6 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
     ];
   }, [data]);
   
-  // Opciones para el filtro de tienda/división
   const opcionesTienda = useMemo(() => {
     if (!empresas.length) return [{ value: 'todas', label: 'Cargando tiendas...' }];
     
@@ -138,9 +137,8 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
     return opciones;
   }, [empresas]);
   
-  // Opciones para el filtro de cliente - CON NOMBRES
   const opcionesCliente = useMemo(() => {
-    if (!data || !data.fac_t || !contactos || !contactos.ent_m) {
+    if (!data || !data.fac_t || !contactos.length) {
       return [{ value: 'todos', label: 'Cargando clientes...' }];
     }
     
@@ -170,9 +168,8 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
     return opciones;
   }, [data, contactos, mapaContactos]);
   
-  // Opciones para el filtro de vendedor - CON NOMBRES
   const opcionesVendedor = useMemo(() => {
-    if (!data || !data.fac_t || !usuarios || !usuarios.usr_m) {
+    if (!data || !data.fac_t || !usuarios.length) {
       return [{ value: 'todos', label: 'Cargando vendedores...' }];
     }
     
@@ -202,7 +199,7 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
     return opciones;
   }, [data, usuarios, mapaUsuarios]);
   
-  // Configuración de filtros actualizada
+  // Configuración de filtros
   const filterConfig = [
     {
       id: 'año',
@@ -256,7 +253,7 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
     }
   ];
   
-  // Aplicar filtros a los datos (actualizado con vendedor)
+  // Aplicar filtros a los datos (código existente...)
   useEffect(() => {
     if (!data || !data.fac_t) return;
     
@@ -371,7 +368,23 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
     }
   }, [data, filtros]);
   
-  // Calcular ventas por mes
+  // NUEVA LÓGICA: Detectar qué filtros están activos
+  const filtrosActivos = useMemo(() => {
+    const activos = {
+      tiendaEspecifica: filtros.tienda !== 'todas',
+      clienteEspecifico: filtros.cliente !== 'todos',
+      vendedorEspecifico: filtros.vendedor !== 'todos',
+      mesEspecifico: filtros.mes !== 'todos',
+      añoEspecifico: filtros.año !== 'todos',
+      rangoFechas: filtros.fechaDesde || filtros.fechaHasta
+    };
+    
+    activos.hayFiltrosActivos = Object.values(activos).some(Boolean);
+    
+    return activos;
+  }, [filtros]);
+  
+  // Calcular datos para gráficos (mejorado y adaptativo)
   const ventasPorMes = useMemo(() => {
     if (!filteredData.length) return [];
     
@@ -392,9 +405,44 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
       .sort((a, b) => a.mes - b.mes);
   }, [filteredData]);
   
-  // Calcular ventas por tienda
+  // NUEVO: Ventas por semana (para cuando hay filtro de mes específico)
+  const ventasPorSemana = useMemo(() => {
+    if (!filteredData.length || !filtrosActivos.mesEspecifico) return [];
+    
+    const semanas = {};
+    filteredData.forEach(item => {
+      if (item.fch) {
+        const fecha = new Date(item.fch);
+        const weekNum = Math.ceil(fecha.getDate() / 7);
+        const semanaKey = `Semana ${weekNum}`;
+        semanas[semanaKey] = (semanas[semanaKey] || 0) + (item.tot || 0);
+      }
+    });
+    
+    return Object.entries(semanas)
+      .map(([semana, total]) => ({ semana, total }))
+      .sort((a, b) => parseInt(a.semana.split(' ')[1]) - parseInt(b.semana.split(' ')[1]));
+  }, [filteredData, filtrosActivos.mesEspecifico]);
+  
+  // NUEVO: Ventas por día (para rangos de fechas cortos)
+  const ventasPorDia = useMemo(() => {
+    if (!filteredData.length || !filtrosActivos.rangoFechas) return [];
+    
+    const dias = {};
+    filteredData.forEach(item => {
+      if (item.fch) {
+        const fecha = new Date(item.fch).toLocaleDateString('es-ES');
+        dias[fecha] = (dias[fecha] || 0) + (item.tot || 0);
+      }
+    });
+    
+    return Object.entries(dias)
+      .map(([fecha, total]) => ({ fecha, total }))
+      .sort((a, b) => new Date(a.fecha.split('/').reverse().join('-')) - new Date(b.fecha.split('/').reverse().join('-')));
+  }, [filteredData, filtrosActivos.rangoFechas]);
+  
   const ventasPorTienda = useMemo(() => {
-    if (!filteredData.length || !empresas.length) return [];
+    if (!filteredData.length || !empresas.length || filtrosActivos.tiendaEspecifica) return [];
     
     const tiendas = {};
     filteredData.forEach(item => {
@@ -415,22 +463,20 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
       })
       .sort((a, b) => b.total - a.total)
       .slice(0, 5);
-  }, [filteredData, empresas]);
+  }, [filteredData, empresas, filtrosActivos.tiendaEspecifica]);
   
-  // Calcular ventas por cliente - CON NOMBRES (excluyendo clientes problemáticos)
   const ventasPorCliente = useMemo(() => {
-    if (!filteredData.length) return [];
+    if (!filteredData.length || filtrosActivos.clienteEspecifico) return [];
     
     const clientes = {};
     filteredData.forEach(item => {
       const clienteId = typeof item.clt === 'string' ? item.clt : item.clt?.toString();
       
-      // Filtrar clientes problemáticos o sin asignar
       if (clienteId && 
           clienteId !== '0' && 
           clienteId !== 'null' && 
           clienteId !== 'undefined' &&
-          item.tot > 0) { // Solo incluir ventas con importe positivo
+          item.tot > 0) {
         clientes[clienteId] = (clientes[clienteId] || 0) + (item.tot || 0);
       }
     });
@@ -441,14 +487,13 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
         nombreCliente: mapaContactos[clienteId] || `Cliente ${clienteId}`,
         total
       }))
-      .filter(cliente => cliente.total > 100) // Filtrar importes muy pequeños
+      .filter(cliente => cliente.total > 100)
       .sort((a, b) => b.total - a.total)
       .slice(0, 5);
-  }, [filteredData, mapaContactos]);
+  }, [filteredData, mapaContactos, filtrosActivos.clienteEspecifico]);
   
-  // Calcular ventas por vendedor - CON NOMBRES
   const ventasPorVendedor = useMemo(() => {
-    if (!filteredData.length) return [];
+    if (!filteredData.length || filtrosActivos.vendedorEspecifico) return [];
     
     const vendedores = {};
     filteredData.forEach(item => {
@@ -477,9 +522,55 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
       }))
       .sort((a, b) => b.totalVentas - a.totalVentas)
       .slice(0, 5);
-  }, [filteredData, mapaUsuarios]);
+  }, [filteredData, mapaUsuarios, filtrosActivos.vendedorEspecifico]);
   
-  // Calcular ventas por forma de pago
+  // NUEVO: Análisis de ticket promedio por período
+  const ticketPromedioPorPeriodo = useMemo(() => {
+    if (!filteredData.length) return [];
+    
+    let agrupacion = 'mes';
+    if (filtrosActivos.mesEspecifico) agrupacion = 'semana';
+    if (filtrosActivos.rangoFechas) agrupacion = 'día';
+    
+    const periodos = {};
+    
+    filteredData.forEach(item => {
+      let clavePeríodo;
+      
+      if (agrupacion === 'día' && item.fch) {
+        clavePeríodo = new Date(item.fch).toLocaleDateString('es-ES');
+      } else if (agrupacion === 'semana' && item.fch) {
+        const fecha = new Date(item.fch);
+        const weekNum = Math.ceil(fecha.getDate() / 7);
+        clavePeríodo = `Semana ${weekNum}`;
+      } else {
+        clavePeríodo = obtenerNombreMes(item.mes);
+      }
+      
+      if (clavePeríodo) {
+        if (!periodos[clavePeríodo]) {
+          periodos[clavePeríodo] = { total: 0, cantidad: 0 };
+        }
+        periodos[clavePeríodo].total += (item.tot || 0);
+        periodos[clavePeríodo].cantidad += 1;
+      }
+    });
+    
+    return Object.entries(periodos)
+      .map(([periodo, datos]) => ({
+        periodo,
+        ticketPromedio: datos.cantidad > 0 ? datos.total / datos.cantidad : 0,
+        cantidadVentas: datos.cantidad,
+        totalVentas: datos.total
+      }))
+      .sort((a, b) => {
+        if (agrupacion === 'día') {
+          return new Date(a.periodo.split('/').reverse().join('-')) - new Date(b.periodo.split('/').reverse().join('-'));
+        }
+        return a.periodo.localeCompare(b.periodo);
+      });
+  }, [filteredData, filtrosActivos]);
+  
   const ventasPorFormaPago = useMemo(() => {
     if (!filteredData.length) return [];
     
@@ -509,7 +600,7 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
     return { total, cantidad, promedio };
   }, [filteredData]);
   
-  // Configuración de columnas para la tabla - CON NOMBRES DE CLIENTES Y VENDEDORES
+  // Configuración de columnas para la tabla
   const columnasTabla = [
     { key: 'id', label: 'ID', format: 'number' },
     { key: 'fch', label: 'Fecha', format: 'date' },
@@ -553,8 +644,8 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
     });
   };
   
-  if (loadingEmpresas) {
-    return <LoadingSpinner text="Cargando información de tiendas..." />;
+  if (loadingEmpresas || loadingContactos || loadingUsuarios) {
+    return <LoadingSpinner text="Cargando información de tiendas, clientes y vendedores..." />;
   }
   
   if (!data || !data.fac_t) {
@@ -574,8 +665,7 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
       />
       
       {/* Información de filtros activos */}
-      {(filtros.año !== 'todos' || filtros.mes !== 'todos' || filtros.cliente !== 'todos' || 
-        filtros.tienda !== 'todas' || filtros.vendedor !== 'todos' || filtros.fechaDesde || filtros.fechaHasta) && (
+      {filtrosActivos.hayFiltrosActivos && (
         <div className="filtros-activos-info">
           <i className="fas fa-info-circle"></i>
           <span>Filtros activos:</span>
@@ -621,8 +711,8 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
           type="primary"
         />
         <DataCard 
-          title="Vendedores Activos" 
-          value={ventasPorVendedor.length} 
+          title={filtrosActivos.vendedorEspecifico ? "Vendedor Seleccionado" : "Vendedores Activos"} 
+          value={filtrosActivos.vendedorEspecifico ? 1 : ventasPorVendedor.length} 
           format="number" 
           icon="users"
           type="warning"
@@ -630,110 +720,204 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
       </div>
 
       <div className="charts-container">
-        <ChartContainer title="Ventas por Mes">
+        {/* Gráfico temporal adaptativo */}
+        {filtrosActivos.mesEspecifico && ventasPorSemana.length > 0 ? (
+          <ChartContainer title={`Ventas por Semana - ${obtenerNombreMes(parseInt(filtros.mes))}`}>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={ventasPorSemana}>
+                <defs>
+                  <linearGradient id="colorVentas" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#0088FE" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#0088FE" stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="semana" />
+                <YAxis />
+                <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Area 
+                  type="monotone" 
+                  dataKey="total" 
+                  stroke="#0088FE" 
+                  fillOpacity={1} 
+                  fill="url(#colorVentas)" 
+                  name="Ventas"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        ) : filtrosActivos.rangoFechas && ventasPorDia.length > 0 && ventasPorDia.length <= 31 ? (
+          <ChartContainer title="Ventas por Día">
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={ventasPorDia}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="fecha" angle={-45} textAnchor="end" height={80} />
+                <YAxis />
+                <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Line 
+                  type="monotone" 
+                  dataKey="total" 
+                  stroke="#0088FE" 
+                  strokeWidth={3}
+                  dot={{ fill: '#0088FE', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6 }}
+                  name="Ventas"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        ) : ventasPorMes.length > 0 ? (
+          <ChartContainer title="Ventas por Mes">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={ventasPorMes}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="nombreMes" />
+                <YAxis />
+                <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Legend />
+                <Bar dataKey="total" fill="#0088FE" name="Ventas" />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        ) : null}
+
+        {/* Análisis de ticket promedio */}
+        <ChartContainer title="Ticket Promedio por Período">
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={ventasPorMes}>
+            <LineChart data={ticketPromedioPorPeriodo}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="nombreMes" />
+              <XAxis dataKey="periodo" />
               <YAxis />
-              <Tooltip formatter={(value) => formatCurrency(value)} />
-              <Legend />
-              <Bar dataKey="total" fill="#0088FE" name="Ventas" />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartContainer>
-
-        <ChartContainer title="Top 5 Tiendas">
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={ventasPorTienda} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis dataKey="nombreTienda" type="category" width={150} />
-              <Tooltip formatter={(value) => formatCurrency(value)} />
-              <Legend />
-              <Bar dataKey="total" fill="#00C49F" name="Ventas" />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartContainer>
-
-        <ChartContainer title="Top 5 Clientes">
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={ventasPorCliente} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis dataKey="nombreCliente" type="category" width={150} />
-              <Tooltip formatter={(value) => formatCurrency(value)} />
-              <Legend />
-              <Bar dataKey="total" fill="#FFBB28" name="Ventas" />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartContainer>
-
-        <ChartContainer title="Top 5 Vendedores">
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={ventasPorVendedor} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis dataKey="nombreVendedor" type="category" width={150} />
               <Tooltip 
                 formatter={(value, name) => {
-                  if (name === 'totalVentas') return formatCurrency(value);
-                  if (name === 'cantidadFacturas') return `${value} facturas`;
-                  if (name === 'promedioFactura') return formatCurrency(value);
+                  if (name === 'ticketPromedio') return formatCurrency(value);
                   return value;
                 }}
               />
               <Legend />
-              <Bar dataKey="totalVentas" fill="#FF8042" name="Ventas Totales" />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartContainer>
-
-        <ChartContainer title="Ventas por Forma de Pago">
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={ventasPorFormaPago}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={100}
-                fill="#8884d8"
-                dataKey="total"
-                nameKey="nombreFormaPago"
-                label={({ nombreFormaPago, percent }) => `${nombreFormaPago}: ${(percent * 100).toFixed(0)}%`}
-              >
-                {ventasPorFormaPago.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value) => formatCurrency(value)} />
-            </PieChart>
-          </ResponsiveContainer>
-        </ChartContainer>
-
-        <ChartContainer title="Estadísticas por Vendedor">
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={ventasPorVendedor}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="nombreVendedor" angle={-45} textAnchor="end" height={80} />
-              <YAxis />
-              <Tooltip 
-                formatter={(value, name) => {
-                  if (name === 'promedioFactura') return formatCurrency(value);
-                  return value;
-                }}
+              <Line 
+                type="monotone" 
+                dataKey="ticketPromedio" 
+                stroke="#82ca9d" 
+                name="Ticket Promedio"
+                strokeWidth={2}
               />
-              <Legend />
-              <Bar dataKey="cantidadFacturas" fill="#82ca9d" name="Cantidad Facturas" />
-              <Bar dataKey="promedioFactura" fill="#ffc658" name="Promedio por Factura" />
-            </BarChart>
+              <Line 
+                type="monotone" 
+                dataKey="cantidadVentas" 
+                stroke="#ffc658" 
+                name="Cantidad Ventas"
+                strokeWidth={2}
+              />
+            </LineChart>
           </ResponsiveContainer>
         </ChartContainer>
+
+        {/* Mostrar Top 5 Tiendas solo si no hay filtro de tienda específica */}
+        {!filtrosActivos.tiendaEspecifica && ventasPorTienda.length > 0 && (
+          <ChartContainer title="Top 5 Tiendas">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={ventasPorTienda} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis dataKey="nombreTienda" type="category" width={150} />
+                <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Legend />
+                <Bar dataKey="total" fill="#00C49F" name="Ventas" />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        )}
+
+        {/* Mostrar Top 5 Clientes solo si no hay filtro de cliente específico */}
+        {!filtrosActivos.clienteEspecifico && ventasPorCliente.length > 0 && (
+          <ChartContainer title="Top 5 Clientes">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={ventasPorCliente} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis dataKey="nombreCliente" type="category" width={150} />
+                <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Legend />
+                <Bar dataKey="total" fill="#FFBB28" name="Ventas" />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        )}
+
+        {/* Mostrar Top 5 Vendedores solo si no hay filtro de vendedor específico */}
+        {!filtrosActivos.vendedorEspecifico && ventasPorVendedor.length > 0 && (
+          <ChartContainer title="Top 5 Vendedores">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={ventasPorVendedor} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis dataKey="nombreVendedor" type="category" width={150} />
+                <Tooltip 
+                  formatter={(value, name) => {
+                    if (name === 'totalVentas') return formatCurrency(value);
+                    if (name === 'cantidadFacturas') return `${value} facturas`;
+                    if (name === 'promedioFactura') return formatCurrency(value);
+                    return value;
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="totalVentas" fill="#FF8042" name="Ventas Totales" />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        )}
+
+        {/* Ventas por Forma de Pago - siempre se muestra si hay datos */}
+        {ventasPorFormaPago.length > 1 && (
+          <ChartContainer title="Ventas por Forma de Pago">
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={ventasPorFormaPago}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="total"
+                  nameKey="nombreFormaPago"
+                  label={({ nombreFormaPago, percent }) => `${nombreFormaPago}: ${(percent * 100).toFixed(0)}%`}
+                >
+                  {ventasPorFormaPago.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => formatCurrency(value)} />
+              </PieChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        )}
+
+        {/* Estadísticas por Vendedor - solo si no hay filtro de vendedor específico */}
+        {!filtrosActivos.vendedorEspecifico && ventasPorVendedor.length > 0 && (
+          <ChartContainer title="Estadísticas por Vendedor">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={ventasPorVendedor}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="nombreVendedor" angle={-45} textAnchor="end" height={80} />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value, name) => {
+                    if (name === 'promedioFactura') return formatCurrency(value);
+                    return value;
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="cantidadFacturas" fill="#82ca9d" name="Cantidad Facturas" />
+                <Bar dataKey="promedioFactura" fill="#ffc658" name="Promedio por Factura" />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        )}
       </div>
-
     </div>
   );
 };
 
-export default EstadisticasVentas;3
+export default EstadisticasVentas;
