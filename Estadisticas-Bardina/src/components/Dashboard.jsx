@@ -350,20 +350,6 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
           icon="truck"
           type="secondary"
         />
-        <DataCard 
-          title="Balance" 
-          value={dashboardData.balance} 
-          format="currency" 
-          icon="balance-scale"
-          type={dashboardData.balance >= 0 ? "positive" : "negative"}
-        />
-        <DataCard 
-          title="Margen %" 
-          value={`${dashboardData.margenBeneficio.toFixed(1)}%`} 
-          format="text" 
-          icon="percentage"
-          type={dashboardData.margenBeneficio >= 0 ? "positive" : "negative"}
-        />
       </div>
       
       <div className="stats-info">

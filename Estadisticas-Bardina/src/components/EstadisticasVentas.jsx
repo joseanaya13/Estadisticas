@@ -1,4 +1,4 @@
-// components/EstadisticasVentas.jsx - Mejorado con gráficos adaptativos
+// components/EstadisticasVentas.jsx - Actualizado con formas de pago reales
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -27,48 +27,60 @@ const EstadisticasVentas = ({ data }) => {
   const [empresas, setEmpresas] = useState([]);
   const [contactos, setContactos] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
+  const [formasPago, setFormasPago] = useState([]);
   const [loadingEmpresas, setLoadingEmpresas] = useState(true);
   const [loadingContactos, setLoadingContactos] = useState(true);
   const [loadingUsuarios, setLoadingUsuarios] = useState(true);
+  const [loadingFormasPago, setLoadingFormasPago] = useState(true);
   const [mapaContactos, setMapaContactos] = useState({});
   const [mapaUsuarios, setMapaUsuarios] = useState({});
+  const [mapaFormasPago, setMapaFormasPago] = useState({});
   
-  // Cargar empresas, contactos y usuarios al montar el componente
+  // Cargar empresas, contactos, usuarios y formas de pago al montar el componente
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoadingEmpresas(true);
         setLoadingContactos(true);
         setLoadingUsuarios(true);
+        setLoadingFormasPago(true);
         
-        const [empresasData, contactosData, usuariosData] = await Promise.all([
+        const [empresasData, contactosData, usuariosData, formasPagoData] = await Promise.all([
           empresasService.getEmpresas(),
           contactosService.getContactos(),
-          usuariosService.getUsuarios()
+          usuariosService.getUsuarios(),
+          formasPagoService.getFormasPago()
         ]);
         
         setEmpresas(empresasData.emp_m || []);
         setContactos(contactosData.ent_m || []);
         setUsuarios(usuariosData.usr_m || []);
+        setFormasPago(formasPagoData.fpg_m || []);
         
         const mapaContactosData = contactosService.crearMapaNombres(contactosData.ent_m || []);
         const mapaUsuariosData = usuariosService.crearMapaNombres(usuariosData.usr_m || []);
+        const mapaFormasPagoData = formasPagoService.crearMapaNombres(formasPagoData.fpg_m || []);
         
         setMapaContactos(mapaContactosData);
         setMapaUsuarios(mapaUsuariosData);
+        setMapaFormasPago(mapaFormasPagoData);
         
         console.log('Datos cargados:', {
           empresas: empresasData.emp_m?.length || 0,
           contactos: contactosData.ent_m?.length || 0,
-          usuarios: usuariosData.usr_m?.length || 0
+          usuarios: usuariosData.usr_m?.length || 0,
+          formasPago: formasPagoData.fpg_m?.length || 0
         });
+        
+        console.log('Mapa de formas de pago:', mapaFormasPagoData);
       } catch (err) {
         console.error('Error al cargar datos:', err);
-        setError(err.message || 'Error al cargar empresas, contactos y usuarios');
+        setError(err.message || 'Error al cargar empresas, contactos, usuarios y formas de pago');
       } finally {
         setLoadingEmpresas(false);
         setLoadingContactos(false);
         setLoadingUsuarios(false);
+        setLoadingFormasPago(false);
       }
     };
     
@@ -90,7 +102,7 @@ const EstadisticasVentas = ({ data }) => {
     }));
   }, [data]);
   
-  // Opciones para filtros (código existente...)
+  // Opciones para filtros
   const opcionesMes = useMemo(() => {
     if (!data || !data.fac_t) return [];
     
@@ -253,7 +265,7 @@ const EstadisticasVentas = ({ data }) => {
     }
   ];
   
-  // Aplicar filtros a los datos (código existente...)
+  // Aplicar filtros a los datos
   useEffect(() => {
     if (!data || !data.fac_t) return;
     
@@ -368,7 +380,7 @@ const EstadisticasVentas = ({ data }) => {
     }
   }, [data, filtros]);
   
-  // NUEVA LÓGICA: Detectar qué filtros están activos
+  // Detectar qué filtros están activos
   const filtrosActivos = useMemo(() => {
     const activos = {
       tiendaEspecifica: filtros.tienda !== 'todas',
@@ -405,7 +417,7 @@ const EstadisticasVentas = ({ data }) => {
       .sort((a, b) => a.mes - b.mes);
   }, [filteredData]);
   
-  // NUEVO: Ventas por semana (para cuando hay filtro de mes específico)
+  // Ventas por semana (para cuando hay filtro de mes específico)
   const ventasPorSemana = useMemo(() => {
     if (!filteredData.length || !filtrosActivos.mesEspecifico) return [];
     
@@ -424,7 +436,7 @@ const EstadisticasVentas = ({ data }) => {
       .sort((a, b) => parseInt(a.semana.split(' ')[1]) - parseInt(b.semana.split(' ')[1]));
   }, [filteredData, filtrosActivos.mesEspecifico]);
   
-  // NUEVO: Ventas por día (para rangos de fechas cortos)
+  // Ventas por día (para rangos de fechas cortos)
   const ventasPorDia = useMemo(() => {
     if (!filteredData.length || !filtrosActivos.rangoFechas) return [];
     
@@ -524,7 +536,7 @@ const EstadisticasVentas = ({ data }) => {
       .slice(0, 5);
   }, [filteredData, mapaUsuarios, filtrosActivos.vendedorEspecifico]);
   
-  // NUEVO: Análisis de ticket promedio por período
+  // Análisis de ticket promedio por período
   const ticketPromedioPorPeriodo = useMemo(() => {
     if (!filteredData.length) return [];
     
@@ -571,23 +583,37 @@ const EstadisticasVentas = ({ data }) => {
       });
   }, [filteredData, filtrosActivos]);
   
+  // ACTUALIZADO: Ventas por forma de pago con nombres reales
   const ventasPorFormaPago = useMemo(() => {
     if (!filteredData.length) return [];
     
-    const formasPago = {};
+    const formasPagoVentas = {};
     filteredData.forEach(item => {
-      const formaPago = typeof item.fpg === 'string' ? parseInt(item.fpg) : item.fpg;
-      if (formaPago !== undefined && formaPago !== null) {
-        formasPago[formaPago] = (formasPago[formaPago] || 0) + (item.tot || 0);
+      const formaPagoId = typeof item.fpg === 'string' ? parseInt(item.fpg) : item.fpg;
+      if (formaPagoId !== undefined && formaPagoId !== null) {
+        formasPagoVentas[formaPagoId] = (formasPagoVentas[formaPagoId] || 0) + (item.tot || 0);
       }
     });
     
-    return Object.entries(formasPago).map(([formaPago, total]) => ({
-      formaPago: parseInt(formaPago),
-      nombreFormaPago: `Forma ${formaPago}`,
-      total
-    }));
-  }, [filteredData]);
+    console.log('Ventas por forma de pago (raw):', formasPagoVentas);
+    console.log('Mapa formas de pago disponible:', mapaFormasPago);
+    
+    return Object.entries(formasPagoVentas)
+      .map(([formaPagoId, total]) => {
+        const id = parseInt(formaPagoId);
+        const nombreFormaPago = mapaFormasPago[id] || `Forma de pago ${id}`;
+        
+        console.log(`Forma de pago ${id}: ${nombreFormaPago} = €${total}`);
+        
+        return {
+          formaPagoId: id,
+          nombreFormaPago,
+          total
+        };
+      })
+      .filter(fp => fp.total > 0) // Solo mostrar formas de pago con ventas
+      .sort((a, b) => b.total - a.total); // Ordenar por total descendente
+  }, [filteredData, mapaFormasPago]);
   
   // Calcular totales
   const totales = useMemo(() => {
@@ -644,8 +670,8 @@ const EstadisticasVentas = ({ data }) => {
     });
   };
   
-  if (loadingEmpresas || loadingContactos || loadingUsuarios) {
-    return <LoadingSpinner text="Cargando información de tiendas, clientes y vendedores..." />;
+  if (loadingEmpresas || loadingContactos || loadingUsuarios || loadingFormasPago) {
+    return <LoadingSpinner text="Cargando información de tiendas, clientes, vendedores y formas de pago..." />;
   }
   
   if (!data || !data.fac_t) {
@@ -861,8 +887,8 @@ const EstadisticasVentas = ({ data }) => {
           </ChartContainer>
         )}
 
-        {/* Ventas por Forma de Pago - siempre se muestra si hay datos */}
-        {ventasPorFormaPago.length > 1 && (
+        {/* ACTUALIZADO: Ventas por Forma de Pago con nombres reales */}
+        {ventasPorFormaPago.length > 0 && (
           <ChartContainer title="Ventas por Forma de Pago">
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -875,13 +901,17 @@ const EstadisticasVentas = ({ data }) => {
                   fill="#8884d8"
                   dataKey="total"
                   nameKey="nombreFormaPago"
-                  label={({ nombreFormaPago, percent }) => `${nombreFormaPago}: ${(percent * 100).toFixed(0)}%`}
+                  label={({ nombreFormaPago, percent }) => 
+                    `${nombreFormaPago}: ${(percent * 100).toFixed(1)}%`
+                  }
                 >
                   {ventasPorFormaPago.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Tooltip 
+                  formatter={(value, name) => [formatCurrency(value), name]}
+                />
               </PieChart>
             </ResponsiveContainer>
           </ChartContainer>
