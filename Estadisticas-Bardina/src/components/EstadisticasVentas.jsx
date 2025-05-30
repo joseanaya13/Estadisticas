@@ -36,6 +36,7 @@ const EstadisticasVentas = ({ data }) => {
   const [mapaUsuarios, setMapaUsuarios] = useState({});
   const [mapaFormasPago, setMapaFormasPago] = useState({});
   
+  
   // Cargar empresas, contactos, usuarios y formas de pago al montar el componente
   useEffect(() => {
     const loadData = async () => {
