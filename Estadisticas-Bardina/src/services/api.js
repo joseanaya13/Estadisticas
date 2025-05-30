@@ -683,6 +683,59 @@ export const usuariosService = {
   }
 };
 
+export const formasPagoService = {
+  /**
+   * Obtiene todas las formas de pago
+   * @returns {Promise} Promesa con los datos
+   */
+  getFormasPago: async () => {
+    try {
+      const response = await apiClient.get('/fpg_m');
+      return response;
+    } catch (error) {
+      console.error('Error al obtener formas de pago:', error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Obtiene una forma de pago por ID
+   * @param {number} id - ID de la forma de pago
+   * @returns {Promise} Promesa con los datos
+   */
+  getFormaPago: (id) => {
+    return apiClient.get(`/fpg_m/${id}`);
+  },
+  
+  /**
+   * Obtiene el nombre de una forma de pago por su ID
+   * @param {string|number} id - ID de la forma de pago
+   * @param {Array} formasPagoList - Lista de formas de pago (opcional)
+   * @returns {string} Nombre de la forma de pago
+   */
+  getNombreFormaPago: (id, formasPagoList = []) => {
+    if (!id) return 'Sin forma de pago';
+    
+    const formaPago = formasPagoList.find(fp => fp.id === id || fp.id === parseInt(id));
+    return formaPago ? formaPago.name : `Forma de pago ${id}`;
+  },
+  
+  /**
+   * Crea un mapa ID -> Nombre para búsquedas rápidas
+   * @param {Array} formasPagoList - Lista de formas de pago
+   * @returns {Object} Mapa de ID a nombre
+   */
+  crearMapaNombres: (formasPagoList = []) => {
+    const mapa = {};
+    formasPagoList.forEach(formaPago => {
+      if (formaPago.id !== undefined && formaPago.name) {
+        mapa[formaPago.id] = formaPago.name;
+      }
+    });
+    return mapa;
+  }
+};
+
 // Exportación por defecto de todos los servicios
 export default {
   ventas: ventasService,
@@ -690,5 +743,6 @@ export default {
   dashboard: dashboardService,
   empresas: empresasService,
   contactos: contactosService,
-  usuarios: usuariosService
+  usuarios: usuariosService,
+  formasPago: formasPagoService
 };
