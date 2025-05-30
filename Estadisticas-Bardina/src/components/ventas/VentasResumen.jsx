@@ -198,25 +198,11 @@ const VentasResumen = ({
           type="primary"
         />
         <DataCard 
-          title="Clientes Únicos" 
-          value={metricas.clientesUnicos} 
-          format="number" 
-          icon="users"
-          type="positive"
-        />
-        <DataCard 
           title="Vendedores Activos" 
           value={metricas.vendedoresActivos} 
           format="number" 
           icon="user-tie"
           type="secondary"
-        />
-        <DataCard 
-          title="Formas de Pago" 
-          value={metricas.formasPagoUsadas} 
-          format="number" 
-          icon="credit-card"
-          type="warning"
         />
       </div>
 
@@ -258,31 +244,6 @@ const VentasResumen = ({
           </div>
         )}
       </div>
-
-      {/* Alerta de vendedores duplicados */}
-      {duplicadosDetectados.length > 0 && (
-        <div className="duplicados-alert">
-          <i className="fas fa-exclamation-triangle"></i>
-          <div>
-            <strong>Vendedores duplicados detectados:</strong>
-            <p>
-              Se encontraron {duplicadosDetectados.length} vendedores con nombres duplicados. 
-              Las ventas han sido consolidadas automáticamente por nombre.
-            </p>
-            <details className="duplicados-details">
-              <summary>Ver detalles de duplicados</summary>
-              <ul>
-                {duplicadosDetectados.map((dup, index) => (
-                  <li key={index}>
-                    <strong>{dup.nombre}</strong>: {dup.cantidad} IDs diferentes 
-                    ({dup.usuarios.map(u => u.id).join(', ')})
-                  </li>
-                ))}
-              </ul>
-            </details>
-          </div>
-        </div>
-      )}
 
       {/* Alerta si hay filtros activos */}
       {filtrosActivos.hayFiltrosActivos && (

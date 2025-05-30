@@ -1,152 +1,234 @@
 // components/ventas/VentasTablaVendedores.jsx
-import React, { useMemo } from 'react';
-import { formatCurrency, obtenerNombreMes } from '../../utils/formatters';
+import React, { useMemo, useState } from 'react';
+import { formatCurrency } from '../../utils/formatters';
 import { analizarDuplicados } from '../../utils/usuariosUtils';
 
 const VentasTablaVendedores = ({ 
   ventasData = [], 
-  mapaUsuarios = {},
+  mapaUsuarios = {}, 
   filtros = {} 
 }) => {
+  const [ordenamiento, setOrdenamiento] = useState({ campo: 'total', direccion: 'desc' });
   
-  // Consolidar vendedores duplicados
+  // Detectar y manejar vendedores duplicados
   const { mapaUsuariosConsolidado, duplicadosInfo } = useMemo(() => {
+    // Crear lista de usuarios para análisis
     const usuariosList = Object.entries(mapaUsuarios).map(([id, name]) => ({
       id: parseInt(id),
       name: name
     }));
     
     if (usuariosList.length === 0) {
-      return { 
-        mapaUsuariosConsolidado: mapaUsuarios, 
-        duplicadosInfo: { cantidad: 0, consolidaciones: {} }
-      };
+      return { mapaUsuariosConsolidado: mapaUsuarios, duplicadosInfo: [] };
     }
     
+    // Analizar duplicados
     const analisis = analizarDuplicados(usuariosList);
+    
+    // Crear mapa consolidado
     const mapaConsolidado = { ...mapaUsuarios };
-    const consolidaciones = {};
+    const infoDuplicados = [];
     
     analisis.duplicados.forEach(duplicado => {
+      infoDuplicados.push(duplicado);
+      // Usar el ID más pequeño como representativo
+      const idRepresentativo = duplicado.idRepresentativo;
       const nombreConsolidado = duplicado.nombre;
+      
+      // Consolidar todos los IDs del grupo al nombre del representativo
       duplicado.usuarios.forEach(usuario => {
         mapaConsolidado[usuario.id] = nombreConsolidado;
-        consolidaciones[nombreConsolidado] = duplicado.cantidad;
       });
     });
     
     return { 
       mapaUsuariosConsolidado: mapaConsolidado, 
-      duplicadosInfo: {
-        cantidad: analisis.cantidadDuplicados,
-        consolidaciones
-      }
+      duplicadosInfo: infoDuplicados 
     };
   }, [mapaUsuarios]);
-
-  // Procesar datos de ventas por vendedor y mes
-  const { ventasPorVendedorMes, totalesPorMes, totalesPorVendedor, totalGeneral } = useMemo(() => {
-    const ventasPorVendedorMesData = {};
-    const totalesMes = {};
-    const totalesVendedor = {};
-    let total = 0;
-
+  
+  // Obtener meses únicos del período actual (filtrado)
+  const mesesPeriodo = useMemo(() => {
+    const mesesSet = new Set();
     ventasData.forEach(venta => {
-      const vendedorId = venta.alt_usr;
-      const mes = typeof venta.mes === 'string' ? parseInt(venta.mes) : venta.mes;
-      const monto = venta.tot || 0;
-      
-      if (vendedorId !== undefined && vendedorId !== null && mes) {
-        const nombreVendedor = mapaUsuariosConsolidado[vendedorId] || `Vendedor ${vendedorId}`;
-        
-        if (!ventasPorVendedorMesData[nombreVendedor]) {
-          ventasPorVendedorMesData[nombreVendedor] = {};
-        }
-        
-        if (!ventasPorVendedorMesData[nombreVendedor][mes]) {
-          ventasPorVendedorMesData[nombreVendedor][mes] = 0;
-        }
-        
-        ventasPorVendedorMesData[nombreVendedor][mes] += monto;
-        
-        // Totales por mes
-        totalesMes[mes] = (totalesMes[mes] || 0) + monto;
-        
-        // Totales por vendedor
-        totalesVendedor[nombreVendedor] = (totalesVendedor[nombreVendedor] || 0) + monto;
-        
-        // Total general
-        total += monto;
+      if (venta.mes) {
+        mesesSet.add(venta.mes);
       }
     });
-
-    return {
-      ventasPorVendedorMes: ventasPorVendedorMesData,
-      totalesPorMes: totalesMes,
-      totalesPorVendedor: totalesVendedor,
-      totalGeneral: total
-    };
+    return Array.from(mesesSet).sort((a, b) => a - b);
+  }, [ventasData]);
+  
+  // Calcular datos de ventas por vendedor y mes (consolidados)
+  const datosVendedores = useMemo(() => {
+    if (!ventasData.length) return [];
+    
+    // Agrupar por nombre de vendedor (consolidado)
+    const ventasPorVendedorNombre = {};
+    const totalGeneral = ventasData.reduce((sum, venta) => sum + (venta.tot || 0), 0);
+    
+    ventasData.forEach(venta => {
+      const vendedorId = venta.alt_usr;
+      if (vendedorId !== undefined && vendedorId !== null) {
+        const nombreVendedor = mapaUsuariosConsolidado[vendedorId] || `Vendedor ${vendedorId}`;
+        
+        if (!ventasPorVendedorNombre[nombreVendedor]) {
+          ventasPorVendedorNombre[nombreVendedor] = {
+            nombre: nombreVendedor,
+            idsOriginales: new Set(),
+            ventasPorMes: {},
+            totalGeneral: 0,
+            cantidadFacturas: 0
+          };
+        }
+        
+        const vendedorData = ventasPorVendedorNombre[nombreVendedor];
+        vendedorData.idsOriginales.add(vendedorId);
+        
+        const mes = venta.mes;
+        if (mes) {
+          if (!vendedorData.ventasPorMes[mes]) {
+            vendedorData.ventasPorMes[mes] = 0;
+          }
+          vendedorData.ventasPorMes[mes] += (venta.tot || 0);
+        }
+        
+        vendedorData.totalGeneral += (venta.tot || 0);
+        vendedorData.cantidadFacturas += 1;
+      }
+    });
+    
+    // Convertir a array y agregar información adicional
+    return Object.values(ventasPorVendedorNombre).map(vendedor => {
+      const porcentajeTotal = totalGeneral > 0 ? (vendedor.totalGeneral / totalGeneral) * 100 : 0;
+      const esConsolidado = vendedor.idsOriginales.size > 1;
+      
+      return {
+        ...vendedor,
+        porcentajeTotal,
+        esConsolidado,
+        cantidadIds: vendedor.idsOriginales.size,
+        promedioFactura: vendedor.cantidadFacturas > 0 ? 
+          vendedor.totalGeneral / vendedor.cantidadFacturas : 0
+      };
+    });
   }, [ventasData, mapaUsuariosConsolidado]);
-
-  // Obtener lista de meses ordenados
-  const mesesOrdenados = useMemo(() => {
-    return Object.keys(totalesPorMes)
-      .map(mes => parseInt(mes))
-      .sort((a, b) => a - b);
-  }, [totalesPorMes]);
-
-  // Obtener lista de vendedores ordenados por total de ventas
-  const vendedoresOrdenados = useMemo(() => {
-    return Object.entries(totalesPorVendedor)
-      .sort(([, a], [, b]) => b - a)
-      .map(([vendedor]) => vendedor);
-  }, [totalesPorVendedor]);
-
-  // Calcular porcentajes
-  const calcularPorcentaje = (valor) => {
-    if (totalGeneral === 0) return 0;
-    return ((valor / totalGeneral) * 100).toFixed(2);
+  
+  // Calcular totales por mes
+  const totalesPorMes = useMemo(() => {
+    const totales = {};
+    mesesPeriodo.forEach(mes => {
+      totales[mes] = 0;
+    });
+    
+    ventasData.forEach(venta => {
+      if (venta.mes && totales.hasOwnProperty(venta.mes)) {
+        totales[venta.mes] += (venta.tot || 0);
+      }
+    });
+    
+    return totales;
+  }, [ventasData, mesesPeriodo]);
+  
+  // Calcular total general
+  const totalGeneral = useMemo(() => {
+    return ventasData.reduce((sum, venta) => sum + (venta.tot || 0), 0);
+  }, [ventasData]);
+  
+  // Aplicar ordenamiento
+  const datosOrdenados = useMemo(() => {
+    const datos = [...datosVendedores];
+    
+    datos.sort((a, b) => {
+      let valorA, valorB;
+      
+      switch (ordenamiento.campo) {
+        case 'nombre':
+          valorA = a.nombre.toLowerCase();
+          valorB = b.nombre.toLowerCase();
+          break;
+        case 'total':
+          valorA = a.totalGeneral;
+          valorB = b.totalGeneral;
+          break;
+        case 'porcentaje':
+          valorA = a.porcentajeTotal;
+          valorB = b.porcentajeTotal;
+          break;
+        case 'promedio':
+          valorA = a.promedioFactura;
+          valorB = b.promedioFactura;
+          break;
+        default:
+          // Para ordenar por mes específico
+          if (ordenamiento.campo.startsWith('mes_')) {
+            const mes = parseInt(ordenamiento.campo.split('_')[1]);
+            valorA = a.ventasPorMes[mes] || 0;
+            valorB = b.ventasPorMes[mes] || 0;
+          } else {
+            valorA = a.totalGeneral;
+            valorB = b.totalGeneral;
+          }
+      }
+      
+      if (ordenamiento.direccion === 'asc') {
+        return valorA > valorB ? 1 : valorA < valorB ? -1 : 0;
+      } else {
+        return valorA < valorB ? 1 : valorA > valorB ? -1 : 0;
+      }
+    });
+    
+    return datos;
+  }, [datosVendedores, ordenamiento]);
+  
+  // Manejar cambio de ordenamiento
+  const handleSort = (campo) => {
+    setOrdenamiento(prev => ({
+      campo,
+      direccion: prev.campo === campo && prev.direccion === 'desc' ? 'asc' : 'desc'
+    }));
   };
-
-  // Calcular porcentaje del mes
-  const calcularPorcentajeMes = (valor, mes) => {
-    const totalMes = totalesPorMes[mes] || 0;
-    if (totalMes === 0) return 0;
-    return ((valor / totalMes) * 100).toFixed(1);
-  };
+  
+  // Generar descripción del período
+  const descripcionPeriodo = useMemo(() => {
+    if (filtros.año !== 'todos' && filtros.mes !== 'todos') {
+      return `${filtros.mes}/${filtros.año}`;
+    } else if (filtros.año !== 'todos') {
+      return `Año ${filtros.año}`;
+    } else if (mesesPeriodo.length > 0) {
+      return `${mesesPeriodo.length} meses`;
+    }
+    return 'Todo el período';
+  }, [filtros, mesesPeriodo]);
 
   if (!ventasData.length) {
     return (
-      <div className="ventas-tabla-vendedores">
-        <div className="no-data-message">
-          <i className="fas fa-table"></i>
-          <h3>No hay datos para mostrar</h3>
-          <p>No se encontraron ventas con los filtros aplicados.</p>
-        </div>
+      <div className="no-data">
+        <i className="fas fa-user-slash"></i>
+        <p>No hay datos de vendedores para mostrar con los filtros actuales.</p>
       </div>
     );
   }
 
   return (
     <div className="ventas-tabla-vendedores">
-      {/* Información de la tabla */}
+      {/* Información sobre la tabla */}
       <div className="tabla-info">
         <div className="info-item">
           <i className="fas fa-users"></i>
-          <span>{vendedoresOrdenados.length} vendedores activos</span>
+          <span>{datosOrdenados.length} vendedores activos</span>
         </div>
         <div className="info-item">
-          <i className="fas fa-calendar"></i>
-          <span>{mesesOrdenados.length} meses con ventas</span>
+          <i className="fas fa-calendar-alt"></i>
+          <span>{descripcionPeriodo}</span>
         </div>
         <div className="info-item">
-          <i className="fas fa-euro-sign"></i>
-          <span>Total: {formatCurrency(totalGeneral)}</span>
+          <i className="fas fa-file-invoice-dollar"></i>
+          <span>{ventasData.length} facturas</span>
         </div>
-        {duplicadosInfo.cantidad > 0 && (
+        {duplicadosInfo.length > 0 && (
           <div className="info-item warning">
             <i className="fas fa-exclamation-triangle"></i>
-            <span>{duplicadosInfo.cantidad} vendedores consolidados</span>
+            <span>{duplicadosInfo.length} vendedores consolidados</span>
           </div>
         )}
       </div>
@@ -156,95 +238,140 @@ const VentasTablaVendedores = ({
         <table className="ventas-vendedores-table">
           <thead>
             <tr>
-              <th className="vendedor-col">Vendedor</th>
-              {mesesOrdenados.map(mes => (
-                <th key={mes} className="mes-col">
-                  {obtenerNombreMes(mes)}
+              <th 
+                className="vendedor-col clickable"
+                onClick={() => handleSort('nombre')}
+              >
+                Vendedor
+                {ordenamiento.campo === 'nombre' && (
+                  <i className={`fas fa-sort-${ordenamiento.direccion === 'asc' ? 'up' : 'down'}`}></i>
+                )}
+              </th>
+              {mesesPeriodo.map(mes => (
+                <th 
+                  key={mes} 
+                  className="mes-col clickable"
+                  onClick={() => handleSort(`mes_${mes}`)}
+                >
+                  {new Date(2024, mes - 1).toLocaleDateString('es-ES', { month: 'short' })}
+                  {ordenamiento.campo === `mes_${mes}` && (
+                    <i className={`fas fa-sort-${ordenamiento.direccion === 'asc' ? 'up' : 'down'}`}></i>
+                  )}
                 </th>
               ))}
-              <th className="total-col">Total</th>
-              <th className="porcentaje-col">%</th>
+              <th 
+                className="total-col clickable"
+                onClick={() => handleSort('total')}
+              >
+                Total
+                {ordenamiento.campo === 'total' && (
+                  <i className={`fas fa-sort-${ordenamiento.direccion === 'asc' ? 'up' : 'down'}`}></i>
+                )}
+              </th>
+              <th 
+                className="porcentaje-col clickable"
+                onClick={() => handleSort('porcentaje')}
+              >
+                %
+                {ordenamiento.campo === 'porcentaje' && (
+                  <i className={`fas fa-sort-${ordenamiento.direccion === 'asc' ? 'up' : 'down'}`}></i>
+                )}
+              </th>
             </tr>
           </thead>
           <tbody>
-            {vendedoresOrdenados.map((vendedor, index) => {
-              const esDuplicado = duplicadosInfo.consolidaciones[vendedor] > 1;
-              
-              return (
-                <tr key={vendedor} className="vendedor-row">
-                  <td className="vendedor-info">
+            {datosOrdenados.map((vendedor, index) => (
+              <tr key={index} className="vendedor-row">
+                <td className="vendedor-col">
+                  <div className="vendedor-info">
                     <i className="fas fa-user"></i>
-                    <span className="vendedor-nombre" title={esDuplicado ? `Consolidado de ${duplicadosInfo.consolidaciones[vendedor]} IDs` : ''}>
-                      {vendedor}
-                      {esDuplicado && (
-                        <span className="consolidado-badge">{duplicadosInfo.consolidaciones[vendedor]}</span>
+                    <span 
+                      className="vendedor-nombre"
+                      title={vendedor.esConsolidado ? 
+                        `Consolidado: ${vendedor.cantidadIds} IDs diferentes` : 
+                        undefined
+                      }
+                    >
+                      {vendedor.nombre}
+                      {vendedor.esConsolidado && (
+                        <span className="consolidado-badge">
+                          {vendedor.cantidadIds}
+                        </span>
                       )}
                     </span>
-                  </td>
-                  {mesesOrdenados.map(mes => {
-                    const valor = ventasPorVendedorMes[vendedor]?.[mes] || 0;
-                    const porcentajeMes = calcularPorcentajeMes(valor, mes);
-                    
-                    return (
-                      <td key={mes} className={`mes-valor ${valor > 0 ? 'con-ventas' : 'sin-ventas'}`}>
-                        {valor > 0 ? (
-                          <div className="valor-container">
-                            <span className="valor-principal">{formatCurrency(valor)}</span>
-                            <span className="valor-porcentaje">{porcentajeMes}%</span>
-                          </div>
-                        ) : (
-                          '-'
-                        )}
-                      </td>
-                    );
-                  })}
-                  <td className="total-vendedor">
-                    {formatCurrency(totalesPorVendedor[vendedor])}
-                  </td>
-                  <td className="porcentaje-vendedor">
-                    <div className="porcentaje-bar">
-                      <div 
-                        className="porcentaje-fill"
-                        style={{ width: `${calcularPorcentaje(totalesPorVendedor[vendedor])}%` }}
-                      />
-                      <span className="porcentaje-text">
-                        {calcularPorcentaje(totalesPorVendedor[vendedor])}%
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+                  </div>
+                </td>
+                {mesesPeriodo.map(mes => {
+                  const ventaMes = vendedor.ventasPorMes[mes] || 0;
+                  const porcentajeMes = totalesPorMes[mes] > 0 ? 
+                    (ventaMes / totalesPorMes[mes]) * 100 : 0;
+                  
+                  return (
+                    <td 
+                      key={mes} 
+                      className={`mes-valor ${ventaMes > 0 ? 'con-ventas' : 'sin-ventas'}`}
+                    >
+                      {ventaMes > 0 ? (
+                        <div className="valor-container">
+                          <span className="valor-principal">
+                            {formatCurrency(ventaMes)}
+                          </span>
+                          <span className="valor-porcentaje">
+                            {porcentajeMes.toFixed(1)}%
+                          </span>
+                        </div>
+                      ) : (
+                        '-'
+                      )}
+                    </td>
+                  );
+                })}
+                <td className="total-vendedor">
+                  {formatCurrency(vendedor.totalGeneral)}
+                </td>
+                <td className="porcentaje-vendedor">
+                  <div className="porcentaje-bar">
+                    <div 
+                      className="porcentaje-fill"
+                      style={{ width: `${Math.min(vendedor.porcentajeTotal, 100)}%` }}
+                    ></div>
+                    <span className="porcentaje-text">
+                      {vendedor.porcentajeTotal.toFixed(1)}%
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            ))}
             
             {/* Fila de totales */}
             <tr className="totales-row">
               <td className="total-label">
-                <i className="fas fa-chart-bar"></i>
-                <strong>TOTALES</strong>
+                <i className="fas fa-calculator"></i>
+                TOTALES
               </td>
-              {mesesOrdenados.map(mes => (
+              {mesesPeriodo.map(mes => (
                 <td key={mes} className="total-mes">
-                  <strong>{formatCurrency(totalesPorMes[mes])}</strong>
+                  {formatCurrency(totalesPorMes[mes])}
                 </td>
               ))}
               <td className="total-general">
-                <strong>{formatCurrency(totalGeneral)}</strong>
+                {formatCurrency(totalGeneral)}
               </td>
               <td className="porcentaje-total">
-                <strong>100%</strong>
+                100%
               </td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      {/* Resumen de información */}
+      {/* Resumen adicional */}
       <div className="tabla-resumen">
         <i className="fas fa-info-circle"></i>
-        Mostrando ventas por vendedor y mes. 
-        {filtros.año !== 'todos' && ` Año: ${filtros.año}.`}
-        {filtros.mes !== 'todos' && ` Mes: ${obtenerNombreMes(parseInt(filtros.mes))}.`}
-        {duplicadosInfo.cantidad > 0 && ` Se consolidaron ${duplicadosInfo.cantidad} vendedores con nombres duplicados.`}
+        Promedio por vendedor: {formatCurrency(totalGeneral / datosOrdenados.length)}
+        {duplicadosInfo.length > 0 && (
+          <span> • {duplicadosInfo.length} vendedores fueron consolidados por tener nombres duplicados</span>
+        )}
       </div>
     </div>
   );

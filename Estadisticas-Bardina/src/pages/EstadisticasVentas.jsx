@@ -83,17 +83,6 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
             }
           });
           
-          // Log de duplicados detectados
-          if (analisisDuplicados.cantidadDuplicados > 0) {
-            console.log('⚠️ Vendedores duplicados detectados:', {
-              cantidad: analisisDuplicados.cantidadDuplicados,
-              usuariosEliminados: analisisDuplicados.usuariosEliminados,
-              duplicados: analisisDuplicados.duplicados.map(d => ({
-                nombre: d.nombre,
-                ids: d.usuarios.map(u => u.id)
-              }))
-            });
-          }
         }
         
         // Mapa de empresas
@@ -114,14 +103,6 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
         setMapaUsuarios(mapaUsuariosData);
         setMapaEmpresas(mapaEmpresasData);
         setMapaFormasPago(mapaFormasPagoData);
-        
-        console.log('Datos de referencia cargados:', {
-          contactos: Object.keys(mapaContactosData).length,
-          usuarios: Object.keys(mapaUsuariosData).length,
-          empresas: Object.keys(mapaEmpresasData).length,
-          formasPago: Object.keys(mapaFormasPagoData).length,
-          duplicadosDetectados: analisisDuplicados?.cantidadDuplicados || 0
-        });
         
       } catch (err) {
         console.error('Error al cargar datos de referencia:', err);
@@ -472,29 +453,6 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
           )}
           {filtros.fechaDesde && <span>Desde: {formatDate(filtros.fechaDesde)}</span>}
           {filtros.fechaHasta && <span>Hasta: {formatDate(filtros.fechaHasta)}</span>}
-        </div>
-      )}
-      
-      {/* Alerta de vendedores duplicados */}
-      {duplicadosDetectados.length > 0 && (
-        <div className="duplicados-alert">
-          <i className="fas fa-exclamation-triangle"></i>
-          <div>
-            <strong>Vendedores duplicados detectados:</strong>
-            <span>
-              Se consolidaron automáticamente {duplicadosDetectados.length} vendedores con nombres duplicados.
-              <details className="duplicados-summary">
-                <summary>Ver detalles</summary>
-                <ul>
-                  {duplicadosDetectados.map((dup, index) => (
-                    <li key={index}>
-                      <strong>{dup.nombre}</strong>: IDs {dup.usuarios.map(u => u.id).join(', ')}
-                    </li>
-                  ))}
-                </ul>
-              </details>
-            </span>
-          </div>
         </div>
       )}
       
