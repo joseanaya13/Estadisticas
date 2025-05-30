@@ -32,7 +32,6 @@ const VentasTablaVendedores = ({
     analisis.duplicados.forEach(duplicado => {
       infoDuplicados.push(duplicado);
       // Usar el ID más pequeño como representativo
-      const idRepresentativo = duplicado.idRepresentativo;
       const nombreConsolidado = duplicado.nombre;
       
       // Consolidar todos los IDs del grupo al nombre del representativo
@@ -214,10 +213,6 @@ const VentasTablaVendedores = ({
       {/* Información sobre la tabla */}
       <div className="tabla-info">
         <div className="info-item">
-          <i className="fas fa-users"></i>
-          <span>{datosOrdenados.length} vendedores activos</span>
-        </div>
-        <div className="info-item">
           <i className="fas fa-calendar-alt"></i>
           <span>{descripcionPeriodo}</span>
         </div>
@@ -228,7 +223,7 @@ const VentasTablaVendedores = ({
         {duplicadosInfo.length > 0 && (
           <div className="info-item warning">
             <i className="fas fa-exclamation-triangle"></i>
-            <span>{duplicadosInfo.length} vendedores consolidados</span>
+            <span>{duplicadosInfo.length} vendedores </span>
           </div>
         )}
       </div>
@@ -287,17 +282,8 @@ const VentasTablaVendedores = ({
                     <i className="fas fa-user"></i>
                     <span 
                       className="vendedor-nombre"
-                      title={vendedor.esConsolidado ? 
-                        `Consolidado: ${vendedor.cantidadIds} IDs diferentes` : 
-                        undefined
-                      }
                     >
                       {vendedor.nombre}
-                      {vendedor.esConsolidado && (
-                        <span className="consolidado-badge">
-                          {vendedor.cantidadIds}
-                        </span>
-                      )}
                     </span>
                   </div>
                 </td>

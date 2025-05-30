@@ -225,6 +225,7 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
         });
       });
     
+      console.log('Opciones de vendedores:', opciones);
     return opciones;
   }, [data, mapaUsuarios]);
   
@@ -455,6 +456,7 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
           {filtros.fechaHasta && <span>Hasta: {formatDate(filtros.fechaHasta)}</span>}
         </div>
       )}
+      
       
       {/* Navegación entre vistas */}
       <div className="ventas-navigation">
