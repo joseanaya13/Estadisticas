@@ -8,6 +8,7 @@ import VentasGraficos from '../components/ventas/VentasGraficos';
 import VentasTablaVendedores from '../components/ventas/VentasTablaVendedores';
 import { formatDate, obtenerNombreMes } from '../utils/formatters';
 import { empresasService, contactosService, usuariosService, formasPagoService } from '../services/api';
+import { analizarDuplicados } from '../utils/usuariosUtils';
 
 const EstadisticasVentas = ({ data, contactos, usuarios }) => {
   const [filtros, setFiltros] = useState({
@@ -23,12 +24,13 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [activeView, setActiveView] = useState('resumen'); // resumen, graficos, tabla, analisis
+  const [activeView, setActiveView] = useState('resumen'); // resumen, graficos, tabla
   
   // Estados para datos de referencia
   const [empresas, setEmpresas] = useState([]);
   const [formasPago, setFormasPago] = useState([]);
   const [loadingReferenceData, setLoadingReferenceData] = useState(true);
+  const [duplicadosDetectados, setDuplicadosDetectados] = useState([]);
   
   // Mapas para conversión ID -> Nombre
   const [mapaContactos, setMapaContactos] = useState({});
@@ -66,13 +68,32 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
           });
         }
         
-        // Mapa de usuarios
+        // Mapa de usuarios (con detección de duplicados)
         if (usuarios?.usr_m) {
-          usuarios.usr_m.forEach(usuario => {
+          const usuariosList = usuarios.usr_m.filter(u => u.id && u.name);
+          
+          // Analizar duplicados
+          const analisisDuplicados = analizarDuplicados(usuariosList);
+          setDuplicadosDetectados(analisisDuplicados.duplicados);
+          
+          // Crear mapa consolidado
+          usuariosList.forEach(usuario => {
             if (usuario.id && usuario.name) {
               mapaUsuariosData[usuario.id] = usuario.name;
             }
           });
+          
+          // Log de duplicados detectados
+          if (analisisDuplicados.cantidadDuplicados > 0) {
+            console.log('⚠️ Vendedores duplicados detectados:', {
+              cantidad: analisisDuplicados.cantidadDuplicados,
+              usuariosEliminados: analisisDuplicados.usuariosEliminados,
+              duplicados: analisisDuplicados.duplicados.map(d => ({
+                nombre: d.nombre,
+                ids: d.usuarios.map(u => u.id)
+              }))
+            });
+          }
         }
         
         // Mapa de empresas
@@ -98,7 +119,8 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
           contactos: Object.keys(mapaContactosData).length,
           usuarios: Object.keys(mapaUsuariosData).length,
           empresas: Object.keys(mapaEmpresasData).length,
-          formasPago: Object.keys(mapaFormasPagoData).length
+          formasPago: Object.keys(mapaFormasPagoData).length,
+          duplicadosDetectados: analisisDuplicados?.cantidadDuplicados || 0
         });
         
       } catch (err) {
@@ -450,6 +472,29 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
           )}
           {filtros.fechaDesde && <span>Desde: {formatDate(filtros.fechaDesde)}</span>}
           {filtros.fechaHasta && <span>Hasta: {formatDate(filtros.fechaHasta)}</span>}
+        </div>
+      )}
+      
+      {/* Alerta de vendedores duplicados */}
+      {duplicadosDetectados.length > 0 && (
+        <div className="duplicados-alert">
+          <i className="fas fa-exclamation-triangle"></i>
+          <div>
+            <strong>Vendedores duplicados detectados:</strong>
+            <span>
+              Se consolidaron automáticamente {duplicadosDetectados.length} vendedores con nombres duplicados.
+              <details className="duplicados-summary">
+                <summary>Ver detalles</summary>
+                <ul>
+                  {duplicadosDetectados.map((dup, index) => (
+                    <li key={index}>
+                      <strong>{dup.nombre}</strong>: IDs {dup.usuarios.map(u => u.id).join(', ')}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            </span>
+          </div>
         </div>
       )}
       
