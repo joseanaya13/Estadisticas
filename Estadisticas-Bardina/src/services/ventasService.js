@@ -1,264 +1,344 @@
-// services/ventasService.js - Servicio para facturas de venta
-import { apiClient } from './apiClient.js';
+// services/ventasService.js - Servicio específico para gestión de ventas
+import { apiClient, apiUtils } from './apiClient.js';
 
-export const ventasService = {
+/**
+ * Servicio de ventas - Gestiona todas las operaciones relacionadas con facturas
+ */
+export class VentasService {
+  constructor() {
+    this.endpoint = '/fac_t';
+    this.dataKey = 'fac_t';
+  }
+  
   /**
    * Obtiene todas las facturas (con paginación completa)
    * @param {Object} params - Parámetros de filtrado
    * @returns {Promise} Promesa con los datos
    */
-  getFacturas: (params = {}) => {
-    const query = apiClient.buildQueryParams(params);
-    return apiClient.getAllPaginated(`/fac_t${query}`, 'fac_t');
-  },
+  async getFacturas(params = {}) {
+    try {
+      const queryString = apiClient.buildQueryParams(params);
+      const endpoint = queryString ? `${this.endpoint}?${queryString}` : this.endpoint;
+      
+      return await apiClient.getAllPaginated(endpoint, this.dataKey);
+    } catch (error) {
+      throw apiUtils.handleError(error, 'VentasService.getFacturas');
+    }
+  }
+  
+  /**
+   * Obtiene facturas con filtros específicos de la API
+   * @param {Object} filters - Filtros a aplicar
+   * @returns {Promise} Promesa con los datos filtrados
+   */
+  async getFacturasFiltered(filters = {}) {
+    try {
+      const apiFilters = apiClient.buildApiFilters(filters);
+      const queryString = apiClient.buildQueryParams(apiFilters);
+      const endpoint = queryString ? `${this.endpoint}?${queryString}` : this.endpoint;
+      
+      console.log(`Obteniendo facturas con filtros:`, filters);
+      console.log(`Endpoint: ${endpoint}`);
+      
+      return await apiClient.getAllPaginated(endpoint, this.dataKey);
+    } catch (error) {
+      throw apiUtils.handleError(error, 'VentasService.getFacturasFiltered');
+    }
+  }
   
   /**
    * Obtiene una factura por ID
    * @param {number} id - ID de la factura
    * @returns {Promise} Promesa con los datos
    */
-  getFactura: (id) => {
-    return apiClient.get(`/fac_t/${id}`);
-  },
+  async getFactura(id) {
+    try {
+      apiUtils.validateRequiredParams({ id }, ['id']);
+      return await apiClient.get(`${this.endpoint}/${id}`);
+    } catch (error) {
+      throw apiUtils.handleError(error, 'VentasService.getFactura');
+    }
+  }
   
   /**
-   * Obtiene facturas con filtros específicos
-   * @param {Object} filtros - Filtros aplicados
-   * @returns {Promise} Promesa con los datos filtrados
+   * Crea una nueva factura
+   * @param {Object} facturaData - Datos de la factura
+   * @returns {Promise} Promesa con los datos creados
    */
-  getFacturasFiltradas: (filtros = {}) => {
-    const params = {};
-    
-    // Convertir filtros de la UI a parámetros de API
-    if (filtros.eje && filtros.eje !== 'todos') {
-      params['filter[eje]'] = filtros.eje;
+  async createFactura(facturaData) {
+    try {
+      apiUtils.validateRequiredParams(facturaData, ['clt', 'tot']);
+      return await apiClient.post(this.endpoint, facturaData);
+    } catch (error) {
+      throw apiUtils.handleError(error, 'VentasService.createFactura');
     }
-    
-    if (filtros.mes && filtros.mes !== 'todos') {
-      params['filter[mes]'] = filtros.mes;
-    }
-    
-    if (filtros.emp && filtros.emp !== 'todas') {
-      params['filter[emp]'] = filtros.emp;
-    }
-    
-    if (filtros.fechaDesde && filtros.fechaHasta) {
-      params['filter[fch]'] = `${filtros.fechaDesde},${filtros.fechaHasta}`;
-    } else if (filtros.fechaDesde) {
-      params['filter[fch][gte]'] = filtros.fechaDesde;
-    } else if (filtros.fechaHasta) {
-      params['filter[fch][lte]'] = filtros.fechaHasta;
-    }
-    
-    return ventasService.getFacturas(params);
-  },
+  }
   
   /**
-   * Obtiene estadísticas básicas de ventas
-   * @param {Array} facturas - Array de facturas
-   * @returns {Object} Estadísticas calculadas
+   * Actualiza una factura existente
+   * @param {number} id - ID de la factura
+   * @param {Object} facturaData - Datos actualizados
+   * @returns {Promise} Promesa con los datos actualizados
    */
-  calcularEstadisticas: (facturas = []) => {
-    if (!facturas.length) {
+  async updateFactura(id, facturaData) {
+    try {
+      apiUtils.validateRequiredParams({ id }, ['id']);
+      return await apiClient.put(`${this.endpoint}/${id}`, facturaData);
+    } catch (error) {
+      throw apiUtils.handleError(error, 'VentasService.updateFactura');
+    }
+  }
+  
+  /**
+   * Elimina una factura
+   * @param {number} id - ID de la factura
+   * @returns {Promise} Promesa con el resultado
+   */
+  async deleteFactura(id) {
+    try {
+      apiUtils.validateRequiredParams({ id }, ['id']);
+      return await apiClient.delete(`${this.endpoint}/${id}`);
+    } catch (error) {
+      throw apiUtils.handleError(error, 'VentasService.deleteFactura');
+    }
+  }
+  
+  /**
+   * Obtiene estadísticas de ventas
+   * @param {Object} filters - Filtros a aplicar
+   * @returns {Promise} Promesa con las estadísticas
+   */
+  async getEstadisticas(filters = {}) {
+    try {
+      const facturas = await this.getFacturasFiltered(filters);
+      
+      // Calcular estadísticas básicas
+      const total = facturas[this.dataKey].reduce((sum, item) => sum + (item.tot || 0), 0);
+      const cantidad = facturas[this.dataKey].length;
+      const promedio = cantidad > 0 ? total / cantidad : 0;
+      
+      // Ventas por mes
+      const ventasPorMes = this._agruparPorCampo(facturas[this.dataKey], 'mes', 'tot');
+      
+      // Ventas por cliente
+      const ventasPorCliente = this._agruparPorCampo(facturas[this.dataKey], 'clt', 'tot');
+      
+      // Ventas por vendedor
+      const ventasPorVendedor = this._agruparPorCampo(facturas[this.dataKey], 'alt_usr', 'tot');
+      
+      // Ventas por forma de pago
+      const ventasPorFormaPago = this._agruparPorCampo(facturas[this.dataKey], 'fpg', 'tot');
+      
+      // Ventas por empresa/tienda
+      const ventasPorEmpresa = this._agruparPorCampo(facturas[this.dataKey], 'emp', 'tot');
+      const ventasPorDivision = this._agruparPorCampo(facturas[this.dataKey], 'emp_div', 'tot');
+      
       return {
-        total: 0,
-        cantidad: 0,
-        promedio: 0,
-        ventasPorMes: [],
-        ventasPorCliente: [],
-        ventasPorVendedor: []
+        resumen: {
+          total,
+          cantidad,
+          promedio,
+          fechaInicio: this._obtenerFechaMinima(facturas[this.dataKey]),
+          fechaFin: this._obtenerFechaMaxima(facturas[this.dataKey])
+        },
+        distribuciones: {
+          ventasPorMes: this._formatearAgrupacion(ventasPorMes, 'mes'),
+          ventasPorCliente: this._formatearAgrupacion(ventasPorCliente, 'cliente'),
+          ventasPorVendedor: this._formatearAgrupacion(ventasPorVendedor, 'vendedor'),
+          ventasPorFormaPago: this._formatearAgrupacion(ventasPorFormaPago, 'formaPago'),
+          ventasPorEmpresa: this._formatearAgrupacion(ventasPorEmpresa, 'empresa'),
+          ventasPorDivision: this._formatearAgrupacion(ventasPorDivision, 'division')
+        },
+        datosOriginales: facturas
       };
+    } catch (error) {
+      throw apiUtils.handleError(error, 'VentasService.getEstadisticas');
     }
-    
-    // Calcular totales básicos
-    const total = facturas.reduce((sum, item) => sum + (item.tot || 0), 0);
-    const cantidad = facturas.length;
-    const promedio = cantidad > 0 ? total / cantidad : 0;
-    
-    // Ventas por mes
-    const mesesMap = {};
-    facturas.forEach(item => {
-      const mes = item.mes;
-      if (mes) {
-        mesesMap[mes] = (mesesMap[mes] || 0) + (item.tot || 0);
-      }
-    });
-    
-    const ventasPorMes = Object.entries(mesesMap).map(([mes, total]) => ({
-      mes: parseInt(mes),
-      total
-    })).sort((a, b) => a.mes - b.mes);
-    
-    // Ventas por cliente
-    const clientesMap = {};
-    facturas.forEach(item => {
-      const cliente = item.clt;
-      if (cliente) {
-        clientesMap[cliente] = (clientesMap[cliente] || 0) + (item.tot || 0);
-      }
-    });
-    
-    const ventasPorCliente = Object.entries(clientesMap)
-      .map(([cliente, total]) => ({
-        cliente,
-        total
-      }))
-      .sort((a, b) => b.total - a.total);
-    
-    // Ventas por vendedor
-    const vendedoresMap = {};
-    facturas.forEach(item => {
-      const vendedor = item.alt_usr;
-      if (vendedor !== undefined && vendedor !== null) {
-        if (!vendedoresMap[vendedor]) {
-          vendedoresMap[vendedor] = {
-            vendedor,
-            totalVentas: 0,
-            cantidadFacturas: 0
-          };
-        }
-        vendedoresMap[vendedor].totalVentas += (item.tot || 0);
-        vendedoresMap[vendedor].cantidadFacturas += 1;
-      }
-    });
-    
-    const ventasPorVendedor = Object.values(vendedoresMap)
-      .map(vendedor => ({
-        ...vendedor,
-        promedioFactura: vendedor.cantidadFacturas > 0 ? 
-          vendedor.totalVentas / vendedor.cantidadFacturas : 0
-      }))
-      .sort((a, b) => b.totalVentas - a.totalVentas);
-    
-    return {
-      total,
-      cantidad,
-      promedio,
-      ventasPorMes,
-      ventasPorCliente,
-      ventasPorVendedor
-    };
-  },
+  }
   
   /**
-   * Obtiene el resumen de ventas por período
-   * @param {Array} facturas - Array de facturas
-   * @param {string} periodo - 'mes', 'dia', 'semana'
-   * @returns {Array} Datos agrupados por período
+   * Obtiene el top de clientes por ventas
+   * @param {Object} filters - Filtros a aplicar
+   * @param {number} limit - Límite de resultados (por defecto 10)
+   * @returns {Promise} Top clientes
    */
-  agruparPorPeriodo: (facturas = [], periodo = 'mes') => {
-    const grupos = {};
-    
-    facturas.forEach(factura => {
-      let clave;
+  async getTopClientes(filters = {}, limit = 10) {
+    try {
+      const estadisticas = await this.getEstadisticas(filters);
       
-      switch (periodo) {
-        case 'dia':
-          if (factura.fch) {
-            clave = new Date(factura.fch).toLocaleDateString('es-ES');
-          }
-          break;
-        case 'semana':
-          if (factura.fch) {
-            const fecha = new Date(factura.fch);
-            const semana = Math.ceil(fecha.getDate() / 7);
-            clave = `Semana ${semana}`;
-          }
-          break;
-        case 'mes':
-        default:
-          clave = factura.mes;
-          break;
-      }
+      return estadisticas.distribuciones.ventasPorCliente
+        .sort((a, b) => b.total - a.total)
+        .slice(0, limit);
+    } catch (error) {
+      throw apiUtils.handleError(error, 'VentasService.getTopClientes');
+    }
+  }
+  
+  /**
+   * Obtiene el top de vendedores por ventas
+   * @param {Object} filters - Filtros a aplicar
+   * @param {number} limit - Límite de resultados (por defecto 10)
+   * @returns {Promise} Top vendedores
+   */
+  async getTopVendedores(filters = {}, limit = 10) {
+    try {
+      const estadisticas = await this.getEstadisticas(filters);
       
-      if (clave) {
-        if (!grupos[clave]) {
-          grupos[clave] = {
-            periodo: clave,
-            totalVentas: 0,
-            cantidadFacturas: 0,
-            promedioFactura: 0
-          };
+      return estadisticas.distribuciones.ventasPorVendedor
+        .sort((a, b) => b.total - a.total)
+        .slice(0, limit);
+    } catch (error) {
+      throw apiUtils.handleError(error, 'VentasService.getTopVendedores');
+    }
+  }
+  
+  /**
+   * Obtiene tendencias de ventas por período
+   * @param {Object} filters - Filtros a aplicar
+   * @param {string} periodo - Período de agrupación ('mes', 'trimestre', 'año')
+   * @returns {Promise} Tendencias de ventas
+   */
+  async getTendencias(filters = {}, periodo = 'mes') {
+    try {
+      const facturas = await this.getFacturasFiltered(filters);
+      
+      const agrupacion = {};
+      
+      facturas[this.dataKey].forEach(factura => {
+        let clave;
+        
+        switch (periodo) {
+          case 'año':
+            clave = factura.eje;
+            break;
+          case 'trimestre':
+            clave = `${factura.eje}-Q${Math.ceil(factura.mes / 3)}`;
+            break;
+          case 'mes':
+          default:
+            clave = `${factura.eje}-${String(factura.mes).padStart(2, '0')}`;
+            break;
         }
         
-        grupos[clave].totalVentas += (factura.tot || 0);
-        grupos[clave].cantidadFacturas += 1;
+        if (clave) {
+          if (!agrupacion[clave]) {
+            agrupacion[clave] = {
+              periodo: clave,
+              total: 0,
+              cantidad: 0,
+              promedio: 0
+            };
+          }
+          
+          agrupacion[clave].total += (factura.tot || 0);
+          agrupacion[clave].cantidad += 1;
+        }
+      });
+      
+      // Calcular promedios y ordenar
+      const tendencias = Object.values(agrupacion)
+        .map(item => ({
+          ...item,
+          promedio: item.cantidad > 0 ? item.total / item.cantidad : 0
+        }))
+        .sort((a, b) => a.periodo.localeCompare(b.periodo));
+      
+      // Calcular variaciones
+      for (let i = 1; i < tendencias.length; i++) {
+        const actual = tendencias[i];
+        const anterior = tendencias[i - 1];
+        
+        actual.variacionTotal = anterior.total !== 0 ? 
+          ((actual.total - anterior.total) / anterior.total) * 100 : 0;
+        actual.variacionCantidad = anterior.cantidad !== 0 ? 
+          ((actual.cantidad - anterior.cantidad) / anterior.cantidad) * 100 : 0;
       }
-    });
-    
-    // Calcular promedios
-    return Object.values(grupos).map(grupo => ({
-      ...grupo,
-      promedioFactura: grupo.cantidadFacturas > 0 ? 
-        grupo.totalVentas / grupo.cantidadFacturas : 0
-    })).sort((a, b) => {
-      if (periodo === 'dia') {
-        return new Date(a.periodo.split('/').reverse().join('-')) - 
-               new Date(b.periodo.split('/').reverse().join('-'));
-      }
-      return a.periodo.toString().localeCompare(b.periodo.toString());
-    });
-  },
+      
+      return tendencias;
+    } catch (error) {
+      throw apiUtils.handleError(error, 'VentasService.getTendencias');
+    }
+  }
   
   /**
-   * Filtra facturas por múltiples criterios (lado cliente)
+   * Filtra facturas localmente (útil para filtros que no soporta la API)
    * @param {Array} facturas - Array de facturas
-   * @param {Object} filtros - Filtros a aplicar
+   * @param {Object} filters - Filtros a aplicar
    * @returns {Array} Facturas filtradas
    */
-  filtrarFacturas: (facturas = [], filtros = {}) => {
-    return facturas.filter(factura => {
-      // Filtro por año
-      if (filtros.año && filtros.año !== 'todos') {
-        const año = parseInt(filtros.año);
-        const facturaAño = typeof factura.eje === 'string' ? parseInt(factura.eje) : factura.eje;
-        if (facturaAño !== año) return false;
-      }
-      
-      // Filtro por mes
-      if (filtros.mes && filtros.mes !== 'todos') {
-        const mes = parseInt(filtros.mes);
-        const facturaMes = typeof factura.mes === 'string' ? parseInt(factura.mes) : factura.mes;
-        if (facturaMes !== mes) return false;
-      }
-      
-      // Filtro por cliente
-      if (filtros.cliente && filtros.cliente !== 'todos') {
-        const clienteId = filtros.cliente;
-        const facturaCliente = typeof factura.clt === 'string' ? factura.clt : factura.clt?.toString();
-        if (facturaCliente !== clienteId) return false;
-      }
-      
-      // Filtro por vendedor (con manejo de duplicados)
-      if (filtros.vendedor && filtros.vendedor !== 'todos' && filtros.mapaIdRepresentativo) {
-        const vendedorId = parseInt(filtros.vendedor);
-        const facturaVendedor = typeof factura.alt_usr === 'string' ? parseInt(factura.alt_usr) : factura.alt_usr;
-        const idRepresentativo = filtros.mapaIdRepresentativo[facturaVendedor] || facturaVendedor;
-        if (idRepresentativo !== vendedorId) return false;
-      }
-      
-      // Filtro por rango de fechas
-      if (filtros.fechaDesde || filtros.fechaHasta) {
-        if (!factura.fch) return false;
-        
-        const fechaFactura = new Date(factura.fch);
-        
-        if (filtros.fechaDesde) {
-          const desde = new Date(filtros.fechaDesde);
-          desde.setHours(0, 0, 0, 0);
-          if (fechaFactura < desde) return false;
-        }
-        
-        if (filtros.fechaHasta) {
-          const hasta = new Date(filtros.fechaHasta);
-          hasta.setHours(23, 59, 59, 999);
-          if (fechaFactura > hasta) return false;
-        }
-      }
-      
-      return true;
-    });
+  filtrarFacturasLocalmente(facturas = [], filters = {}) {
+    return apiUtils.filterAndSort(facturas, filters);
   }
-};
+  
+  /**
+   * Agrupa facturas por un campo específico
+   * @private
+   * @param {Array} facturas - Array de facturas
+   * @param {string} campo - Campo por el que agrupar
+   * @param {string} valorCampo - Campo del valor a sumar
+   * @returns {Object} Agrupación
+   */
+  _agruparPorCampo(facturas, campo, valorCampo) {
+    const agrupacion = {};
+    
+    facturas.forEach(factura => {
+      const clave = factura[campo];
+      if (clave !== undefined && clave !== null) {
+        agrupacion[clave] = (agrupacion[clave] || 0) + (factura[valorCampo] || 0);
+      }
+    });
+    
+    return agrupacion;
+  }
+  
+  /**
+   * Formatea una agrupación para uso en componentes
+   * @private
+   * @param {Object} agrupacion - Agrupación a formatear
+   * @param {string} nombreClave - Nombre para la clave
+   * @returns {Array} Array formateado
+   */
+  _formatearAgrupacion(agrupacion, nombreClave) {
+    return Object.entries(agrupacion).map(([clave, total]) => ({
+      [nombreClave]: clave,
+      [`${nombreClave}Id`]: clave,
+      total
+    }));
+  }
+  
+  /**
+   * Obtiene la fecha mínima de un array de facturas
+   * @private
+   * @param {Array} facturas - Array de facturas
+   * @returns {string|null} Fecha mínima
+   */
+  _obtenerFechaMinima(facturas) {
+    const fechas = facturas
+      .map(f => f.fch)
+      .filter(f => f)
+      .sort();
+    
+    return fechas.length > 0 ? fechas[0] : null;
+  }
+  
+  /**
+   * Obtiene la fecha máxima de un array de facturas
+   * @private
+   * @param {Array} facturas - Array de facturas
+   * @returns {string|null} Fecha máxima
+   */
+  _obtenerFechaMaxima(facturas) {
+    const fechas = facturas
+      .map(f => f.fch)
+      .filter(f => f)
+      .sort();
+    
+    return fechas.length > 0 ? fechas[fechas.length - 1] : null;
+  }
+}
 
+// Crear instancia singleton
+export const ventasService = new VentasService();
+
+// Exportación por defecto
 export default ventasService;

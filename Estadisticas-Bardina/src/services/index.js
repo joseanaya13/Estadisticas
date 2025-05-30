@@ -1,76 +1,129 @@
-// services/index.js - Exportador principal de todos los servicios
-export { apiClient, default as apiClientDefault } from './apiClient.js';
-export { ventasService, default as ventasServiceDefault } from './ventasService.js';
-export { comprasService, default as comprasServiceDefault } from './comprasService.js';
-export { usuariosService, default as usuariosServiceDefault } from './usuariosService.js';
-export { contactosService, default as contactosServiceDefault } from './contactosService.js';
-export { empresasService, default as empresasServiceDefault } from './empresasService.js';
-export { dashboardService, default as dashboardServiceDefault } from './dashboardService.js';
+// services/index.js - Archivo índice para todos los servicios de la API
 
-// Para mantener compatibilidad con el código existente
-export const formasPagoService = {
-  /**
-   * Obtiene todas las formas de pago
-   * @returns {Promise} Promesa con los datos
-   */
-  getFormasPago: async () => {
+// Cliente base y utilidades
+export { apiClient, apiUtils } from './apiClient.js';
+
+// Servicios principales
+export { ventasService, VentasService } from './ventasService.js';
+export { comprasService, ComprasService } from './comprasService.js';
+export { formasPagoService, FormasPagoService } from './formasPagoService.js';
+export { contactosService, ContactosService } from './contactosService.js';
+export { usuariosService, UsuariosService } from './usuariosService.js';
+export { empresasService, EmpresasService } from './empresasService.js';
+export { dashboardService, DashboardService } from './dashboardService.js';
+
+// Instancias por defecto (singleton) para compatibilidad
+export default {
+  ventas: ventasService,
+  compras: comprasService,
+  formasPago: formasPagoService,
+  contactos: contactosService,
+  usuarios: usuariosService,
+  empresas: empresasService,
+  dashboard: dashboardService,
+  
+  // Aliases para compatibilidad con código existente
+  ventasService,
+  comprasService,
+  formasPagoService,
+  contactosService,
+  usuariosService,
+  empresasService,
+  dashboardService,
+  
+  // Métodos de utilidad global
+  clearAllCaches: () => {
+    formasPagoService.clearCache();
+    contactosService.clearCache();
+    usuariosService.clearCache();
+    empresasService.clearCache();
+    dashboardService.clearCache();
+    console.log('Todas las cachés han sido limpiadas');
+  },
+  
+  getCacheStats: () => {
+    return {
+      formasPago: formasPagoService.getCacheStats(),
+      contactos: contactosService.getCacheStats(),
+      usuarios: usuariosService.getCacheStats(),
+      empresas: empresasService.getCacheStats(),
+      dashboard: dashboardService.getCacheStats()
+    };
+  },
+  
+  // Método para cargar todos los datos básicos
+  loadBasicData: async () => {
+    console.log('Cargando datos básicos...');
+    
     try {
-      const { apiClient } = await import('./apiClient.js');
-      const response = await apiClient.get('/fpg_m');
-      return response;
+      const [empresas, contactos, usuarios, formasPago] = await Promise.all([
+        empresasService.getEmpresas(),
+        contactosService.getContactos(),
+        usuariosService.getUsuarios(),
+        formasPagoService.getFormasPago()
+      ]);
+      
+      console.log('Datos básicos cargados:', {
+        empresas: empresas.emp_m?.length || 0,
+        contactos: contactos.ent_m?.length || 0,
+        usuarios: usuarios.usr_m?.length || 0,
+        formasPago: formasPago.fpg_m?.length || 0
+      });
+      
+      return {
+        empresas,
+        contactos,
+        usuarios,
+        formasPago
+      };
     } catch (error) {
-      console.error('Error al obtener formas de pago:', error);
+      console.error('Error al cargar datos básicos:', error);
       throw error;
     }
   },
   
-  /**
-   * Obtiene una forma de pago por ID
-   * @param {number} id - ID de la forma de pago
-   * @returns {Promise} Promesa con los datos
-   */
-  getFormaPago: async (id) => {
-    const { apiClient } = await import('./apiClient.js');
-    return apiClient.get(`/fpg_m/${id}`);
-  },
-  
-  /**
-   * Obtiene el nombre de una forma de pago por su ID
-   * @param {string|number} id - ID de la forma de pago
-   * @param {Array} formasPagoList - Lista de formas de pago (opcional)
-   * @returns {string} Nombre de la forma de pago
-   */
-  getNombreFormaPago: (id, formasPagoList = []) => {
-    if (!id) return 'Sin forma de pago';
+  // Método para cargar todos los datos operacionales
+  loadOperationalData: async (filters = {}) => {
+    console.log('Cargando datos operacionales...');
     
-    const formaPago = formasPagoList.find(fp => fp.id === id || fp.id === parseInt(id));
-    return formaPago ? formaPago.name : `Forma de pago ${id}`;
+    try {
+      const [ventas, compras] = await Promise.all([
+        ventasService.getFacturasFiltered(filters),
+        comprasService.getAlbaranesFiltered(filters)
+      ]);
+      
+      console.log('Datos operacionales cargados:', {
+        ventas: ventas.fac_t?.length || 0,
+        compras: compras.com_alb_g?.length || 0
+      });
+      
+      return {
+        ventas,
+        compras
+      };
+    } catch (error) {
+      console.error('Error al cargar datos operacionales:', error);
+      throw error;
+    }
   },
   
-  /**
-   * Crea un mapa ID -> Nombre para búsquedas rápidas
-   * @param {Array} formasPagoList - Lista de formas de pago
-   * @returns {Object} Mapa de ID a nombre
-   */
-  crearMapaNombres: (formasPagoList = []) => {
-    const mapa = {};
-    formasPagoList.forEach(formaPago => {
-      if (formaPago.id !== undefined && formaPago.name) {
-        mapa[formaPago.id] = formaPago.name;
-      }
-    });
-    return mapa;
+  // Método para cargar todos los datos completos
+  loadAllData: async (filters = {}) => {
+    console.log('Cargando todos los datos...');
+    
+    try {
+      const [basicData, operationalData] = await Promise.all([
+        this.loadBasicData(),
+        this.loadOperationalData(filters)
+      ]);
+      
+      return {
+        ...basicData,
+        ...operationalData
+      };
+    } catch (error) {
+      console.error('Error al cargar todos los datos:', error);
+      throw error;
+    }
   }
-};
-
-// Exportación por defecto con todos los servicios agrupados
-export default {
-  api: apiClientDefault,
-  ventas: ventasServiceDefault,
-  compras: comprasServiceDefault,
-  usuarios: usuariosServiceDefault,
-  contactos: contactosServiceDefault,
-  empresas: empresasServiceDefault,
-  dashboard: dashboardServiceDefault,
-  formasPago: formasPagoService
 };

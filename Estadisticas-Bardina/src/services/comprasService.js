@@ -1,331 +1,461 @@
-// services/comprasService.js - Servicio para albaranes de compra
-import { apiClient } from "./apiClient.js";
+// services/comprasService.js - Servicio específico para gestión de compras
+import { apiClient, apiUtils } from './apiClient.js';
 
-export const comprasService = {
+/**
+ * Servicio de compras - Gestiona todas las operaciones relacionadas con albaranes
+ */
+export class ComprasService {
+  constructor() {
+    this.endpoint = '/com_alb_g';
+    this.dataKey = 'com_alb_g';
+  }
+  
   /**
    * Obtiene todos los albaranes (con paginación completa)
    * @param {Object} params - Parámetros de filtrado
    * @returns {Promise} Promesa con los datos
    */
-  getAlbaranes: (params = {}) => {
-    const query = apiClient.buildQueryParams(params);
-    return apiClient.getAllPaginated(`/com_alb_g${query}`, "com_alb_g");
-  },
-
+  async getAlbaranes(params = {}) {
+    try {
+      const queryString = apiClient.buildQueryParams(params);
+      const endpoint = queryString ? `${this.endpoint}?${queryString}` : this.endpoint;
+      
+      return await apiClient.getAllPaginated(endpoint, this.dataKey);
+    } catch (error) {
+      throw apiUtils.handleError(error, 'ComprasService.getAlbaranes');
+    }
+  }
+  
+  /**
+   * Obtiene albaranes con filtros específicos de la API
+   * @param {Object} filters - Filtros a aplicar
+   * @returns {Promise} Promesa con los datos filtrados
+   */
+  async getAlbaranesFiltered(filters = {}) {
+    try {
+      const apiFilters = apiClient.buildApiFilters(filters);
+      const queryString = apiClient.buildQueryParams(apiFilters);
+      const endpoint = queryString ? `${this.endpoint}?${queryString}` : this.endpoint;
+      
+      console.log(`Obteniendo albaranes con filtros:`, filters);
+      console.log(`Endpoint: ${endpoint}`);
+      
+      return await apiClient.getAllPaginated(endpoint, this.dataKey);
+    } catch (error) {
+      throw apiUtils.handleError(error, 'ComprasService.getAlbaranesFiltered');
+    }
+  }
+  
   /**
    * Obtiene un albarán por ID
    * @param {number} id - ID del albarán
    * @returns {Promise} Promesa con los datos
    */
-  getAlbaran: (id) => {
-    return apiClient.get(`/com_alb_g/${id}`);
-  },
-
+  async getAlbaran(id) {
+    try {
+      apiUtils.validateRequiredParams({ id }, ['id']);
+      return await apiClient.get(`${this.endpoint}/${id}`);
+    } catch (error) {
+      throw apiUtils.handleError(error, 'ComprasService.getAlbaran');
+    }
+  }
+  
   /**
-   * Obtiene albaranes con filtros específicos
-   * @param {Object} filtros - Filtros aplicados
-   * @returns {Promise} Promesa con los datos filtrados
+   * Crea un nuevo albarán
+   * @param {Object} albaranData - Datos del albarán
+   * @returns {Promise} Promesa con los datos creados
    */
-  getAlbaranesFiltrados: (filtros = {}) => {
-    const params = {};
-
-    // Convertir filtros de la UI a parámetros de API
-    if (filtros.eje && filtros.eje !== "todos") {
-      params["filter[eje]"] = filtros.eje;
+  async createAlbaran(albaranData) {
+    try {
+      apiUtils.validateRequiredParams(albaranData, ['prv', 'tot_alb']);
+      return await apiClient.post(this.endpoint, albaranData);
+    } catch (error) {
+      throw apiUtils.handleError(error, 'ComprasService.createAlbaran');
     }
-
-    if (filtros.mes && filtros.mes !== "todos") {
-      params["filter[mes]"] = filtros.mes;
-    }
-
-    if (filtros.proveedor && filtros.proveedor !== "todos") {
-      params["filter[prv]"] = filtros.proveedor;
-    }
-
-    if (filtros.fechaDesde && filtros.fechaHasta) {
-      params["filter[fch]"] = `${filtros.fechaDesde},${filtros.fechaHasta}`;
-    } else if (filtros.fechaDesde) {
-      params["filter[fch][gte]"] = filtros.fechaDesde;
-    } else if (filtros.fechaHasta) {
-      params["filter[fch][lte]"] = filtros.fechaHasta;
-    }
-
-    return comprasService.getAlbaranes(params);
-  },
-
+  }
+  
   /**
-   * Obtiene estadísticas básicas de compras
-   * @param {Array} albaranes - Array de albaranes
-   * @returns {Object} Estadísticas calculadas
+   * Actualiza un albarán existente
+   * @param {number} id - ID del albarán
+   * @param {Object} albaranData - Datos actualizados
+   * @returns {Promise} Promesa con los datos actualizados
    */
-  calcularEstadisticas: (albaranes = []) => {
-    if (!albaranes.length) {
+  async updateAlbaran(id, albaranData) {
+    try {
+      apiUtils.validateRequiredParams({ id }, ['id']);
+      return await apiClient.put(`${this.endpoint}/${id}`, albaranData);
+    } catch (error) {
+      throw apiUtils.handleError(error, 'ComprasService.updateAlbaran');
+    }
+  }
+  
+  /**
+   * Elimina un albarán
+   * @param {number} id - ID del albarán
+   * @returns {Promise} Promesa con el resultado
+   */
+  async deleteAlbaran(id) {
+    try {
+      apiUtils.validateRequiredParams({ id }, ['id']);
+      return await apiClient.delete(`${this.endpoint}/${id}`);
+    } catch (error) {
+      throw apiUtils.handleError(error, 'ComprasService.deleteAlbaran');
+    }
+  }
+  
+  /**
+   * Obtiene estadísticas de compras
+   * @param {Object} filters - Filtros a aplicar
+   * @returns {Promise} Promesa con las estadísticas
+   */
+  async getEstadisticas(filters = {}) {
+    try {
+      const albaranes = await this.getAlbaranesFiltered(filters);
+      
+      // Calcular estadísticas básicas
+      const total = albaranes[this.dataKey].reduce((sum, item) => sum + (item.tot_alb || 0), 0);
+      const cantidad = albaranes[this.dataKey].length;
+      const promedio = cantidad > 0 ? total / cantidad : 0;
+      
+      // Compras por mes
+      const comprasPorMes = this._agruparPorCampo(albaranes[this.dataKey], 'mes', 'tot_alb');
+      
+      // Compras por proveedor
+      const comprasPorProveedor = this._agruparPorCampo(albaranes[this.dataKey], 'prv', 'tot_alb');
+      
+      // Compras por serie
+      const comprasPorSerie = this._agruparPorCampo(albaranes[this.dataKey], 'ser', 'tot_alb');
+      
+      // Compras por empresa
+      const comprasPorEmpresa = this._agruparPorCampo(albaranes[this.dataKey], 'emp', 'tot_alb');
+      
+      // Compras por almacén
+      const comprasPorAlmacen = this._agruparPorCampo(albaranes[this.dataKey], 'alm', 'tot_alb');
+      
       return {
-        total: 0,
-        cantidad: 0,
-        promedio: 0,
-        comprasPorMes: [],
-        comprasPorProveedor: [],
-        comprasPorSerie: [],
+        resumen: {
+          total,
+          cantidad,
+          promedio,
+          fechaInicio: this._obtenerFechaMinima(albaranes[this.dataKey]),
+          fechaFin: this._obtenerFechaMaxima(albaranes[this.dataKey])
+        },
+        distribuciones: {
+          comprasPorMes: this._formatearAgrupacion(comprasPorMes, 'mes'),
+          comprasPorProveedor: this._formatearAgrupacion(comprasPorProveedor, 'proveedor'),
+          comprasPorSerie: this._formatearAgrupacion(comprasPorSerie, 'serie'),
+          comprasPorEmpresa: this._formatearAgrupacion(comprasPorEmpresa, 'empresa'),
+          comprasPorAlmacen: this._formatearAgrupacion(comprasPorAlmacen, 'almacen')
+        },
+        datosOriginales: albaranes
       };
+    } catch (error) {
+      throw apiUtils.handleError(error, 'ComprasService.getEstadisticas');
     }
-
-    // Calcular totales básicos
-    const total = albaranes.reduce((sum, item) => sum + (item.tot_alb || 0), 0);
-    const cantidad = albaranes.length;
-    const promedio = cantidad > 0 ? total / cantidad : 0;
-
-    // Compras por mes
-    const mesesMap = {};
-    albaranes.forEach((item) => {
-      const mes = item.mes;
-      if (mes) {
-        mesesMap[mes] = (mesesMap[mes] || 0) + (item.tot_alb || 0);
-      }
-    });
-
-    const comprasPorMes = Object.entries(mesesMap)
-      .map(([mes, total]) => ({
-        mes: parseInt(mes),
-        total,
-      }))
-      .sort((a, b) => a.mes - b.mes);
-
-    // Compras por proveedor
-    const proveedoresMap = {};
-    albaranes.forEach((item) => {
-      const proveedor = item.prv;
-      if (proveedor) {
-        proveedoresMap[proveedor] =
-          (proveedoresMap[proveedor] || 0) + (item.tot_alb || 0);
-      }
-    });
-
-    const comprasPorProveedor = Object.entries(proveedoresMap)
-      .map(([proveedor, total]) => ({
-        proveedor: parseInt(proveedor),
-        total,
-      }))
-      .sort((a, b) => b.total - a.total);
-
-    // Compras por serie
-    const seriesMap = {};
-    albaranes.forEach((item) => {
-      const serie = item.ser;
-      if (serie !== undefined) {
-        seriesMap[serie] = (seriesMap[serie] || 0) + (item.tot_alb || 0);
-      }
-    });
-
-    const comprasPorSerie = Object.entries(seriesMap).map(([serie, total]) => ({
-      serie: parseInt(serie),
-      total,
-    }));
-
-    return {
-      total,
-      cantidad,
-      promedio,
-      comprasPorMes,
-      comprasPorProveedor,
-      comprasPorSerie,
-    };
-  },
-
+  }
+  
   /**
-   * Obtiene el resumen de compras por período
-   * @param {Array} albaranes - Array de albaranes
-   * @param {string} periodo - 'mes', 'dia', 'semana'
-   * @returns {Array} Datos agrupados por período
+   * Obtiene el top de proveedores por compras
+   * @param {Object} filters - Filtros a aplicar
+   * @param {number} limit - Límite de resultados (por defecto 10)
+   * @returns {Promise} Top proveedores
    */
-  agruparPorPeriodo: (albaranes = [], periodo = "mes") => {
-    const grupos = {};
-
-    albaranes.forEach((albaran) => {
-      let clave;
-
-      switch (periodo) {
-        case "dia":
-          if (albaran.fch) {
-            clave = new Date(albaran.fch).toLocaleDateString("es-ES");
-          }
-          break;
-        case "semana":
-          if (albaran.fch) {
-            const fecha = new Date(albaran.fch);
-            const semana = Math.ceil(fecha.getDate() / 7);
-            clave = `Semana ${semana}`;
-          }
-          break;
-        case "mes":
-        default:
-          clave = albaran.mes;
-          break;
-      }
-
-      if (clave) {
-        if (!grupos[clave]) {
-          grupos[clave] = {
-            periodo: clave,
-            totalCompras: 0,
-            cantidadAlbaranes: 0,
-            promedioAlbaran: 0,
-          };
-        }
-
-        grupos[clave].totalCompras += albaran.tot_alb || 0;
-        grupos[clave].cantidadAlbaranes += 1;
-      }
-    });
-
-    // Calcular promedios
-    return Object.values(grupos)
-      .map((grupo) => ({
-        ...grupo,
-        promedioAlbaran:
-          grupo.cantidadAlbaranes > 0
-            ? grupo.totalCompras / grupo.cantidadAlbaranes
-            : 0,
-      }))
-      .sort((a, b) => {
-        if (periodo === "dia") {
-          return (
-            new Date(a.periodo.split("/").reverse().join("-")) -
-            new Date(b.periodo.split("/").reverse().join("-"))
-          );
-        }
-        return a.periodo.toString().localeCompare(b.periodo.toString());
-      });
-  },
-
+  async getTopProveedores(filters = {}, limit = 10) {
+    try {
+      const estadisticas = await this.getEstadisticas(filters);
+      
+      return estadisticas.distribuciones.comprasPorProveedor
+        .sort((a, b) => b.total - a.total)
+        .slice(0, limit);
+    } catch (error) {
+      throw apiUtils.handleError(error, 'ComprasService.getTopProveedores');
+    }
+  }
+  
   /**
-   * Filtra albaranes por múltiples criterios (lado cliente)
+   * Obtiene análisis de categorías de compras (por serie)
+   * @param {Object} filters - Filtros a aplicar
+   * @returns {Promise} Análisis de categorías
+   */
+  async getAnalisisCategorias(filters = {}) {
+    try {
+      const estadisticas = await this.getEstadisticas(filters);
+      
+      const analisis = estadisticas.distribuciones.comprasPorSerie
+        .map(categoria => {
+          const porcentaje = estadisticas.resumen.total > 0 ? 
+            (categoria.total / estadisticas.resumen.total) * 100 : 0;
+          
+          return {
+            ...categoria,
+            porcentaje,
+            categoria: `Serie ${categoria.serie}`
+          };
+        })
+        .sort((a, b) => b.total - a.total);
+      
+      return {
+        categorias: analisis,
+        totalCategorias: analisis.length,
+        categoriasPrincipales: analisis.slice(0, 5),
+        concentracion: this._calcularConcentracion(analisis)
+      };
+    } catch (error) {
+      throw apiUtils.handleError(error, 'ComprasService.getAnalisisCategorias');
+    }
+  }
+  
+  /**
+   * Obtiene tendencias de compras por período
+   * @param {Object} filters - Filtros a aplicar
+   * @param {string} periodo - Período de agrupación ('mes', 'trimestre', 'año')
+   * @returns {Promise} Tendencias de compras
+   */
+  async getTendencias(filters = {}, periodo = 'mes') {
+    try {
+      const albaranes = await this.getAlbaranesFiltered(filters);
+      
+      const agrupacion = {};
+      
+      albaranes[this.dataKey].forEach(albaran => {
+        let clave;
+        
+        switch (periodo) {
+          case 'año':
+            clave = albaran.eje;
+            break;
+          case 'trimestre':
+            clave = `${albaran.eje}-Q${Math.ceil(albaran.mes / 3)}`;
+            break;
+          case 'mes':
+          default:
+            clave = `${albaran.eje}-${String(albaran.mes).padStart(2, '0')}`;
+            break;
+        }
+        
+        if (clave) {
+          if (!agrupacion[clave]) {
+            agrupacion[clave] = {
+              periodo: clave,
+              total: 0,
+              cantidad: 0,
+              promedio: 0,
+              proveedoresUnicos: new Set()
+            };
+          }
+          
+          agrupacion[clave].total += (albaran.tot_alb || 0);
+          agrupacion[clave].cantidad += 1;
+          
+          if (albaran.prv) {
+            agrupacion[clave].proveedoresUnicos.add(albaran.prv);
+          }
+        }
+      });
+      
+      // Calcular promedios y convertir Sets
+      const tendencias = Object.values(agrupacion)
+        .map(item => ({
+          ...item,
+          promedio: item.cantidad > 0 ? item.total / item.cantidad : 0,
+          proveedoresUnicos: item.proveedoresUnicos.size
+        }))
+        .sort((a, b) => a.periodo.localeCompare(b.periodo));
+      
+      // Calcular variaciones
+      for (let i = 1; i < tendencias.length; i++) {
+        const actual = tendencias[i];
+        const anterior = tendencias[i - 1];
+        
+        actual.variacionTotal = anterior.total !== 0 ? 
+          ((actual.total - anterior.total) / anterior.total) * 100 : 0;
+        actual.variacionCantidad = anterior.cantidad !== 0 ? 
+          ((actual.cantidad - anterior.cantidad) / anterior.cantidad) * 100 : 0;
+      }
+      
+      return tendencias;
+    } catch (error) {
+      throw apiUtils.handleError(error, 'ComprasService.getTendencias');
+    }
+  }
+  
+  /**
+   * Analiza la rotación de proveedores
+   * @param {Object} filters - Filtros a aplicar
+   * @returns {Promise} Análisis de rotación
+   */
+  async getAnalisisRotacionProveedores(filters = {}) {
+    try {
+      const albaranes = await this.getAlbaranesFiltered(filters);
+      
+      const proveedoresPorMes = {};
+      const estadisticasProveedores = {};
+      
+      albaranes[this.dataKey].forEach(albaran => {
+        const claveMes = `${albaran.eje}-${String(albaran.mes).padStart(2, '0')}`;
+        const proveedor = albaran.prv;
+        
+        if (proveedor && claveMes) {
+          // Proveedores por mes
+          if (!proveedoresPorMes[claveMes]) {
+            proveedoresPorMes[claveMes] = new Set();
+          }
+          proveedoresPorMes[claveMes].add(proveedor);
+          
+          // Estadísticas por proveedor
+          if (!estadisticasProveedores[proveedor]) {
+            estadisticasProveedores[proveedor] = {
+              proveedor,
+              totalCompras: 0,
+              cantidadAlbaranes: 0,
+              mesesActivo: new Set(),
+              ultimaCompra: null,
+              primeraCompra: null
+            };
+          }
+          
+          const stats = estadisticasProveedores[proveedor];
+          stats.totalCompras += (albaran.tot_alb || 0);
+          stats.cantidadAlbaranes += 1;
+          stats.mesesActivo.add(claveMes);
+          
+          const fechaAlbaran = new Date(albaran.fch);
+          if (!stats.ultimaCompra || fechaAlbaran > new Date(stats.ultimaCompra)) {
+            stats.ultimaCompra = albaran.fch;
+          }
+          if (!stats.primeraCompra || fechaAlbaran < new Date(stats.primeraCompra)) {
+            stats.primeraCompra = albaran.fch;
+          }
+        }
+      });
+      
+      // Procesar estadísticas finales
+      const proveedoresFinales = Object.values(estadisticasProveedores)
+        .map(proveedor => ({
+          ...proveedor,
+          mesesActivo: proveedor.mesesActivo.size,
+          promedioCompra: proveedor.cantidadAlbaranes > 0 ? 
+            proveedor.totalCompras / proveedor.cantidadAlbaranes : 0,
+          frecuenciaCompra: proveedor.mesesActivo.size > 0 ? 
+            proveedor.cantidadAlbaranes / proveedor.mesesActivo.size : 0
+        }))
+        .sort((a, b) => b.totalCompras - a.totalCompras);
+      
+      const rotacionPorMes = Object.entries(proveedoresPorMes)
+        .map(([mes, proveedores]) => ({
+          mes,
+          cantidadProveedores: proveedores.size,
+          proveedores: Array.from(proveedores)
+        }))
+        .sort((a, b) => a.mes.localeCompare(b.mes));
+      
+      return {
+        proveedores: proveedoresFinales,
+        rotacionMensual: rotacionPorMes,
+        resumen: {
+          totalProveedores: proveedoresFinales.length,
+          proveedoresActivos: proveedoresFinales.filter(p => p.mesesActivo > 0).length,
+          promedioProveedoresPorMes: rotacionPorMes.length > 0 ? 
+            rotacionPorMes.reduce((sum, item) => sum + item.cantidadProveedores, 0) / rotacionPorMes.length : 0
+        }
+      };
+    } catch (error) {
+      throw apiUtils.handleError(error, 'ComprasService.getAnalisisRotacionProveedores');
+    }
+  }
+  
+  /**
+   * Filtra albaranes localmente (útil para filtros que no soporta la API)
    * @param {Array} albaranes - Array de albaranes
-   * @param {Object} filtros - Filtros a aplicar
+   * @param {Object} filters - Filtros a aplicar
    * @returns {Array} Albaranes filtrados
    */
-  filtrarAlbaranes: (albaranes = [], filtros = {}) => {
-    return albaranes.filter((albaran) => {
-      // Filtro por año
-      if (filtros.año && filtros.año !== "todos") {
-        const año = parseInt(filtros.año);
-        const albaranAño =
-          typeof albaran.eje === "string" ? parseInt(albaran.eje) : albaran.eje;
-        if (albaranAño !== año) return false;
-      }
-
-      // Filtro por mes
-      if (filtros.mes && filtros.mes !== "todos") {
-        const mes = parseInt(filtros.mes);
-        const albaranMes =
-          typeof albaran.mes === "string" ? parseInt(albaran.mes) : albaran.mes;
-        if (albaranMes !== mes) return false;
-      }
-
-      // Filtro por proveedor
-      if (filtros.proveedor && filtros.proveedor !== "todos") {
-        const proveedorId = parseInt(filtros.proveedor);
-        const albaranProveedor =
-          typeof albaran.prv === "string" ? parseInt(albaran.prv) : albaran.prv;
-        if (albaranProveedor !== proveedorId) return false;
-      }
-
-      // Filtro por rango de fechas
-      if (filtros.fechaDesde || filtros.fechaHasta) {
-        if (!albaran.fch) return false;
-
-        const fechaAlbaran = new Date(albaran.fch);
-
-        if (filtros.fechaDesde) {
-          const desde = new Date(filtros.fechaDesde);
-          desde.setHours(0, 0, 0, 0);
-          if (fechaAlbaran < desde) return false;
-        }
-
-        if (filtros.fechaHasta) {
-          const hasta = new Date(filtros.fechaHasta);
-          hasta.setHours(23, 59, 59, 999);
-          if (fechaAlbaran > hasta) return false;
-        }
-      }
-
-      return true;
-    });
-  },
-
+  filtrarAlbaranesLocalmente(albaranes = [], filters = {}) {
+    return apiUtils.filterAndSort(albaranes, filters);
+  }
+  
   /**
-   * Obtiene los top proveedores por volumen de compras
+   * Agrupa albaranes por un campo específico
+   * @private
    * @param {Array} albaranes - Array de albaranes
-   * @param {number} limite - Número de proveedores a retornar
-   * @returns {Array} Top proveedores
+   * @param {string} campo - Campo por el que agrupar
+   * @param {string} valorCampo - Campo del valor a sumar
+   * @returns {Object} Agrupación
    */
-  getTopProveedores: (albaranes = [], limite = 5) => {
-    const proveedoresMap = {};
-
-    albaranes.forEach((albaran) => {
-      const proveedor = albaran.prv;
-      if (proveedor) {
-        if (!proveedoresMap[proveedor]) {
-          proveedoresMap[proveedor] = {
-            proveedor,
-            totalCompras: 0,
-            cantidadAlbaranes: 0,
-            promedioAlbaran: 0,
-          };
-        }
-
-        proveedoresMap[proveedor].totalCompras += albaran.tot_alb || 0;
-        proveedoresMap[proveedor].cantidadAlbaranes += 1;
+  _agruparPorCampo(albaranes, campo, valorCampo) {
+    const agrupacion = {};
+    
+    albaranes.forEach(albaran => {
+      const clave = albaran[campo];
+      if (clave !== undefined && clave !== null) {
+        agrupacion[clave] = (agrupacion[clave] || 0) + (albaran[valorCampo] || 0);
       }
     });
-
-    return Object.values(proveedoresMap)
-      .map((proveedor) => ({
-        ...proveedor,
-        promedioAlbaran:
-          proveedor.cantidadAlbaranes > 0
-            ? proveedor.totalCompras / proveedor.cantidadAlbaranes
-            : 0,
-      }))
-      .sort((a, b) => b.totalCompras - a.totalCompras)
-      .slice(0, limite);
-  },
-
+    
+    return agrupacion;
+  }
+  
   /**
-   * Obtiene análisis por series
-   * @param {Array} albaranes - Array de albaranes
-   * @returns {Array} Análisis por series
+   * Formatea una agrupación para uso en componentes
+   * @private
+   * @param {Object} agrupacion - Agrupación a formatear
+   * @param {string} nombreClave - Nombre para la clave
+   * @returns {Array} Array formateado
    */
-  getAnalisisPorSeries: (albaranes = []) => {
-    const seriesMap = {};
+  _formatearAgrupacion(agrupacion, nombreClave) {
+    return Object.entries(agrupacion).map(([clave, total]) => ({
+      [nombreClave]: clave,
+      [`${nombreClave}Id`]: clave,
+      total
+    }));
+  }
+  
+  /**
+   * Calcula la concentración de las compras (índice de Herfindahl)
+   * @private
+   * @param {Array} categorias - Array de categorías con porcentajes
+   * @returns {number} Índice de concentración
+   */
+  _calcularConcentracion(categorias) {
+    return categorias.reduce((sum, categoria) => {
+      const porcentajeNormalizado = categoria.porcentaje / 100;
+      return sum + (porcentajeNormalizado * porcentajeNormalizado);
+    }, 0);
+  }
+  
+  /**
+   * Obtiene la fecha mínima de un array de albaranes
+   * @private
+   * @param {Array} albaranes - Array de albaranes
+   * @returns {string|null} Fecha mínima
+   */
+  _obtenerFechaMinima(albaranes) {
+    const fechas = albaranes
+      .map(a => a.fch)
+      .filter(f => f)
+      .sort();
+    
+    return fechas.length > 0 ? fechas[0] : null;
+  }
+  
+  /**
+   * Obtiene la fecha máxima de un array de albaranes
+   * @private
+   * @param {Array} albaranes - Array de albaranes
+   * @returns {string|null} Fecha máxima
+   */
+  _obtenerFechaMaxima(albaranes) {
+    const fechas = albaranes
+      .map(a => a.fch)
+      .filter(f => f)
+      .sort();
+    
+    return fechas.length > 0 ? fechas[fechas.length - 1] : null;
+  }
+}
 
-    albaranes.forEach((albaran) => {
-      const serie = albaran.ser;
-      if (serie !== undefined) {
-        if (!seriesMap[serie]) {
-          seriesMap[serie] = {
-            serie,
-            totalCompras: 0,
-            cantidadAlbaranes: 0,
-            promedioAlbaran: 0,
-          };
-        }
+// Crear instancia singleton
+export const comprasService = new ComprasService();
 
-        seriesMap[serie].totalCompras += albaran.tot_alb || 0;
-        seriesMap[serie].cantidadAlbaranes += 1;
-      }
-    });
-
-    return Object.values(seriesMap)
-      .map((serie) => ({
-        ...serie,
-        promedioAlbaran:
-          serie.cantidadAlbaranes > 0
-            ? serie.totalCompras / serie.cantidadAlbaranes
-            : 0,
-      }))
-      .sort((a, b) => b.totalCompras - a.totalCompras);
-  },
-};
-
+// Exportación por defecto
 export default comprasService;
