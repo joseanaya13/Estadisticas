@@ -1,10 +1,14 @@
-// components/Dashboard.jsx - Con filtros
+// components/Dashboard.jsx - Con importaciones corregidas
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell 
 } from 'recharts';
-import { ChartContainer, DataCard, LoadingSpinner, ErrorMessage, FilterBar } from './index';
+import ChartContainer from './ChartContainer';
+import DataCard from './DataCard';
+import LoadingSpinner from './LoadingSpinner';
+import ErrorMessage from './ErrorMessage';
+import FilterBar from './FilterBar';
 import { formatCurrency, obtenerNombreMes, formatDateRange } from '../utils/formatters';
 import { dashboardService } from '../services/api';
 

@@ -1,10 +1,14 @@
-// components/EstadisticasCompras.jsx (actualizado con imports correctos)
+// components/EstadisticasCompras.jsx - Importaciones corregidas
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell 
 } from 'recharts';
-import { ChartContainer, DataCard, LoadingSpinner, ErrorMessage, FilterBar } from './index';
+import ChartContainer from './ChartContainer';
+import DataCard from './DataCard';
+import LoadingSpinner from './LoadingSpinner';
+import ErrorMessage from './ErrorMessage';
+import FilterBar from './FilterBar';
 import { formatCurrency, obtenerNombreMes } from '../utils/formatters';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];

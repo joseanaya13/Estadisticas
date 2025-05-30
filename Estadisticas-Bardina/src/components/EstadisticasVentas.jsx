@@ -1,10 +1,14 @@
-// components/EstadisticasVentas.jsx - Actualizado con formas de pago reales
+// components/EstadisticasVentas.jsx - Importaciones corregidas
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area 
 } from 'recharts';
-import { ChartContainer, DataCard, LoadingSpinner, ErrorMessage, FilterBar } from './index';
+import ChartContainer from './ChartContainer';
+import DataCard from './DataCard';
+import LoadingSpinner from './LoadingSpinner';
+import ErrorMessage from './ErrorMessage';
+import FilterBar from './FilterBar';
 import { formatCurrency, formatDate, obtenerNombreMes } from '../utils/formatters';
 import { empresasService, contactosService, usuariosService, formasPagoService } from '../services/api';
 
@@ -453,138 +457,8 @@ const EstadisticasVentas = ({ data }) => {
       .map(([fecha, total]) => ({ fecha, total }))
       .sort((a, b) => new Date(a.fecha.split('/').reverse().join('-')) - new Date(b.fecha.split('/').reverse().join('-')));
   }, [filteredData, filtrosActivos.rangoFechas]);
-  
-  const ventasPorTienda = useMemo(() => {
-    if (!filteredData.length || !empresas.length || filtrosActivos.tiendaEspecifica) return [];
-    
-    const tiendas = {};
-    filteredData.forEach(item => {
-      const tiendaId = item.emp_div || item.emp;
-      if (tiendaId) {
-        tiendas[tiendaId] = (tiendas[tiendaId] || 0) + (item.tot || 0);
-      }
-    });
-    
-    return Object.entries(tiendas)
-      .map(([tiendaId, total]) => {
-        const empresa = empresas.find(e => e.id === tiendaId);
-        return {
-          tiendaId,
-          nombreTienda: empresa ? empresa.name : `Tienda ${tiendaId}`,
-          total
-        };
-      })
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 5);
-  }, [filteredData, empresas, filtrosActivos.tiendaEspecifica]);
-  
-  const ventasPorCliente = useMemo(() => {
-    if (!filteredData.length || filtrosActivos.clienteEspecifico) return [];
-    
-    const clientes = {};
-    filteredData.forEach(item => {
-      const clienteId = typeof item.clt === 'string' ? item.clt : item.clt?.toString();
-      
-      if (clienteId && 
-          clienteId !== '0' && 
-          clienteId !== 'null' && 
-          clienteId !== 'undefined' &&
-          item.tot > 0) {
-        clientes[clienteId] = (clientes[clienteId] || 0) + (item.tot || 0);
-      }
-    });
-    
-    return Object.entries(clientes)
-      .map(([clienteId, total]) => ({
-        clienteId,
-        nombreCliente: mapaContactos[clienteId] || `Cliente ${clienteId}`,
-        total
-      }))
-      .filter(cliente => cliente.total > 100)
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 5);
-  }, [filteredData, mapaContactos, filtrosActivos.clienteEspecifico]);
-  
-  const ventasPorVendedor = useMemo(() => {
-    if (!filteredData.length || filtrosActivos.vendedorEspecifico) return [];
-    
-    const vendedores = {};
-    filteredData.forEach(item => {
-      const vendedorId = item.alt_usr;
-      
-      if (vendedorId !== undefined && vendedorId !== null && item.tot > 0) {
-        if (!vendedores[vendedorId]) {
-          vendedores[vendedorId] = {
-            vendedorId,
-            nombreVendedor: mapaUsuarios[vendedorId] || `Vendedor ${vendedorId}`,
-            totalVentas: 0,
-            cantidadFacturas: 0
-          };
-        }
-        
-        vendedores[vendedorId].totalVentas += (item.tot || 0);
-        vendedores[vendedorId].cantidadFacturas += 1;
-      }
-    });
-    
-    return Object.values(vendedores)
-      .map(vendedor => ({
-        ...vendedor,
-        promedioFactura: vendedor.cantidadFacturas > 0 ? 
-          vendedor.totalVentas / vendedor.cantidadFacturas : 0
-      }))
-      .sort((a, b) => b.totalVentas - a.totalVentas)
-      .slice(0, 5);
-  }, [filteredData, mapaUsuarios, filtrosActivos.vendedorEspecifico]);
-  
-  // Análisis de ticket promedio por período
-  const ticketPromedioPorPeriodo = useMemo(() => {
-    if (!filteredData.length) return [];
-    
-    let agrupacion = 'mes';
-    if (filtrosActivos.mesEspecifico) agrupacion = 'semana';
-    if (filtrosActivos.rangoFechas) agrupacion = 'día';
-    
-    const periodos = {};
-    
-    filteredData.forEach(item => {
-      let clavePeríodo;
-      
-      if (agrupacion === 'día' && item.fch) {
-        clavePeríodo = new Date(item.fch).toLocaleDateString('es-ES');
-      } else if (agrupacion === 'semana' && item.fch) {
-        const fecha = new Date(item.fch);
-        const weekNum = Math.ceil(fecha.getDate() / 7);
-        clavePeríodo = `Semana ${weekNum}`;
-      } else {
-        clavePeríodo = obtenerNombreMes(item.mes);
-      }
-      
-      if (clavePeríodo) {
-        if (!periodos[clavePeríodo]) {
-          periodos[clavePeríodo] = { total: 0, cantidad: 0 };
-        }
-        periodos[clavePeríodo].total += (item.tot || 0);
-        periodos[clavePeríodo].cantidad += 1;
-      }
-    });
-    
-    return Object.entries(periodos)
-      .map(([periodo, datos]) => ({
-        periodo,
-        ticketPromedio: datos.cantidad > 0 ? datos.total / datos.cantidad : 0,
-        cantidadVentas: datos.cantidad,
-        totalVentas: datos.total
-      }))
-      .sort((a, b) => {
-        if (agrupacion === 'día') {
-          return new Date(a.periodo.split('/').reverse().join('-')) - new Date(b.periodo.split('/').reverse().join('-'));
-        }
-        return a.periodo.localeCompare(b.periodo);
-      });
-  }, [filteredData, filtrosActivos]);
-  
-  // ACTUALIZADO: Ventas por forma de pago con nombres reales
+
+  // Ventas por forma de pago con nombres reales
   const ventasPorFormaPago = useMemo(() => {
     if (!filteredData.length) return [];
     
@@ -596,15 +470,10 @@ const EstadisticasVentas = ({ data }) => {
       }
     });
     
-    console.log('Ventas por forma de pago (raw):', formasPagoVentas);
-    console.log('Mapa formas de pago disponible:', mapaFormasPago);
-    
     return Object.entries(formasPagoVentas)
       .map(([formaPagoId, total]) => {
         const id = parseInt(formaPagoId);
         const nombreFormaPago = mapaFormasPago[id] || `Forma de pago ${id}`;
-        
-        console.log(`Forma de pago ${id}: ${nombreFormaPago} = €${total}`);
         
         return {
           formaPagoId: id,
@@ -612,8 +481,8 @@ const EstadisticasVentas = ({ data }) => {
           total
         };
       })
-      .filter(fp => fp.total > 0) // Solo mostrar formas de pago con ventas
-      .sort((a, b) => b.total - a.total); // Ordenar por total descendente
+      .filter(fp => fp.total > 0)
+      .sort((a, b) => b.total - a.total);
   }, [filteredData, mapaFormasPago]);
   
   // Calcular totales
@@ -626,27 +495,6 @@ const EstadisticasVentas = ({ data }) => {
     
     return { total, cantidad, promedio };
   }, [filteredData]);
-  
-  // Configuración de columnas para la tabla
-  const columnasTabla = [
-    { key: 'id', label: 'ID', format: 'number' },
-    { key: 'fch', label: 'Fecha', format: 'date' },
-    { 
-      key: 'clt', 
-      label: 'Cliente', 
-      format: 'custom',
-      formatter: (value) => mapaContactos[value] || `Cliente ${value}`
-    },
-    { 
-      key: 'alt_usr', 
-      label: 'Vendedor', 
-      format: 'custom',
-      formatter: (value) => mapaUsuarios[value] || `Vendedor ${value}`
-    },
-    { key: 'alm', label: 'Almacén' },
-    { key: 'bas_tot', label: 'Base', format: 'currency' },
-    { key: 'tot', label: 'Total', format: 'currency' }
-  ];
   
   // Manejar cambios en los filtros
   const handleFilterChange = (id, value) => {
@@ -801,94 +649,7 @@ const EstadisticasVentas = ({ data }) => {
           </ChartContainer>
         ) : null}
 
-        {/* Análisis de ticket promedio */}
-        <ChartContainer title="Ticket Promedio por Período">
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={ticketPromedioPorPeriodo}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="periodo" />
-              <YAxis />
-              <Tooltip 
-                formatter={(value, name) => {
-                  if (name === 'ticketPromedio') return formatCurrency(value);
-                  return value;
-                }}
-              />
-              <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="ticketPromedio" 
-                stroke="#82ca9d" 
-                name="Ticket Promedio"
-                strokeWidth={2}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="cantidadVentas" 
-                stroke="#ffc658" 
-                name="Cantidad Ventas"
-                strokeWidth={2}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartContainer>
-
-        {/* Mostrar Top 5 Tiendas solo si no hay filtro de tienda específica */}
-        {!filtrosActivos.tiendaEspecifica && ventasPorTienda.length > 0 && (
-          <ChartContainer title="Top 5 Tiendas">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={ventasPorTienda} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="nombreTienda" type="category" width={150} />
-                <Tooltip formatter={(value) => formatCurrency(value)} />
-                <Legend />
-                <Bar dataKey="total" fill="#00C49F" name="Ventas" />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-        )}
-
-        {/* Mostrar Top 5 Clientes solo si no hay filtro de cliente específico */}
-        {!filtrosActivos.clienteEspecifico && ventasPorCliente.length > 0 && (
-          <ChartContainer title="Top 5 Clientes">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={ventasPorCliente} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="nombreCliente" type="category" width={150} />
-                <Tooltip formatter={(value) => formatCurrency(value)} />
-                <Legend />
-                <Bar dataKey="total" fill="#FFBB28" name="Ventas" />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-        )}
-
-        {/* Mostrar Top 5 Vendedores solo si no hay filtro de vendedor específico */}
-        {!filtrosActivos.vendedorEspecifico && ventasPorVendedor.length > 0 && (
-          <ChartContainer title="Top 5 Vendedores">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={ventasPorVendedor} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="nombreVendedor" type="category" width={150} />
-                <Tooltip 
-                  formatter={(value, name) => {
-                    if (name === 'totalVentas') return formatCurrency(value);
-                    if (name === 'cantidadFacturas') return `${value} facturas`;
-                    if (name === 'promedioFactura') return formatCurrency(value);
-                    return value;
-                  }}
-                />
-                <Legend />
-                <Bar dataKey="totalVentas" fill="#FF8042" name="Ventas Totales" />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-        )}
-
-        {/* ACTUALIZADO: Ventas por Forma de Pago con nombres reales */}
+        {/* Ventas por Forma de Pago con nombres reales */}
         {ventasPorFormaPago.length > 0 && (
           <ChartContainer title="Ventas por Forma de Pago">
             <ResponsiveContainer width="100%" height={300}>
@@ -914,28 +675,6 @@ const EstadisticasVentas = ({ data }) => {
                   formatter={(value, name) => [formatCurrency(value), name]}
                 />
               </PieChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-        )}
-
-        {/* Estadísticas por Vendedor - solo si no hay filtro de vendedor específico */}
-        {!filtrosActivos.vendedorEspecifico && ventasPorVendedor.length > 0 && (
-          <ChartContainer title="Estadísticas por Vendedor">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={ventasPorVendedor}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="nombreVendedor" angle={-45} textAnchor="end" height={80} />
-                <YAxis />
-                <Tooltip 
-                  formatter={(value, name) => {
-                    if (name === 'promedioFactura') return formatCurrency(value);
-                    return value;
-                  }}
-                />
-                <Legend />
-                <Bar dataKey="cantidadFacturas" fill="#82ca9d" name="Cantidad Facturas" />
-                <Bar dataKey="promedioFactura" fill="#ffc658" name="Promedio por Factura" />
-              </BarChart>
             </ResponsiveContainer>
           </ChartContainer>
         )}
