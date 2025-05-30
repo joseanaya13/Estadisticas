@@ -1160,3 +1160,1268 @@ tr:hover {
     --border-color: #333333;
   }
 }
+
+/* === NAVEGACIÓN DE VISTAS DE VENTAS === */
+.ventas-navigation {
+  margin: 1.5rem 0;
+  background: var(--surface-color);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.nav-btn {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border: 2px solid #dee2e6;
+  color: var(--text-primary);
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  font-size: 0.95rem;
+  min-width: 140px;
+  justify-content: center;
+}
+
+.nav-btn:hover {
+  background: linear-gradient(135deg, #e9ecef, #dee2e6);
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.nav-btn.active {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  border-color: var(--primary-dark);
+  color: white;
+  box-shadow: 0 4px 15px rgba(25, 118, 210, 0.3);
+}
+
+.nav-btn i {
+  font-size: 1.1rem;
+}
+
+/* === CONTENIDO DE VENTAS === */
+.ventas-content {
+  margin-top: 1rem;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.estadisticas-ventas-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* === MENSAJES DE NO DATOS === */
+.no-data-message {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: var(--surface-color);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  color: var(--text-secondary);
+}
+
+.no-data-message i {
+  font-size: 4rem;
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.no-data-message h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.no-data-message p {
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.no-data {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+}
+
+.no-data i {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--primary-color);
+  opacity: 0.7;
+}
+
+/* === TABLA DE VENDEDORES === */
+.ventas-vendedores-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.ventas-vendedores-table th,
+.ventas-vendedores-table td {
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.ventas-vendedores-table th {
+  background: linear-gradient(135deg, var(--primary-light), #bbdefb);
+  color: var(--primary-dark);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.vendedor-col {
+  text-align: left !important;
+  min-width: 150px;
+  max-width: 200px;
+}
+
+.mes-col {
+  min-width: 100px;
+}
+
+.total-col {
+  min-width: 120px;
+  background-color: rgba(25, 118, 210, 0.05);
+}
+
+.porcentaje-col {
+  min-width: 100px;
+}
+
+.vendedor-row:hover {
+  background-color: rgba(25, 118, 210, 0.05);
+}
+
+.vendedor-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.vendedor-info i {
+  color: var(--primary-color);
+  font-size: 0.9rem;
+}
+
+.vendedor-nombre {
+  text-align: left;
+  font-weight: 500;
+}
+
+.mes-valor {
+  position: relative;
+}
+
+.valor-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.valor-principal {
+  font-weight: 500;
+}
+
+.valor-porcentaje {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background: var(--primary-light);
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+}
+
+.con-ventas {
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+.sin-ventas {
+  background-color: rgba(158, 158, 158, 0.05);
+  color: var(--text-secondary);
+}
+
+.total-vendedor {
+  background-color: rgba(25, 118, 210, 0.1);
+  font-weight: 600;
+}
+
+.porcentaje-vendedor {
+  padding: 0.5rem !important;
+}
+
+.porcentaje-bar {
+  position: relative;
+  width: 100%;
+  height: 24px;
+  background: var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.porcentaje-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  border-radius: 12px;
+  transition: width 0.5s ease;
+}
+
+.porcentaje-text {
+  position: relative;
+  z-index: 2;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.totales-row {
+  background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
+  font-weight: 600;
+  border-top: 2px solid var(--primary-color);
+}
+
+.totales-row td {
+  border-bottom: none;
+  padding: 1rem 0.5rem;
+}
+
+.total-label {
+  text-align: left !important;
+  color: var(--primary-dark);
+}
+
+.total-label i {
+  margin-right: 0.5rem;
+}
+
+.total-mes {
+  background-color: rgba(76, 175, 80, 0.2);
+}
+
+.total-general {
+  background-color: rgba(25, 118, 210, 0.2);
+  font-size: 1.1rem;
+}
+
+.porcentaje-total {
+  background-color: rgba(255, 152, 0, 0.2);
+  font-size: 1.1rem;
+}
+
+/* === INFORMACIÓN DE TABLA === */
+.tabla-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: var(--primary-light);
+  border-radius: 8px;
+  border-left: 4px solid var(--primary-color);
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--primary-dark);
+  font-weight: 500;
+}
+
+.info-item i {
+  color: var(--primary-color);
+  font-size: 1.1rem;
+}
+
+.tabla-resumen {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--surface-color);
+  border-radius: 8px;
+  border-left: 4px solid var(--success-color);
+  color: var(--text-secondary);
+}
+
+.tabla-resumen i {
+  color: var(--success-color);
+  margin-right: 0.5rem;
+}
+
+/* === WRAPPER DE TABLA === */
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--surface-color);
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.table-wrapper::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-dark);
+}
+
+/* === ESTILOS PARA GRÁFICOS === */
+.graficos-ventas {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.charts-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
+/* === ESTILOS PARA RESUMEN === */
+.resumen-ventas {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+.resumen-ventas .summary-cards {
+  margin-bottom: 2rem;
+}
+
+.resumen-ventas .stats-info {
+  margin-bottom: 1.5rem;
+}
+
+.filtros-activos-alert {
+  background: linear-gradient(135deg, #fff8e1, #ffecb3);
+  border-left: 4px solid var(--warning-color);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #e65100;
+  font-weight: 500;
+}
+
+.filtros-activos-alert i {
+  font-size: 1.2rem;
+  color: var(--warning-color);
+}
+
+/* === RESPONSIVE DESIGN === */
+@media (max-width: 1200px) {
+  .charts-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-buttons {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .nav-btn {
+    min-width: unset;
+    width: 100%;
+  }
+  
+  .tabla-info {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .info-item {
+    justify-content: center;
+  }
+  
+  .ventas-vendedores-table {
+    font-size: 0.8rem;
+  }
+  
+  .ventas-vendedores-table th,
+  .ventas-vendedores-table td {
+    padding: 0.5rem 0.25rem;
+  }
+  
+  .vendedor-col {
+    min-width: 120px;
+  }
+  
+  .mes-col {
+    min-width: 80px;
+  }
+  
+  .valor-porcentaje {
+    display: none; /* Ocultar porcentajes en móvil */
+  }
+}
+
+@media (max-width: 480px) {
+  .estadisticas-ventas-container {
+    gap: 1rem;
+  }
+  
+  .table-wrapper {
+    max-height: 50vh;
+  }
+  
+  .ventas-vendedores-table th,
+  .ventas-vendedores-table td {
+    padding: 0.4rem 0.2rem;
+  }
+  
+  .porcentaje-bar {
+    height: 20px;
+  }
+  
+  .porcentaje-text {
+    font-size: 0.7rem;
+  }
+}
+
+/* === ANIMACIONES === */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.vendedor-row {
+  animation: slideInFromLeft 0.3s ease-out;
+}
+
+.vendedor-row:nth-child(even) {
+  animation-delay: 0.1s;
+}
+
+.vendedor-row:nth-child(odd) {
+  animation-delay: 0.05s;
+}
+
+/* === ESTADOS DE HOVER === */
+.mes-valor:hover {
+  background-color: rgba(25, 118, 210, 0.15);
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.vendedor-info:hover {
+  color: var(--primary-color);
+}
+
+/* === ACCESIBILIDAD === */
+@media (prefers-reduced-motion: reduce) {
+  .nav-btn,
+  .porcentaje-fill,
+  .vendedor-row {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* Focus visible para navegación por teclado */
+.nav-btn:focus-visible {
+  outline: 2px solid var(--warning-color);
+  outline-offset: 2px;
+}
+
+.ventas-vendedores-table:focus-within {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* === MODO OSCURO (preparado) === */
+@media (prefers-color-scheme: dark) {
+  .ventas-vendedores-table th {
+    background: linear-gradient(135deg, #2d3748, #4a5568);
+    color: #e2e8f0;
+  }
+  
+  .totales-row {
+    background: linear-gradient(135deg, #2d3748, #4a5568);
+  }
+  
+  .tabla-info {
+    background: rgba(255, 255, 255, 0.05);
+    border-left-color: var(--primary-color);
+  }
+  
+  .no-data-message {
+    background: #2d3748;
+    color: #e2e8f0;
+  }
+}
+
+/* === ESTILOS ADICIONALES PARA COMPONENTES DE VENTAS === */
+/* Estos estilos deben agregarse al archivo styles.css principal */
+
+/* === NAVEGACIÓN DE VISTAS DE VENTAS === */
+.ventas-navigation {
+  margin: 1.5rem 0;
+  background: var(--surface-color);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.nav-btn {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border: 2px solid #dee2e6;
+  color: var(--text-primary);
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  font-size: 0.95rem;
+  min-width: 140px;
+  justify-content: center;
+}
+
+.nav-btn:hover {
+  background: linear-gradient(135deg, #e9ecef, #dee2e6);
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.nav-btn.active {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  border-color: var(--primary-dark);
+  color: white;
+  box-shadow: 0 4px 15px rgba(25, 118, 210, 0.3);
+}
+
+.nav-btn i {
+  font-size: 1.1rem;
+}
+
+/* === CONTENIDO DE VENTAS === */
+.ventas-content {
+  margin-top: 1rem;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.estadisticas-ventas-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* === MENSAJES DE NO DATOS === */
+.no-data-message {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: var(--surface-color);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  color: var(--text-secondary);
+}
+
+.no-data-message i {
+  font-size: 4rem;
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.no-data-message h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.no-data-message p {
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.no-data {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+}
+
+.no-data i {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--primary-color);
+  opacity: 0.7;
+}
+
+/* === TABLA DE VENDEDORES === */
+.ventas-vendedores-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.ventas-vendedores-table th,
+.ventas-vendedores-table td {
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.ventas-vendedores-table th {
+  background: linear-gradient(135deg, var(--primary-light), #bbdefb);
+  color: var(--primary-dark);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.vendedor-col {
+  text-align: left !important;
+  min-width: 150px;
+  max-width: 200px;
+}
+
+.mes-col {
+  min-width: 100px;
+}
+
+.total-col {
+  min-width: 120px;
+  background-color: rgba(25, 118, 210, 0.05);
+}
+
+.porcentaje-col {
+  min-width: 100px;
+}
+
+.vendedor-row:hover {
+  background-color: rgba(25, 118, 210, 0.05);
+}
+
+.vendedor-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.vendedor-info i {
+  color: var(--primary-color);
+  font-size: 0.9rem;
+}
+
+.vendedor-nombre {
+  text-align: left;
+  font-weight: 500;
+}
+
+.mes-valor {
+  position: relative;
+}
+
+.valor-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.valor-principal {
+  font-weight: 500;
+}
+
+.valor-porcentaje {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background: var(--primary-light);
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+}
+
+.con-ventas {
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+.sin-ventas {
+  background-color: rgba(158, 158, 158, 0.05);
+  color: var(--text-secondary);
+}
+
+.total-vendedor {
+  background-color: rgba(25, 118, 210, 0.1);
+  font-weight: 600;
+}
+
+.porcentaje-vendedor {
+  padding: 0.5rem !important;
+}
+
+.porcentaje-bar {
+  position: relative;
+  width: 100%;
+  height: 24px;
+  background: var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.porcentaje-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  border-radius: 12px;
+  transition: width 0.5s ease;
+}
+
+.porcentaje-text {
+  position: relative;
+  z-index: 2;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.totales-row {
+  background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
+  font-weight: 600;
+  border-top: 2px solid var(--primary-color);
+}
+
+.totales-row td {
+  border-bottom: none;
+  padding: 1rem 0.5rem;
+}
+
+.total-label {
+  text-align: left !important;
+  color: var(--primary-dark);
+}
+
+.total-label i {
+  margin-right: 0.5rem;
+}
+
+.total-mes {
+  background-color: rgba(76, 175, 80, 0.2);
+}
+
+.total-general {
+  background-color: rgba(25, 118, 210, 0.2);
+  font-size: 1.1rem;
+}
+
+.porcentaje-total {
+  background-color: rgba(255, 152, 0, 0.2);
+  font-size: 1.1rem;
+}
+
+/* === INFORMACIÓN DE TABLA === */
+.tabla-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: var(--primary-light);
+  border-radius: 8px;
+  border-left: 4px solid var(--primary-color);
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--primary-dark);
+  font-weight: 500;
+}
+
+.info-item i {
+  color: var(--primary-color);
+  font-size: 1.1rem;
+}
+
+.tabla-resumen {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--surface-color);
+  border-radius: 8px;
+  border-left: 4px solid var(--success-color);
+  color: var(--text-secondary);
+}
+
+.tabla-resumen i {
+  color: var(--success-color);
+  margin-right: 0.5rem;
+}
+
+/* === WRAPPER DE TABLA === */
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--surface-color);
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.table-wrapper::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-dark);
+}
+
+/* === ESTILOS PARA GRÁFICOS === */
+.graficos-ventas {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.charts-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
+/* === ESTILOS PARA RESUMEN === */
+.resumen-ventas {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+.resumen-ventas .summary-cards {
+  margin-bottom: 2rem;
+}
+
+.resumen-ventas .stats-info {
+  margin-bottom: 1.5rem;
+}
+
+.filtros-activos-alert {
+  background: linear-gradient(135deg, #fff8e1, #ffecb3);
+  border-left: 4px solid var(--warning-color);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #e65100;
+  font-weight: 500;
+}
+
+.filtros-activos-alert i {
+  font-size: 1.2rem;
+  color: var(--warning-color);
+}
+
+/* === RESPONSIVE DESIGN === */
+@media (max-width: 1200px) {
+  .charts-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-buttons {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .nav-btn {
+    min-width: unset;
+    width: 100%;
+  }
+  
+  .tabla-info {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .info-item {
+    justify-content: center;
+  }
+  
+  .ventas-vendedores-table {
+    font-size: 0.8rem;
+  }
+  
+  .ventas-vendedores-table th,
+  .ventas-vendedores-table td {
+    padding: 0.5rem 0.25rem;
+  }
+  
+  .vendedor-col {
+    min-width: 120px;
+  }
+  
+  .mes-col {
+    min-width: 80px;
+  }
+  
+  .valor-porcentaje {
+    display: none; /* Ocultar porcentajes en móvil */
+  }
+}
+
+@media (max-width: 480px) {
+  .estadisticas-ventas-container {
+    gap: 1rem;
+  }
+  
+  .table-wrapper {
+    max-height: 50vh;
+  }
+  
+  .ventas-vendedores-table th,
+  .ventas-vendedores-table td {
+    padding: 0.4rem 0.2rem;
+  }
+  
+  .porcentaje-bar {
+    height: 20px;
+  }
+  
+  .porcentaje-text {
+    font-size: 0.7rem;
+  }
+}
+
+/* === ANIMACIONES === */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.vendedor-row {
+  animation: slideInFromLeft 0.3s ease-out;
+}
+
+.vendedor-row:nth-child(even) {
+  animation-delay: 0.1s;
+}
+
+.vendedor-row:nth-child(odd) {
+  animation-delay: 0.05s;
+}
+
+/* === ALERTAS DE DUPLICADOS === */
+.duplicados-alert {
+  background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+  border-left: 4px solid #f39c12;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  box-shadow: 0 2px 8px rgba(243, 156, 18, 0.2);
+  animation: slideInFromTop 0.5s ease-out;
+}
+
+.duplicados-alert i {
+  color: #f39c12;
+  font-size: 1.3rem;
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+.duplicados-alert strong {
+  color: #d68910;
+  font-weight: 600;
+}
+
+.duplicados-details,
+.duplicados-summary {
+  margin-top: 0.75rem;
+}
+
+.duplicados-details summary,
+.duplicados-summary summary {
+  cursor: pointer;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  font-weight: 500;
+  color: #d68910;
+  border: 1px solid rgba(243, 156, 18, 0.3);
+  transition: all 0.3s ease;
+}
+
+.duplicados-details summary:hover,
+.duplicados-summary summary:hover {
+  background: rgba(255, 255, 255, 0.5);
+  border-color: #f39c12;
+}
+
+.duplicados-details ul,
+.duplicados-summary ul {
+  margin: 0.5rem 0 0 1rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  border: 1px solid rgba(243, 156, 18, 0.2);
+}
+
+.duplicados-details li,
+.duplicados-summary li {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+  color: #8b5a00;
+}
+
+/* === BADGE DE CONSOLIDADO === */
+.consolidado-badge {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.4rem;
+  border-radius: 10px;
+  margin-left: 0.5rem;
+  display: inline-block;
+  min-width: 18px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(231, 76, 60, 0.3);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* === INFO ITEM WARNING === */
+.info-item.warning {
+  background: rgba(243, 156, 18, 0.1);
+  border: 1px solid rgba(243, 156, 18, 0.3);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  color: #d68910;
+  font-weight: 500;
+}
+
+.info-item.warning i {
+  color: #f39c12;
+}
+
+/* === TOOLTIPS MEJORADOS === */
+.vendedor-info span[title] {
+  position: relative;
+  cursor: help;
+}
+
+.vendedor-info span[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  z-index: 1000;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.vendedor-info span[title]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid rgba(0, 0, 0, 0.9);
+  z-index: 1000;
+}
+
+/* === MEJORAS RESPONSIVAS === */
+@media (max-width: 768px) {
+  .duplicados-alert {
+    flex-direction: column;
+    padding: 1rem;
+  }
+  
+  .duplicados-alert i {
+    align-self: flex-start;
+    margin-top: 0;
+  }
+  
+  .consolidado-badge {
+    display: block;
+    margin: 0.25rem 0 0 0;
+    width: fit-content;
+  }
+  
+  .duplicados-details summary,
+  .duplicados-summary summary {
+    font-size: 0.9rem;
+  }
+  
+  .duplicados-details ul,
+  .duplicados-summary ul {
+    margin-left: 0.5rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .duplicados-alert {
+    margin: 0.5rem 0;
+    padding: 0.75rem;
+  }
+  
+  .info-item.warning {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+  }
+}
+.mes-valor:hover {
+  background-color: rgba(25, 118, 210, 0.15);
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.vendedor-info:hover {
+  color: var(--primary-color);
+}
+
+/* === ACCESIBILIDAD === */
+@media (prefers-reduced-motion: reduce) {
+  .nav-btn,
+  .porcentaje-fill,
+  .vendedor-row {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* Focus visible para navegación por teclado */
+.nav-btn:focus-visible {
+  outline: 2px solid var(--warning-color);
+  outline-offset: 2px;
+}
+
+.ventas-vendedores-table:focus-within {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* === MODO OSCURO (preparado) === */
+@media (prefers-color-scheme: dark) {
+  .ventas-vendedores-table th {
+    background: linear-gradient(135deg, #2d3748, #4a5568);
+    color: #e2e8f0;
+  }
+  
+  .totales-row {
+    background: linear-gradient(135deg, #2d3748, #4a5568);
+  }
+  
+  .tabla-info {
+    background: rgba(255, 255, 255, 0.05);
+    border-left-color: var(--primary-color);
+  }
+  
+  .no-data-message {
+    background: #2d3748;
+    color: #e2e8f0;
+  }
+}

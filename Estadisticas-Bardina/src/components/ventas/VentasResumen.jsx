@@ -1,16 +1,54 @@
-// components/ventas/ResumenVentas.jsx
+// components/ventas/VentasResumen.jsx
 import React, { useMemo } from 'react';
 import DataCard from '../DataCard';
 import { formatCurrency, formatPercentage } from '../../utils/formatters';
+import { analizarDuplicados } from '../../utils/usuariosUtils';
 
-const ResumenVentas = ({ 
+const VentasResumen = ({ 
   ventasData = [], 
   mapaContactos = {}, 
   mapaUsuarios = {}, 
   mapaFormasPago = {},
   filtrosActivos = {}
 }) => {
-  // Calcular métricas de resumen
+  // Detectar y manejar vendedores duplicados
+  const { mapaUsuariosConsolidado, duplicadosDetectados } = useMemo(() => {
+    // Crear lista de usuarios para análisis
+    const usuariosList = Object.entries(mapaUsuarios).map(([id, name]) => ({
+      id: parseInt(id),
+      name: name
+    }));
+    
+    if (usuariosList.length === 0) {
+      return { mapaUsuariosConsolidado: mapaUsuarios, duplicadosDetectados: [] };
+    }
+    
+    // Analizar duplicados
+    const analisis = analizarDuplicados(usuariosList);
+    
+    // Crear mapa consolidado
+    const mapaConsolidado = { ...mapaUsuarios };
+    const duplicados = [];
+    
+    analisis.duplicados.forEach(duplicado => {
+      duplicados.push(duplicado);
+      // Usar el ID más pequeño como representativo
+      const idRepresentativo = duplicado.idRepresentativo;
+      const nombreConsolidado = duplicado.nombre;
+      
+      // Consolidar todos los IDs del grupo al nombre del representativo
+      duplicado.usuarios.forEach(usuario => {
+        mapaConsolidado[usuario.id] = nombreConsolidado;
+      });
+    });
+    
+    return { 
+      mapaUsuariosConsolidado: mapaConsolidado, 
+      duplicadosDetectados: duplicados 
+    };
+  }, [mapaUsuarios]);
+
+  // Calcular métricas de resumen con vendedores consolidados
   const metricas = useMemo(() => {
     if (!ventasData.length) {
       return {
@@ -35,11 +73,15 @@ const ResumenVentas = ({
       if (venta.clt) clientesUnicos.add(venta.clt);
     });
 
-    // Vendedores activos
+    // Vendedores activos (consolidados)
     const vendedoresActivos = new Set();
     ventasData.forEach(venta => {
       if (venta.alt_usr !== undefined && venta.alt_usr !== null) {
-        vendedoresActivos.add(venta.alt_usr);
+        // Usar nombre consolidado en lugar de ID
+        const nombreVendedor = mapaUsuariosConsolidado[venta.alt_usr];
+        if (nombreVendedor) {
+          vendedoresActivos.add(nombreVendedor);
+        }
       }
     });
 
@@ -89,12 +131,15 @@ const ResumenVentas = ({
       total: topClienteEntry[1]
     } : null;
 
-    // Top vendedor
+    // Top vendedor (consolidado)
     const ventasPorVendedor = {};
     ventasData.forEach(venta => {
       const vendedorId = venta.alt_usr;
       if (vendedorId !== undefined && vendedorId !== null) {
-        ventasPorVendedor[vendedorId] = (ventasPorVendedor[vendedorId] || 0) + (venta.tot || 0);
+        const nombreVendedor = mapaUsuariosConsolidado[vendedorId];
+        if (nombreVendedor) {
+          ventasPorVendedor[nombreVendedor] = (ventasPorVendedor[nombreVendedor] || 0) + (venta.tot || 0);
+        }
       }
     });
     
@@ -102,8 +147,7 @@ const ResumenVentas = ({
       .sort(([,a], [,b]) => b - a)[0];
     
     const topVendedor = topVendedorEntry ? {
-      id: topVendedorEntry[0],
-      nombre: mapaUsuarios[topVendedorEntry[0]] || `Vendedor ${topVendedorEntry[0]}`,
+      nombre: topVendedorEntry[0],
       total: topVendedorEntry[1]
     } : null;
 
@@ -126,7 +170,7 @@ const ResumenVentas = ({
     } : null;
 
     return { topCliente, topVendedor, topFormaPago };
-  }, [ventasData, mapaContactos, mapaUsuarios, mapaFormasPago]);
+  }, [ventasData, mapaContactos, mapaUsuariosConsolidado, mapaFormasPago]);
 
   return (
     <div className="resumen-ventas">
@@ -158,14 +202,14 @@ const ResumenVentas = ({
           value={metricas.clientesUnicos} 
           format="number" 
           icon="users"
-          type="success"
+          type="positive"
         />
         <DataCard 
           title="Vendedores Activos" 
           value={metricas.vendedoresActivos} 
           format="number" 
           icon="user-tie"
-          type="info"
+          type="secondary"
         />
         <DataCard 
           title="Formas de Pago" 
@@ -179,16 +223,16 @@ const ResumenVentas = ({
       {/* Información adicional */}
       <div className="stats-info">
         <div className="stat-item">
-          <i className="fas fa-arrow-up text-success"></i>
+          <i className="fas fa-arrow-up"></i>
           <span>Venta más alta: {formatCurrency(metricas.ventaMasAlta)}</span>
         </div>
         <div className="stat-item">
-          <i className="fas fa-arrow-down text-info"></i>
+          <i className="fas fa-arrow-down"></i>
           <span>Venta más baja: {formatCurrency(metricas.ventaMasBaja)}</span>
         </div>
         {topPerformers.topCliente && (
           <div className="stat-item">
-            <i className="fas fa-crown text-warning"></i>
+            <i className="fas fa-crown"></i>
             <span>
               Top Cliente: {topPerformers.topCliente.nombre} 
               ({formatCurrency(topPerformers.topCliente.total)})
@@ -197,7 +241,7 @@ const ResumenVentas = ({
         )}
         {topPerformers.topVendedor && (
           <div className="stat-item">
-            <i className="fas fa-medal text-primary"></i>
+            <i className="fas fa-medal"></i>
             <span>
               Top Vendedor: {topPerformers.topVendedor.nombre} 
               ({formatCurrency(topPerformers.topVendedor.total)})
@@ -206,7 +250,7 @@ const ResumenVentas = ({
         )}
         {topPerformers.topFormaPago && (
           <div className="stat-item">
-            <i className="fas fa-credit-card text-secondary"></i>
+            <i className="fas fa-credit-card"></i>
             <span>
               Forma de pago principal: {topPerformers.topFormaPago.nombre} 
               ({formatCurrency(topPerformers.topFormaPago.total)})
@@ -215,9 +259,34 @@ const ResumenVentas = ({
         )}
       </div>
 
+      {/* Alerta de vendedores duplicados */}
+      {duplicadosDetectados.length > 0 && (
+        <div className="duplicados-alert">
+          <i className="fas fa-exclamation-triangle"></i>
+          <div>
+            <strong>Vendedores duplicados detectados:</strong>
+            <p>
+              Se encontraron {duplicadosDetectados.length} vendedores con nombres duplicados. 
+              Las ventas han sido consolidadas automáticamente por nombre.
+            </p>
+            <details className="duplicados-details">
+              <summary>Ver detalles de duplicados</summary>
+              <ul>
+                {duplicadosDetectados.map((dup, index) => (
+                  <li key={index}>
+                    <strong>{dup.nombre}</strong>: {dup.cantidad} IDs diferentes 
+                    ({dup.usuarios.map(u => u.id).join(', ')})
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </div>
+        </div>
+      )}
+
       {/* Alerta si hay filtros activos */}
       {filtrosActivos.hayFiltrosActivos && (
-        <div className="filtros-activos-alert">
+        <div className="filtros-activos-info">
           <i className="fas fa-filter"></i>
           <span>
             Mostrando resultados con filtros aplicados. 
@@ -229,4 +298,4 @@ const ResumenVentas = ({
   );
 };
 
-export default ResumenVentas;
+export default VentasResumen;
