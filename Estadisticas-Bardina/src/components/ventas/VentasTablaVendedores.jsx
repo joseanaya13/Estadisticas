@@ -3,11 +3,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import LoadingSpinner from '../LoadingSpinner';
 import ErrorMessage from '..//ErrorMessage';
 import FilterBar from '..//FilterBar';
-import VentasResumen from 'VentasResumen';
-import VentasGraficos from 'VentasGraficos';
 import { formatDate, obtenerNombreMes } from '../../utils/formatters';
-import { empresasService, contactosService, usuariosService, formasPagoService } from '../services/api';
-import { analizarDuplicados } from '../utils/usuariosUtils';
+import { empresasService, contactosService, usuariosService, formasPagoService } from '../../services/api';
+import { analizarDuplicados } from '../../utils/usuariosUtils';
 
 const EstadisticasVentas = ({ data, contactos, usuarios }) => {
   const [filtros, setFiltros] = useState({
