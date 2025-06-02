@@ -4,11 +4,11 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell 
 } from 'recharts';
-import ChartContainer from './ChartContainer';
-import DataCard from './DataCard';
-import LoadingSpinner from './LoadingSpinner';
-import ErrorMessage from './ErrorMessage';
-import FilterBar from './FilterBar';
+import ChartContainer from '../components/ChartContainer';
+import DataCard from '../components/DataCard';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorMessage from '../components/ErrorMessage';
+import FilterBar from '../components/FilterBar';
 import { formatCurrency, obtenerNombreMes, formatDateRange } from '../utils/formatters';
 import { dashboardService } from '../services/api';
 

@@ -197,37 +197,49 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
     return opciones;
   }, [data, mapaContactos]);
   
-  const opcionesVendedor = useMemo(() => {
-    if (!data || !data.fac_t || !Object.keys(mapaUsuarios).length) {
-      return [{ value: 'todos', label: 'Cargando vendedores...' }];
+  // Construcción del mapa de usuarios (id -> nombre)
+const mapaUsuarios = useMemo(() => {
+  if (!data || !data.usr_m) return {};
+  const map = {};
+  data.usr_m.forEach(usuario => {
+    map[usuario.id.toString()] = usuario.name;
+  });
+  return map;
+}, [data]);
+
+// Construcción de las opciones del selector de vendedores
+const opcionesVendedor = useMemo(() => {
+  if (!data || !data.fac_t || !Object.keys(mapaUsuarios).length) {
+    return [{ value: 'todos', label: 'Cargando vendedores...' }];
+  }
+
+  const vendedoresEnVentas = new Set();
+
+  data.fac_t.forEach(item => {
+    if (item.alt_usr !== undefined && item.alt_usr !== null) {
+      vendedoresEnVentas.add(item.alt_usr.toString()); // Fuerza ID como string
     }
-    
-    const vendedoresEnVentas = new Set();
-    data.fac_t.forEach(item => {
-      if (item.alt_usr !== undefined && item.alt_usr !== null) {
-        vendedoresEnVentas.add(item.alt_usr);
-      }
-    });
-    
-    const opciones = [{ value: 'todos', label: 'Todos los vendedores' }];
-    
-    Array.from(vendedoresEnVentas)
-      .sort((a, b) => {
-        const nombreA = mapaUsuarios[a] || `Vendedor ${a}`;
-        const nombreB = mapaUsuarios[b] || `Vendedor ${b}`;
-        return nombreA.localeCompare(nombreB);
-      })
-      .forEach(vendedorId => {
-        const nombreVendedor = mapaUsuarios[vendedorId] || `Vendedor ${vendedorId}`;
-        opciones.push({
-          value: vendedorId.toString(),
-          label: nombreVendedor
-        });
+  });
+
+  const opciones = [{ value: 'todos', label: 'Todos los vendedores' }];
+
+  Array.from(vendedoresEnVentas)
+    .sort((a, b) => {
+      const nombreA = mapaUsuarios[a] || `Vendedor ${a}`;
+      const nombreB = mapaUsuarios[b] || `Vendedor ${b}`;
+      return nombreA.localeCompare(nombreB);
+    })
+    .forEach(vendedorId => {
+      const nombreVendedor = mapaUsuarios[vendedorId] || `Vendedor ${vendedorId}`;
+      opciones.push({
+        value: vendedorId,
+        label: nombreVendedor
       });
-    
-      console.log('Opciones de vendedores:', opciones);
-    return opciones;
-  }, [data, mapaUsuarios]);
+    });
+
+  console.log('Opciones de vendedores:', opciones);
+  return opciones;
+}, [data, mapaUsuarios]);
   
   // Configuración de filtros
   const filterConfig = [
