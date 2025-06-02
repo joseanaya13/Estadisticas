@@ -32,8 +32,7 @@ const VentasResumen = ({
     
     analisis.duplicados.forEach(duplicado => {
       duplicados.push(duplicado);
-      // Usar el ID más pequeño como representativo
-      const idRepresentativo = duplicado.idRepresentativo;
+      // Usar el nombre consolidado para todos los IDs del grupo
       const nombreConsolidado = duplicado.nombre;
       
       // Consolidar todos los IDs del grupo al nombre del representativo
@@ -48,7 +47,7 @@ const VentasResumen = ({
     };
   }, [mapaUsuarios]);
 
-  // Calcular métricas de resumen con vendedores consolidados
+  // Calcular métricas básicas
   const metricas = useMemo(() => {
     if (!ventasData.length) {
       return {
@@ -63,6 +62,7 @@ const VentasResumen = ({
       };
     }
 
+    // MANTENER EL CÁLCULO ORIGINAL: suma de TODAS las facturas filtradas
     const totalVentas = ventasData.reduce((sum, venta) => sum + (venta.tot || 0), 0);
     const cantidadFacturas = ventasData.length;
     const promedioFactura = cantidadFacturas > 0 ? totalVentas / cantidadFacturas : 0;
@@ -73,14 +73,13 @@ const VentasResumen = ({
       if (venta.clt) clientesUnicos.add(venta.clt);
     });
 
-    // Vendedores activos (consolidados)
-    const vendedoresActivos = new Set();
+    // Vendedores con al menos 1 factura positiva (consolidados)
+    const vendedoresConVentasPositivas = new Set();
     ventasData.forEach(venta => {
-      if (venta.alt_usr !== undefined && venta.alt_usr !== null) {
-        // Usar nombre consolidado en lugar de ID
+      if (venta.alt_usr !== undefined && venta.alt_usr !== null && (venta.tot || 0) > 0) {
         const nombreVendedor = mapaUsuariosConsolidado[venta.alt_usr];
         if (nombreVendedor) {
-          vendedoresActivos.add(nombreVendedor);
+          vendedoresConVentasPositivas.add(nombreVendedor);
         }
       }
     });
@@ -94,7 +93,7 @@ const VentasResumen = ({
     });
 
     // Venta más alta y más baja
-    const montos = ventasData.map(v => v.tot || 0).filter(t => t > 0);
+    const montos = ventasData.map(v => v.tot || 0);
     const ventaMasAlta = montos.length > 0 ? Math.max(...montos) : 0;
     const ventaMasBaja = montos.length > 0 ? Math.min(...montos) : 0;
 
@@ -103,12 +102,12 @@ const VentasResumen = ({
       cantidadFacturas,
       promedioFactura,
       clientesUnicos: clientesUnicos.size,
-      vendedoresActivos: vendedoresActivos.size,
+      vendedoresActivos: vendedoresConVentasPositivas.size, // Solo vendedores con al menos 1 venta > 0
       formasPagoUsadas: formasPagoUsadas.size,
       ventaMasAlta,
       ventaMasBaja
     };
-  }, [ventasData]);
+  }, [ventasData, mapaUsuariosConsolidado]);
 
   // Top performers
   const topPerformers = useMemo(() => {
@@ -184,7 +183,7 @@ const VentasResumen = ({
           type="primary"
         />
         <DataCard 
-          title="Cantidad de Facturas" 
+          title="Facturas Totales" 
           value={metricas.cantidadFacturas} 
           format="number" 
           icon="file-invoice-dollar"
@@ -196,13 +195,6 @@ const VentasResumen = ({
           format="currency" 
           icon="calculator"
           type="primary"
-        />
-        <DataCard 
-          title="Vendedores Activos" 
-          value={metricas.vendedoresActivos} 
-          format="number" 
-          icon="user-tie"
-          type="secondary"
         />
       </div>
 
@@ -234,15 +226,7 @@ const VentasResumen = ({
             </span>
           </div>
         )}
-        {topPerformers.topFormaPago && (
-          <div className="stat-item">
-            <i className="fas fa-credit-card"></i>
-            <span>
-              Forma de pago principal: {topPerformers.topFormaPago.nombre} 
-              ({formatCurrency(topPerformers.topFormaPago.total)})
-            </span>
-          </div>
-        )}
+
       </div>
 
       {/* Alerta si hay filtros activos */}

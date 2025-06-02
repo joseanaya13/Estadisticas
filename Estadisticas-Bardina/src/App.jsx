@@ -135,16 +135,7 @@ function App() {
         {renderContent()}
       </main>
       <footer className="app-footer">
-        <p>© 2025 Estadísticas de Compra y Venta - Desarrollado para Consultoría Principado</p>
-        <p>
-          <small>
-            <i className="fas fa-database"></i> 
-            {ventasData && ` ${ventasData.fac_t?.length || 0} facturas`}
-            {comprasData && ` • ${comprasData.com_alb_g?.length || 0} albaranes`}
-            {contactosData && ` • ${contactosData.ent_m?.length || 0} contactos`}
-            {usuariosData && ` • ${usuariosData.usr_m?.length || 0} usuarios`}
-          </small>
-        </p>
+        <p>© 2025 Estadísticas de Compra y Venta - Desarrollado por Consultoría Principado</p>
       </footer>
     </div>
   );

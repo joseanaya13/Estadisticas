@@ -57,13 +57,12 @@ const VentasTablaVendedores = ({
     return Array.from(mesesSet).sort((a, b) => a - b);
   }, [ventasData]);
   
-  // Calcular datos de ventas por vendedor y mes (consolidados)
+  // Calcular datos de ventas por vendedor y mes (consolidados) - FILTRADOS POR AL MENOS 1 VENTA POSITIVA
   const datosVendedores = useMemo(() => {
     if (!ventasData.length) return [];
     
     // Agrupar por nombre de vendedor (consolidado)
     const ventasPorVendedorNombre = {};
-    const totalGeneral = ventasData.reduce((sum, venta) => sum + (venta.tot || 0), 0);
     
     ventasData.forEach(venta => {
       const vendedorId = venta.alt_usr;
@@ -76,7 +75,8 @@ const VentasTablaVendedores = ({
             idsOriginales: new Set(),
             ventasPorMes: {},
             totalGeneral: 0,
-            cantidadFacturas: 0
+            cantidadFacturas: 0,
+            tieneVentasPositivas: false
           };
         }
         
@@ -93,12 +93,24 @@ const VentasTablaVendedores = ({
         
         vendedorData.totalGeneral += (venta.tot || 0);
         vendedorData.cantidadFacturas += 1;
+        
+        // Marcar si tiene al menos 1 venta positiva
+        if ((venta.tot || 0) > 0) {
+          vendedorData.tieneVentasPositivas = true;
+        }
       }
     });
     
-    // Convertir a array y agregar información adicional
-    return Object.values(ventasPorVendedorNombre).map(vendedor => {
-      const porcentajeTotal = totalGeneral > 0 ? (vendedor.totalGeneral / totalGeneral) * 100 : 0;
+    // Filtrar solo vendedores que tienen al menos 1 venta positiva
+    const vendedoresValidos = Object.values(ventasPorVendedorNombre)
+      .filter(vendedor => vendedor.tieneVentasPositivas);
+    
+    // Calcular total SOLO de vendedores válidos para porcentajes correctos
+    const totalGeneralValido = vendedoresValidos.reduce((sum, vendedor) => sum + vendedor.totalGeneral, 0);
+    
+    // Convertir a array con porcentajes correctos
+    return vendedoresValidos.map(vendedor => {
+      const porcentajeTotal = totalGeneralValido > 0 ? (vendedor.totalGeneral / totalGeneralValido) * 100 : 0;
       const esConsolidado = vendedor.idsOriginales.size > 1;
       
       return {
@@ -112,26 +124,29 @@ const VentasTablaVendedores = ({
     });
   }, [ventasData, mapaUsuariosConsolidado]);
   
-  // Calcular totales por mes
+  // Calcular totales por mes (solo de vendedores con ventas > 0)
   const totalesPorMes = useMemo(() => {
     const totales = {};
     mesesPeriodo.forEach(mes => {
       totales[mes] = 0;
     });
     
-    ventasData.forEach(venta => {
-      if (venta.mes && totales.hasOwnProperty(venta.mes)) {
-        totales[venta.mes] += (venta.tot || 0);
-      }
+    // Solo sumar las ventas de vendedores que están incluidos en datosVendedores
+    datosVendedores.forEach(vendedor => {
+      mesesPeriodo.forEach(mes => {
+        if (vendedor.ventasPorMes[mes]) {
+          totales[mes] += vendedor.ventasPorMes[mes];
+        }
+      });
     });
     
     return totales;
-  }, [ventasData, mesesPeriodo]);
+  }, [datosVendedores, mesesPeriodo]);
   
-  // Calcular total general
+  // Calcular total general (solo de vendedores con ventas > 0)
   const totalGeneral = useMemo(() => {
-    return ventasData.reduce((sum, venta) => sum + (venta.tot || 0), 0);
-  }, [ventasData]);
+    return datosVendedores.reduce((sum, vendedor) => sum + vendedor.totalGeneral, 0);
+  }, [datosVendedores]);
   
   // Aplicar ordenamiento
   const datosOrdenados = useMemo(() => {
@@ -208,6 +223,15 @@ const VentasTablaVendedores = ({
     );
   }
 
+  if (datosVendedores.length === 0) {
+    return (
+      <div className="no-data">
+        <i className="fas fa-user-slash"></i>
+        <p>No hay vendedores con al menos 1 venta positiva para mostrar.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="ventas-tabla-vendedores">
       {/* Información sobre la tabla */}
@@ -220,12 +244,10 @@ const VentasTablaVendedores = ({
           <i className="fas fa-file-invoice-dollar"></i>
           <span>{ventasData.length} facturas</span>
         </div>
-        {duplicadosInfo.length > 0 && (
-          <div className="info-item warning">
-            <i className="fas fa-exclamation-triangle"></i>
-            <span>{duplicadosInfo.length} vendedores </span>
-          </div>
-        )}
+        <div className="info-item">
+          <i className="fas fa-users"></i>
+          <span>{datosVendedores.length} vendedores activos</span>
+        </div>
       </div>
 
       {/* Tabla de vendedores */}
@@ -351,14 +373,6 @@ const VentasTablaVendedores = ({
         </table>
       </div>
 
-      {/* Resumen adicional */}
-      <div className="tabla-resumen">
-        <i className="fas fa-info-circle"></i>
-        Promedio por vendedor: {formatCurrency(totalGeneral / datosOrdenados.length)}
-        {duplicadosInfo.length > 0 && (
-          <span> • {duplicadosInfo.length} vendedores fueron consolidados por tener nombres duplicados</span>
-        )}
-      </div>
     </div>
   );
 };
