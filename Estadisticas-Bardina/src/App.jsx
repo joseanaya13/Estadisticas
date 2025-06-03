@@ -1,143 +1,261 @@
-// App.jsx - Actualizado con servicio de usuarios/vendedores
-import React, { useState, useEffect } from 'react';
-import { Dashboard, EstadisticasVentas, EstadisticasCompras, LoadingSpinner, ErrorMessage } from './components';
-import { ventasService, comprasService, contactosService, usuariosService } from './services/api';
+// src/App.jsx - Versión completa con routing y store
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, NavLink, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+
+// Componentes y páginas
+import { ErrorBoundary, LoadingSpinner, ErrorMessage } from './components/common';
+import { 
+  Dashboard, 
+  EstadisticasVentas, 
+  EstadisticasCompras, 
+  VentasDetalladas,
+  SellOut,
+  Inventario
+} from './pages';
+
+// Hooks y stores
+import { useAppData, useNotifications } from './hooks';
+import useAppStore from './stores/useAppStore';
+
+// Configuración
+import { NAVIGATION, APP_CONFIG } from './config/app.config';
+
+// Estilos
 import './styles.css';
+import './styles/utils.css';
 
-function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [ventasData, setVentasData] = useState(null);
-  const [comprasData, setComprasData] = useState(null);
-  const [contactosData, setContactosData] = useState(null);
-  const [usuariosData, setUsuariosData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [loadingProgress, setLoadingProgress] = useState(0);
+function AppContent() {
+  const { data, loading, errors, isDataLoaded } = useAppData();
+  const { isLoading } = useAppStore();
+  const { showNotification } = useNotifications();
 
+  // Mostrar errores como notificaciones
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        setLoadingProgress(0);
-        
-        console.log('Iniciando carga de datos...');
-        
-        // Obtener datos en paralelo - incluir contactos y usuarios
-        setLoadingProgress(20);
-        const [ventasResponse, comprasResponse, contactosResponse, usuariosResponse] = await Promise.all([
-          ventasService.getFacturas(),
-          comprasService.getAlbaranes(),
-          contactosService.getContactos(),
-          usuariosService.getUsuarios()
-        ]);
-        
-        setLoadingProgress(80);
-        
-        console.log('Datos cargados:', {
-          ventas: ventasResponse.fac_t?.length || 0,
-          compras: comprasResponse.com_alb_g?.length || 0,
-          contactos: contactosResponse.ent_m?.length || 0,
-          usuarios: usuariosResponse.usr_m?.length || 0
-        });
-        
-        setVentasData(ventasResponse);
-        setComprasData(comprasResponse);
-        setContactosData(contactosResponse);
-        setUsuariosData(usuariosResponse);
-        
-        setLoadingProgress(100);
-      } catch (err) {
-        console.error('Error al obtener datos:', err);
-        setError(err.message || 'Error al cargar los datos');
-      } finally {
-        setTimeout(() => {
-          setLoading(false);
-          setLoadingProgress(0);
-        }, 500); // Pequeña pausa para mostrar el 100%
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  const handleRetry = () => {
-    setError(null);
-    // Recargar la página para reiniciar todo
-    window.location.reload();
-  };
-
-  const renderContent = () => {
-    if (loading) {
-      return (
-        <LoadingSpinner 
-          text="Cargando datos de estadísticas..." 
-          progress={loadingProgress}
-        />
-      );
+    if (errors.global) {
+      showNotification(`Error global: ${errors.global}`, 'error');
     }
-
-    if (error) {
-      return (
-        <ErrorMessage 
-          error={error}
-          retry={handleRetry}
-        />
-      );
+    if (errors.ventas) {
+      showNotification(`Error en ventas: ${errors.ventas}`, 'error');
     }
-
-    switch (activeTab) {
-      case 'dashboard':
-        return <Dashboard ventasData={ventasData} comprasData={comprasData} />;
-      case 'ventas':
-        return (
-          <EstadisticasVentas 
-            data={ventasData} 
-            contactos={contactosData} 
-            usuarios={usuariosData}
-          />
-        );
-      case 'compras':
-        return <EstadisticasCompras data={comprasData} />;
-      default:
-        return <Dashboard ventasData={ventasData} comprasData={comprasData} />;
+    if (errors.compras) {
+      showNotification(`Error en compras: ${errors.compras}`, 'error');
     }
-  };
+  }, [errors, showNotification]);
 
-  return (
+  // Componente de layout
+  const Layout = ({ children }) => (
     <div className="app-container">
       <header className="app-header">
-        <h1>
-          <i className="fas fa-chart-line"></i> Estadísticas de Compra y Venta
-        </h1>
+        <div className="header-content">
+          <h1>
+            <i className="fas fa-chart-line"></i> 
+            {APP_CONFIG.name}
+          </h1>
+          <p className="app-subtitle">{APP_CONFIG.description}</p>
+        </div>
+        
         <nav className="app-nav">
-          <button 
-            className={`nav-button ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('dashboard')}
-          >
-            <i className="fas fa-tachometer-alt"></i> Dashboard
-          </button>
-          <button 
-            className={`nav-button ${activeTab === 'ventas' ? 'active' : ''}`}
-            onClick={() => setActiveTab('ventas')}
-          >
-            <i className="fas fa-shopping-cart"></i> Ventas
-          </button>
-          <button 
-            className={`nav-button ${activeTab === 'compras' ? 'active' : ''}`}
-            onClick={() => setActiveTab('compras')}
-          >
-            <i className="fas fa-truck"></i> Compras
-          </button>
+          {NAVIGATION
+            .filter(item => item.enabled)
+            .sort((a, b) => a.order - b.order)
+            .map((item) => (
+              <NavLink
+                key={item.id}
+                to={item.path}
+                className={({ isActive }) => 
+                  `nav-button ${isActive ? 'active' : ''}`
+                }
+              >
+                <i className={`fas fa-${item.icon}`}></i>
+                {item.label}
+                {item.badge && (
+                  <span className="nav-button-badge">{item.badge}</span>
+                )}
+              </NavLink>
+            ))}
         </nav>
       </header>
+
       <main className="app-content">
-        {renderContent()}
+        {children}
       </main>
+
       <footer className="app-footer">
-        <p>© 2025 Estadísticas de Compra y Venta - Desarrollado por Consultoría Principado</p>
+        <div className="footer-content">
+          <div className="footer-info">
+            <p>© 2025 {APP_CONFIG.name}</p>
+            <div className="footer-details">
+              <small>
+                {APP_CONFIG.author} | v{APP_CONFIG.version}
+                {APP_CONFIG.features.debugging && (
+                  <span className="badge badge-warning ml-2">DEV</span>
+                )}
+              </small>
+            </div>
+          </div>
+          <div className="footer-actions">
+            <button 
+              className="footer-button" 
+              onClick={() => window.location.reload()}
+              title="Actualizar datos"
+            >
+              <i className="fas fa-sync"></i>
+            </button>
+            <button 
+              className="footer-button"
+              onClick={() => {
+                const debugInfo = useAppStore.getState().getDebugInfo();
+                console.log('🔍 Debug Info:', debugInfo);
+                showNotification('Info de debug en consola', 'info');
+              }}
+              title="Info de debug"
+            >
+              <i className="fas fa-bug"></i>
+            </button>
+          </div>
+        </div>
       </footer>
     </div>
+  );
+
+  // Loading global
+  if (loading.global || isLoading()) {
+    return (
+      <Layout>
+        <LoadingSpinner 
+          text="Cargando sistema de estadísticas..." 
+          progress={data.ventas ? 75 : data.contactos ? 50 : 25}
+        />
+      </Layout>
+    );
+  }
+
+  // Error global crítico
+  if (errors.global && !isDataLoaded) {
+    return (
+      <Layout>
+        <ErrorMessage 
+          error={`Error crítico: ${errors.global}`}
+          retry={() => window.location.reload()}
+        />
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <Routes>
+        {/* Ruta por defecto */}
+        <Route path="/" element={<Navigate to={APP_CONFIG.routes.default} replace />} />
+        
+        {/* Rutas principales */}
+        <Route 
+          path="/dashboard" 
+          element={
+            <Dashboard 
+              ventasData={data.ventas} 
+              comprasData={data.compras} 
+            />
+          } 
+        />
+        
+        <Route 
+          path="/ventas" 
+          element={
+            <EstadisticasVentas 
+              data={data.ventas} 
+              contactos={data.contactos} 
+              usuarios={data.usuarios}
+            />
+          } 
+        />
+        
+        <Route 
+          path="/compras" 
+          element={
+            <EstadisticasCompras 
+              data={data.compras} 
+            />
+          } 
+        />
+
+        {/* Nuevas rutas */}
+        <Route 
+          path="/ventas-detalladas" 
+          element={
+            <VentasDetalladas 
+              data={data.ventas} 
+              contactos={data.contactos} 
+              usuarios={data.usuarios}
+            />
+          } 
+        />
+        
+        <Route 
+          path="/sellout" 
+          element={
+            <SellOut 
+              ventasData={data.ventas}
+              comprasData={data.compras}
+            />
+          } 
+        />
+        
+        <Route 
+          path="/inventario" 
+          element={<Inventario />} 
+        />
+
+        {/* Ruta 404 */}
+        <Route path="*" element={
+          <div className="no-data-message">
+            <i className="fas fa-exclamation-triangle"></i>
+            <h3>Página no encontrada</h3>
+            <p>La página que buscas no existe.</p>
+            <NavLink to="/dashboard" className="btn btn-primary">
+              <i className="fas fa-home"></i>
+              Ir al Dashboard
+            </NavLink>
+          </div>
+        } />
+      </Routes>
+    </Layout>
+  );
+}
+
+function App() {
+  return (
+    <ErrorBoundary>
+      <Router>
+        <AppContent />
+        {/* Toaster para notificaciones */}
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#fff',
+              color: '#333',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              borderRadius: '8px'
+            },
+            success: {
+              iconTheme: {
+                primary: '#4caf50',
+                secondary: '#fff'
+              }
+            },
+            error: {
+              iconTheme: {
+                primary: '#f44336',
+                secondary: '#fff'
+              }
+            }
+          }}
+        />
+      </Router>
+    </ErrorBoundary>
   );
 }
 
