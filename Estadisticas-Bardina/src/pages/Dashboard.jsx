@@ -1,8 +1,8 @@
-// src/pages/Dashboard.jsx - Versión actualizada con nueva estructura
+// src/pages/Dashboard.jsx - Versión corregida
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell 
+import {
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
 
 // Componentes actualizados con nuevas rutas
@@ -23,12 +23,12 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+
   // Usar el nuevo sistema de filtros
   const { filters, updateFilter, resetFilters, hasActiveFilters } = useFilters();
   const { showNotification } = useNotifications();
   const { nameMaps } = useAppStore();
-  
+
   // Debug: Verificar tipos de datos al cargar
   useEffect(() => {
     if (APP_CONFIG.features.debugging) {
@@ -50,29 +50,29 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
       }
     }
   }, [initialVentasData, initialComprasData]);
-  
+
   // Obtener años únicos de los datos usando el nuevo sistema
   const añosDisponibles = useMemo(() => {
     if (!initialVentasData || !initialComprasData) return [];
-    
+
     const años = new Set();
-    
+
     // Extraer años de las facturas
     initialVentasData.fac_t?.forEach(item => {
       if (item.eje) años.add(item.eje);
     });
-    
+
     // Extraer años de los albaranes
     initialComprasData.com_alb_g?.forEach(item => {
       if (item.eje) años.add(item.eje);
     });
-    
+
     return Array.from(años).sort((a, b) => b - a).map(año => ({
       value: año.toString(),
       label: año.toString()
     }));
   }, [initialVentasData, initialComprasData]);
-  
+
   // Configuración de filtros usando el nuevo sistema
   const filterConfig = [
     {
@@ -119,56 +119,182 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
       value: filters.dateRange.to || ''
     }
   ];
-  
-  // Aplicar filtros usando el servicio de dashboard
-  const applyFilters = async (ventasData, comprasData) => {
-    if (!ventasData || !comprasData) return null;
-    
-    try {
-      setLoading(true);
-      
-      // Usar el servicio de dashboard para procesar datos con filtros
-      const filteredData = await dashboardService.procesarDatosExistentes(
-        ventasData, 
-        comprasData, 
-        {
-          año: filters.selectedYear !== 'todos' ? filters.selectedYear : null,
-          mes: filters.selectedMonth !== 'todos' ? filters.selectedMonth : null,
-          fechaDesde: filters.dateRange.from,
-          fechaHasta: filters.dateRange.to
-        }
-      );
-      
-      return filteredData;
-    } catch (err) {
-      console.error("Error al aplicar filtros en dashboard:", err);
-      throw err;
-    } finally {
-      setLoading(false);
+
+  // Procesar datos del dashboard manualmente
+  const processDashboardData = (ventasFiltradas, comprasFiltradas) => {
+    // Calcular totales
+    const ventasTotales = ventasFiltradas.reduce((sum, v) => sum + (v.tot || 0), 0);
+    const comprasTotales = comprasFiltradas.reduce((sum, c) => sum + (c.tot_alb || 0), 0);
+    const balance = ventasTotales - comprasTotales;
+    const margenBeneficio = ventasTotales > 0 ? ((balance / ventasTotales) * 100) : 0;
+
+    // Agrupar por mes
+    const datosPorMes = {};
+
+    // Procesar ventas
+    ventasFiltradas.forEach(venta => {
+      const claveMes = `${venta.eje}-${String(venta.mes).padStart(2, '0')}`;
+      if (!datosPorMes[claveMes]) {
+        datosPorMes[claveMes] = {
+          periodo: claveMes,
+          ventas: 0,
+          compras: 0,
+          balance: 0,
+          mes: venta.mes,
+          año: venta.eje
+        };
+      }
+      datosPorMes[claveMes].ventas += (venta.tot || 0);
+    });
+
+    // Procesar compras
+    comprasFiltradas.forEach(compra => {
+      const claveMes = `${compra.eje}-${String(compra.mes).padStart(2, '0')}`;
+      if (!datosPorMes[claveMes]) {
+        datosPorMes[claveMes] = {
+          periodo: claveMes,
+          ventas: 0,
+          compras: 0,
+          balance: 0,
+          mes: compra.mes,
+          año: compra.eje
+        };
+      }
+      datosPorMes[claveMes].compras += (compra.tot_alb || 0);
+    });
+
+    // Calcular balance y formatear
+    const datosTemporales = Object.values(datosPorMes)
+      .map(periodo => ({
+        ...periodo,
+        balance: periodo.ventas - periodo.compras,
+        nombrePeriodo: obtenerNombreMes(periodo.mes) + ' ' + periodo.año
+      }))
+      .sort((a, b) => a.periodo.localeCompare(b.periodo));
+
+    // Calcular tendencias
+    let tendencias = {
+      tendenciaVentas: 0,
+      tendenciaCompras: 0,
+      tendenciaBalance: 0,
+      variacionVentas: 0,
+      variacionCompras: 0,
+      variacionBalance: 0
+    };
+
+    if (datosTemporales.length >= 2) {
+      const ultimo = datosTemporales[datosTemporales.length - 1];
+      const penultimo = datosTemporales[datosTemporales.length - 2];
+
+      tendencias.variacionVentas = penultimo.ventas > 0 ?
+        ((ultimo.ventas - penultimo.ventas) / penultimo.ventas) * 100 : 0;
+      tendencias.variacionCompras = penultimo.compras > 0 ?
+        ((ultimo.compras - penultimo.compras) / penultimo.compras) * 100 : 0;
+      tendencias.variacionBalance = penultimo.balance !== 0 ?
+        ((ultimo.balance - penultimo.balance) / Math.abs(penultimo.balance)) * 100 : 0;
     }
+
+    // Generar alertas
+    const alertas = [];
+
+    if (balance < 0) {
+      alertas.push({
+        tipo: 'warning',
+        titulo: 'Balance Negativo',
+        mensaje: `Las compras superan a las ventas en ${formatCurrency(Math.abs(balance))}`
+      });
+    }
+
+    if (margenBeneficio < 10 && margenBeneficio > 0) {
+      alertas.push({
+        tipo: 'warning',
+        titulo: 'Margen de Beneficio Bajo',
+        mensaje: `El margen de beneficio es solo del ${margenBeneficio.toFixed(1)}%`
+      });
+    }
+
+    if (tendencias.variacionVentas < -10) {
+      alertas.push({
+        tipo: 'error',
+        titulo: 'Caída en Ventas',
+        mensaje: `Las ventas han disminuido un ${Math.abs(tendencias.variacionVentas).toFixed(1)}%`
+      });
+    }
+
+    return {
+      ventasTotales,
+      comprasTotales,
+      balance,
+      margenBeneficio,
+      totalFacturas: ventasFiltradas.length,
+      totalAlbaranes: comprasFiltradas.length,
+      promedioFactura: ventasFiltradas.length > 0 ? ventasTotales / ventasFiltradas.length : 0,
+      promedioAlbaran: comprasFiltradas.length > 0 ? comprasTotales / comprasFiltradas.length : 0,
+      datosTemporales,
+      tendencias,
+      alertas
+    };
   };
-  
+
   useEffect(() => {
     const loadDashboardData = async () => {
       if (!initialVentasData || !initialComprasData) return;
-      
+
       try {
         setLoading(true);
-        
+
+        // Filtrar datos localmente
+        let ventasFiltradas = [...initialVentasData.fac_t];
+        let comprasFiltradas = [...initialComprasData.com_alb_g];
+
+        // Aplicar filtros
+        if (filters.selectedYear !== 'todos') {
+          const año = parseInt(filters.selectedYear);
+          ventasFiltradas = ventasFiltradas.filter(item => item.eje === año);
+          comprasFiltradas = comprasFiltradas.filter(item => item.eje === año);
+        }
+
+        if (filters.selectedMonth !== 'todos') {
+          const mes = parseInt(filters.selectedMonth);
+          ventasFiltradas = ventasFiltradas.filter(item => item.mes === mes);
+          comprasFiltradas = comprasFiltradas.filter(item => item.mes === mes);
+        }
+
+        if (filters.dateRange.from) {
+          const fechaDesde = new Date(filters.dateRange.from);
+          fechaDesde.setHours(0, 0, 0, 0);
+          ventasFiltradas = ventasFiltradas.filter(item => {
+            const fecha = new Date(item.fch);
+            return fecha >= fechaDesde;
+          });
+          comprasFiltradas = comprasFiltradas.filter(item => {
+            const fecha = new Date(item.fch);
+            return fecha >= fechaDesde;
+          });
+        }
+
+        if (filters.dateRange.to) {
+          const fechaHasta = new Date(filters.dateRange.to);
+          fechaHasta.setHours(23, 59, 59, 999);
+          ventasFiltradas = ventasFiltradas.filter(item => {
+            const fecha = new Date(item.fch);
+            return fecha <= fechaHasta;
+          });
+          comprasFiltradas = comprasFiltradas.filter(item => {
+            const fecha = new Date(item.fch);
+            return fecha <= fechaHasta;
+          });
+        }
+
+        // Procesar datos
+        const processedData = processDashboardData(ventasFiltradas, comprasFiltradas);
+
         if (APP_CONFIG.features.debugging) {
-          console.log('🔍 Dashboard - Filtros actuales:', filters);
+          console.log('🔍 Dashboard - Datos procesados:', processedData);
         }
-        
-        // Usar el servicio de dashboard mejorado
-        const processedData = await applyFilters(initialVentasData, initialComprasData);
-        
-        if (processedData) {
-          setDashboardData(processedData);
-          
-          if (APP_CONFIG.features.debugging) {
-            console.log('🔍 Dashboard - Datos procesados:', processedData);
-          }
-        }
+
+        setDashboardData(processedData);
+
       } catch (err) {
         console.error("❌ Error al procesar datos del dashboard:", err);
         setError(err.message || "Error al procesar los datos");
@@ -177,34 +303,34 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
         setLoading(false);
       }
     };
-    
+
     loadDashboardData();
   }, [initialVentasData, initialComprasData, filters]);
-  
+
   // Datos para gráfico de pie usando las nuevas constantes
   const datosPie = useMemo(() => {
     if (!dashboardData) return [];
-    
+
     return [
-      { 
-        name: 'Ventas', 
+      {
+        name: 'Ventas',
         value: dashboardData.ventasTotales,
         color: COLORS[0]
       },
-      { 
-        name: 'Compras', 
+      {
+        name: 'Compras',
         value: dashboardData.comprasTotales,
         color: COLORS[1]
       }
     ];
   }, [dashboardData]);
-  
+
   // Manejar cambios en los filtros con el nuevo sistema
   const handleFilterChange = (id, value) => {
     if (APP_CONFIG.features.debugging) {
       console.log(`🔧 Dashboard - Cambiando filtro ${id} a:`, value, `(tipo: ${typeof value})`);
     }
-    
+
     // Manejar filtros anidados como dateRange.from
     if (id.includes('.')) {
       const [parent, child] = id.split('.');
@@ -216,22 +342,22 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
       updateFilter(id, value);
     }
   };
-  
+
   // Resetear filtros con notificación
   const handleResetFilters = () => {
     resetFilters();
     showNotification('Filtros reiniciados', 'info');
   };
-  
+
   // Estados de carga y error mejorados
   if (loading) {
     return <LoadingSpinner text="Procesando datos del dashboard..." />;
   }
-  
+
   if (error) {
     return (
-      <ErrorMessage 
-        error={error} 
+      <ErrorMessage
+        error={error}
         retry={() => {
           setError(null);
           window.location.reload();
@@ -239,7 +365,7 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
       />
     );
   }
-  
+
   if (!dashboardData) {
     return <LoadingSpinner text="Cargando dashboard..." />;
   }
@@ -247,12 +373,12 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
   return (
     <div className="dashboard">
       {/* Filtros con el nuevo componente */}
-      <FilterBar 
-        filters={filterConfig} 
-        onChange={handleFilterChange} 
+      <FilterBar
+        filters={filterConfig}
+        onChange={handleFilterChange}
         onReset={handleResetFilters}
       />
-      
+
       {/* Indicador de filtros activos */}
       {hasActiveFilters && (
         <div className="filtros-activos-info">
@@ -260,32 +386,32 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
           <span>Filtros aplicados - Los datos pueden no representar la totalidad</span>
         </div>
       )}
-      
+
       {/* Tarjetas de resumen */}
       <div className="summary-cards">
-        <DataCard 
-          title="Total Ventas" 
-          value={dashboardData.ventasTotales} 
-          format="currency" 
+        <DataCard
+          title="Total Ventas"
+          value={dashboardData.ventasTotales}
+          format="currency"
           icon="shopping-cart"
           type="primary"
         />
-        <DataCard 
-          title="Total Compras" 
-          value={dashboardData.comprasTotales} 
-          format="currency" 
+        <DataCard
+          title="Total Compras"
+          value={dashboardData.comprasTotales}
+          format="currency"
           icon="truck"
           type="secondary"
         />
-        <DataCard 
-          title="Balance" 
-          value={dashboardData.balance} 
-          format="currency" 
+        <DataCard
+          title="Balance"
+          value={dashboardData.balance}
+          format="currency"
           icon="balance-scale"
           type={dashboardData.balance >= 0 ? "positive" : "negative"}
         />
       </div>
-      
+
       {/* Información estadística */}
       <div className="stats-info">
         <div className="stat-item">
@@ -296,16 +422,23 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
           <i className="fas fa-file-alt"></i>
           <span>Total Albaranes: {dashboardData.totalAlbaranes}</span>
         </div>
-        
+        <div className="stat-item">
+          <i className="fas fa-percentage"></i>
+          <span>Margen: {dashboardData.margenBeneficio.toFixed(1)}%</span>
+        </div>
+        <div className="stat-item">
+          <i className="fas fa-calculator"></i>
+          <span>Promedio Factura: {formatCurrency(dashboardData.promedioFactura)}</span>
+        </div>
       </div>
 
       {/* Contenedor de gráficos */}
       <div className="charts-container">
         <ChartContainer title="Ventas vs Compras por Mes" height={APP_CONFIG.ui.charts.defaultHeight}>
           <ResponsiveContainer width="100%" height={APP_CONFIG.ui.charts.defaultHeight}>
-            <BarChart data={dashboardData.datosPorMes}>
+            <BarChart data={dashboardData.datosTemporales || []}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="nombreMes" />
+              <XAxis dataKey="nombrePeriodo" />
               <YAxis />
               <Tooltip formatter={(value) => formatCurrency(value)} />
               <Legend />
@@ -317,16 +450,16 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
 
         <ChartContainer title="Balance Mensual" height={APP_CONFIG.ui.charts.defaultHeight}>
           <ResponsiveContainer width="100%" height={APP_CONFIG.ui.charts.defaultHeight}>
-            <LineChart data={dashboardData.datosPorMes}>
+            <LineChart data={dashboardData.datosTemporales || []}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="nombreMes" />
+              <XAxis dataKey="nombrePeriodo" />
               <YAxis />
               <Tooltip formatter={(value) => formatCurrency(value)} />
               <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="balance" 
-                stroke={COLORS[4]} 
+              <Line
+                type="monotone"
+                dataKey="balance"
+                stroke={COLORS[4]}
                 activeDot={{ r: 8 }}
                 name="Balance"
                 strokeWidth={3}
