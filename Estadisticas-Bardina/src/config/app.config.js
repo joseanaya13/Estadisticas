@@ -148,7 +148,6 @@ export const NAVIGATION = [
     icon: 'chart-line',
     order: 3,
     enabled: true,
-    badge: 'NUEVO'
   },
   {
     id: 'compras',
