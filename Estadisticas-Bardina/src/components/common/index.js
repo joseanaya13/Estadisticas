@@ -1,4 +1,4 @@
-// src/components/common/index.js
+// src/components/common/index.js - ACTUALIZADO
 export { default as ChartContainer } from './ChartContainer';
 export { default as DataCard } from './DataCard';
 export { default as ErrorMessage } from './ErrorMessage';
@@ -6,6 +6,7 @@ export { default as FilterBar } from './FilterBar';
 export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as ErrorBoundary } from './ErrorBoundary';
 export { default as ExportButton } from './ExportButton';
+export { default as SidebarNavigation } from './SidebarNavigation'; // 🆕 NUEVO
 
 // 🆕 Componentes por implementar
 // export { default as DateRangePicker } from './DateRangePicker';
