@@ -4,10 +4,9 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell 
 } from 'recharts';
-// Imports actualizados (DESPUÉS)
 import { ChartContainer, DataCard, LoadingSpinner, ErrorMessage, FilterBar } from '../components/common';
 import { formatCurrency, obtenerNombreMes } from '../utils/formatters';
-import { dashboardService } from '../services';
+import { dashboardService } from '../services/core/dashboardService';
 import { useNotifications } from '../hooks';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];

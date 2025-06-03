@@ -1,6 +1,5 @@
 // pages/EstadisticasVentas.jsx - Corregido y actualizado
 import React, { useState, useEffect, useMemo } from "react";
-// Imports actualizados (DESPUÉS)
 import { LoadingSpinner, ErrorMessage, FilterBar } from "../components/common";
 import { VentasResumen, VentasGraficos, VentasTablaVendedores } from "../components/ventas";
 import {
@@ -13,7 +12,7 @@ import {
   contactosService,
   usuariosService,
   formasPagoService,
-} from "../services";
+} from "../services/maestros";
 import { analizarDuplicados } from "../utils/usuariosUtils";
 
 const EstadisticasVentas = ({ data, contactos, usuarios }) => {

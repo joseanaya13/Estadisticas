@@ -4,7 +4,6 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell 
 } from 'recharts';
-// Imports actualizados (DESPUÉS)
 import { ChartContainer, DataCard, LoadingSpinner, ErrorMessage, FilterBar } from '../components/common';
 import { formatCurrency, obtenerNombreMes } from '../utils/formatters';
 

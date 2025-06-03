@@ -1,7 +1,7 @@
 // src/services/index.js - VERSIÓN LIMPIA SIN REDUNDANCIAS
 
 // Cliente API base
-export { apiClient, apiUtils } from './apiClient';
+export { apiClient, apiUtils } from './core/apiClient';
 
 // Servicios por módulos (barrel exports)
 export * from './core';

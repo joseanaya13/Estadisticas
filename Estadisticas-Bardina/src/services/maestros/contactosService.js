@@ -1,5 +1,5 @@
 // services/contactosService.js - Servicio específico para gestión de contactos/clientes
-import { apiClient, apiUtils } from '../apiClient.js';
+import { apiClient, apiUtils } from '../core/apiClient.js';
 
 /**
  * Servicio de contactos - Gestiona todas las operaciones relacionadas con entidades/clientes
