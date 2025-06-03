@@ -1,5 +1,5 @@
 // services/empresasService.js - Servicio específico para gestión de empresas y divisiones
-import { apiClient, apiUtils } from './apiClient.js';
+import { apiClient, apiUtils } from '../apiClient.js';
 
 /**
  * Servicio de empresas - Gestiona todas las operaciones relacionadas con empresas y divisiones

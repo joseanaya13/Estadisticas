@@ -1,20 +1,12 @@
-// src/services/index.js - BARREL EXPORT PRINCIPAL
+// src/services/index.js - VERSIÓN LIMPIA SIN REDUNDANCIAS
+
 // Cliente API base
 export { apiClient, apiUtils } from './apiClient';
 
-// Servicios principales
+// Servicios por módulos (barrel exports)
 export * from './core';
 export * from './maestros';
 
-// 🆕 Nuevos servicios (descomentar cuando estén listos)
+// 🆕 Nuevos módulos (descomentar cuando estén listos)
 // export * from './transaccionales';
 // export * from './analytics';
-
-// Mantener compatibilidad con imports actuales
-export { ventasService, comprasService, dashboardService } from './core';
-export { 
-  contactosService, 
-  usuariosService, 
-  empresasService, 
-  formasPagoService 
-} from './maestros';

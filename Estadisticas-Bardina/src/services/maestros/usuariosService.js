@@ -1,5 +1,5 @@
 // services/usuariosService.js - Servicio específico para gestión de usuarios/vendedores
-import { apiClient, apiUtils } from './apiClient.js';
+import { apiClient, apiUtils } from '../apiClient.js';
 
 /**
  * Servicio de usuarios - Gestiona todas las operaciones relacionadas con usuarios/vendedores

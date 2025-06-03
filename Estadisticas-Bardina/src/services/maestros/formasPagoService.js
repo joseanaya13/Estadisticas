@@ -1,5 +1,5 @@
 // services/formasPagoService.js - Servicio específico para gestión de formas de pago
-import { apiClient, apiUtils } from './apiClient.js';
+import { apiClient, apiUtils } from '../apiClient.js';
 
 /**
  * Servicio de formas de pago - Gestiona todas las operaciones relacionadas con métodos de pago
