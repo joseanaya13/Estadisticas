@@ -1,11 +1,8 @@
 // pages/EstadisticasVentas.jsx - Corregido y actualizado
 import React, { useState, useEffect, useMemo } from "react";
-import LoadingSpinner from "../components/LoadingSpinner";
-import ErrorMessage from "../components/ErrorMessage";
-import FilterBar from "../components/FilterBar";
-import VentasResumen from "../components/ventas/VentasResumen";
-import VentasGraficos from "../components/ventas/VentasGraficos";
-import VentasTablaVendedores from "../components/ventas/VentasTablaVendedores";
+// Imports actualizados (DESPUÉS)
+import { LoadingSpinner, ErrorMessage, FilterBar } from "../components/common";
+import { VentasResumen, VentasGraficos, VentasTablaVendedores } from "../components/ventas";
 import {
   formatDate,
   obtenerNombreMes,
@@ -16,7 +13,7 @@ import {
   contactosService,
   usuariosService,
   formasPagoService,
-} from "../services/api";
+} from "../services";
 import { analizarDuplicados } from "../utils/usuariosUtils";
 
 const EstadisticasVentas = ({ data, contactos, usuarios }) => {

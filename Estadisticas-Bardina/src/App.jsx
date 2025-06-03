@@ -1,7 +1,6 @@
 // src/App.jsx - Versión completa con routing y store
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink, Navigate } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
 
 // Componentes y páginas
 import { ErrorBoundary, LoadingSpinner, ErrorMessage } from './components/common';
@@ -14,7 +13,7 @@ import {
   Inventario
 } from './pages';
 
-// Hooks y stores
+// Hooks
 import { useAppData, useNotifications } from './hooks';
 import useAppStore from './stores/useAppStore';
 
@@ -229,31 +228,6 @@ function App() {
     <ErrorBoundary>
       <Router>
         <AppContent />
-        {/* Toaster para notificaciones */}
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#fff',
-              color: '#333',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-              borderRadius: '8px'
-            },
-            success: {
-              iconTheme: {
-                primary: '#4caf50',
-                secondary: '#fff'
-              }
-            },
-            error: {
-              iconTheme: {
-                primary: '#f44336',
-                secondary: '#fff'
-              }
-            }
-          }}
-        />
       </Router>
     </ErrorBoundary>
   );

@@ -5,7 +5,7 @@ import {
   Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, 
   AreaChart, Area, ComposedChart 
 } from 'recharts';
-import ChartContainer from '../ChartContainer';
+import { ChartContainer } from '../common';
 import { formatCurrency, obtenerNombreMes, parseFechaRobusta, formatDate, roundToPrecision } from '../../utils/formatters';
 import { analizarDuplicados } from '../../utils/usuariosUtils';
 

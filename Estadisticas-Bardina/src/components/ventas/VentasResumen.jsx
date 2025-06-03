@@ -1,6 +1,6 @@
 // components/ventas/VentasResumen.jsx
 import React, { useMemo } from 'react';
-import DataCard from '../DataCard';
+import { DataCard } from '../common';
 import { formatCurrency, formatPercentage } from '../../utils/formatters';
 import { analizarDuplicados } from '../../utils/usuariosUtils';
 

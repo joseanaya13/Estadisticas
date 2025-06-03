@@ -1,6 +1,6 @@
 // components/DataCard.jsx
 import React from 'react';
-import { formatCurrency } from '../utils/formatters';
+import { formatCurrency } from '../../utils/formatters';
 
 const DataCard = ({ title, value, type = 'default', format = 'text', icon = null }) => {
   const renderValue = () => {
