@@ -1,4 +1,4 @@
-// src/pages/Dashboard.jsx - Versión Corregida con Filtros Funcionales
+// src/pages/Dashboard.jsx - Versión con filtros corregidos
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -7,10 +7,9 @@ import {
 
 // Componentes actualizados con nuevas rutas
 import { ChartContainer, DataCard, LoadingSpinner, ErrorMessage, FilterBar } from '../components/common';
-import { formatCurrency, obtenerNombreMes, parseFechaRobusta, formatDate } from '../utils/formatters';
+import { formatCurrency, obtenerNombreMes, parseFechaRobusta, formatDate, normalizeNumber, normalizeYear, normalizeMonth } from '../utils/formatters';
 
 // Servicios y hooks actualizados
-import { dashboardService } from '../services/core/dashboardService';
 import { useNotifications, useFilters } from '../hooks';
 import useAppStore from '../stores/useAppStore';
 
@@ -52,32 +51,61 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
     }
   }, [initialVentasData, initialComprasData]);
 
-  // Función para validar datos
-  const validarDatos = (datos) => {
-    if (!datos) return false;
-    if (typeof datos !== 'object') return false;
-    return true;
+  // Función mejorada para validar y normalizar datos
+  const validarYNormalizarItem = (item) => {
+    if (!item || typeof item !== 'object') return null;
+
+    // Normalizar campos críticos
+    const itemNormalizado = {
+      ...item,
+      // Normalizar año (eje)
+      eje: item.eje !== undefined && item.eje !== null ?
+        normalizeYear(item.eje) : null,
+      // Normalizar mes
+      mes: item.mes !== undefined && item.mes !== null ?
+        normalizeMonth(item.mes) : null,
+      // Normalizar totales
+      tot: normalizeNumber(item.tot, 0),
+      tot_alb: normalizeNumber(item.tot_alb, 0)
+    };
+
+    // Si no tenemos año o mes válidos, intentar extraer de la fecha
+    if ((!itemNormalizado.eje || !itemNormalizado.mes) && item.fch) {
+      const fecha = parseFechaRobusta(item.fch);
+      if (fecha) {
+        if (!itemNormalizado.eje || itemNormalizado.eje < 2000) {
+          itemNormalizado.eje = fecha.getFullYear();
+        }
+        if (!itemNormalizado.mes || itemNormalizado.mes < 1 || itemNormalizado.mes > 12) {
+          itemNormalizado.mes = fecha.getMonth() + 1;
+        }
+      }
+    }
+
+    // Validar que tenemos los datos mínimos necesarios
+    if (!itemNormalizado.eje || itemNormalizado.eje < 2000 || itemNormalizado.eje > 2050) {
+      console.warn('❌ Item sin año válido:', item);
+      return null;
+    }
+
+    if (!itemNormalizado.mes || itemNormalizado.mes < 1 || itemNormalizado.mes > 12) {
+      console.warn('❌ Item sin mes válido:', item);
+      return null;
+    }
+
+    return itemNormalizado;
   };
 
   // Función para obtener años disponibles con validación robusta
   const añosDisponibles = useMemo(() => {
     const años = new Set();
-    
+
     // Procesar ventas
     if (initialVentasData?.fac_t && Array.isArray(initialVentasData.fac_t)) {
       initialVentasData.fac_t.forEach(item => {
-        if (item && item.eje && item.eje > 0) {
-          años.add(item.eje);
-        }
-        // También intentar extraer año de la fecha si eje no es válido
-        if (item && item.fch && (!item.eje || item.eje <= 0)) {
-          const fecha = parseFechaRobusta(item.fch);
-          if (fecha) {
-            const año = fecha.getFullYear();
-            if (año >= 2020 && año <= 2030) { // Rango razonable
-              años.add(año);
-            }
-          }
+        const itemNormalizado = validarYNormalizarItem(item);
+        if (itemNormalizado?.eje) {
+          años.add(itemNormalizado.eje);
         }
       });
     }
@@ -85,18 +113,9 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
     // Procesar compras
     if (initialComprasData?.com_alb_g && Array.isArray(initialComprasData.com_alb_g)) {
       initialComprasData.com_alb_g.forEach(item => {
-        if (item && item.eje && item.eje > 0) {
-          años.add(item.eje);
-        }
-        // También intentar extraer año de la fecha si eje no es válido
-        if (item && item.fch && (!item.eje || item.eje <= 0)) {
-          const fecha = parseFechaRobusta(item.fch);
-          if (fecha) {
-            const año = fecha.getFullYear();
-            if (año >= 2020 && año <= 2030) { // Rango razonable
-              años.add(año);
-            }
-          }
+        const itemNormalizado = validarYNormalizarItem(item);
+        if (itemNormalizado?.eje) {
+          años.add(itemNormalizado.eje);
         }
       });
     }
@@ -107,7 +126,7 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
     }
 
     const añosArray = Array.from(años).sort((a, b) => b - a);
-    
+
     if (APP_CONFIG.features.debugging) {
       console.log('🔍 Dashboard - Años disponibles:', añosArray);
     }
@@ -125,18 +144,9 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
     // Procesar ventas
     if (initialVentasData?.fac_t && Array.isArray(initialVentasData.fac_t)) {
       initialVentasData.fac_t.forEach(item => {
-        if (item && item.mes && item.mes >= 1 && item.mes <= 12) {
-          meses.add(item.mes);
-        }
-        // También intentar extraer mes de la fecha
-        if (item && item.fch && (!item.mes || item.mes <= 0 || item.mes > 12)) {
-          const fecha = parseFechaRobusta(item.fch);
-          if (fecha) {
-            const mes = fecha.getMonth() + 1; // getMonth() devuelve 0-11
-            if (mes >= 1 && mes <= 12) {
-              meses.add(mes);
-            }
-          }
+        const itemNormalizado = validarYNormalizarItem(item);
+        if (itemNormalizado?.mes) {
+          meses.add(itemNormalizado.mes);
         }
       });
     }
@@ -144,18 +154,9 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
     // Procesar compras
     if (initialComprasData?.com_alb_g && Array.isArray(initialComprasData.com_alb_g)) {
       initialComprasData.com_alb_g.forEach(item => {
-        if (item && item.mes && item.mes >= 1 && item.mes <= 12) {
-          meses.add(item.mes);
-        }
-        // También intentar extraer mes de la fecha
-        if (item && item.fch && (!item.mes || item.mes <= 0 || item.mes > 12)) {
-          const fecha = parseFechaRobusta(item.fch);
-          if (fecha) {
-            const mes = fecha.getMonth() + 1; // getMonth() devuelve 0-11
-            if (mes >= 1 && mes <= 12) {
-              meses.add(mes);
-            }
-          }
+        const itemNormalizado = validarYNormalizarItem(item);
+        if (itemNormalizado?.mes) {
+          meses.add(itemNormalizado.mes);
         }
       });
     }
@@ -202,80 +203,104 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
     }
   ];
 
-  // Función para obtener año y mes de un item con fallback a fecha
-  const obtenerAñoMes = (item) => {
-    let año = item.eje;
-    let mes = item.mes;
-
-    // Si año o mes no son válidos, extraer de la fecha
-    if (!año || año <= 0 || !mes || mes <= 0 || mes > 12) {
-      const fecha = parseFechaRobusta(item.fch);
-      if (fecha) {
-        if (!año || año <= 0) {
-          año = fecha.getFullYear();
-        }
-        if (!mes || mes <= 0 || mes > 12) {
-          mes = fecha.getMonth() + 1; // getMonth() devuelve 0-11
-        }
-      }
+  // Función mejorada para filtrar datos
+  const filtrarDatos = (datosOriginales, tipoData = 'fac_t') => {
+    if (!datosOriginales || !Array.isArray(datosOriginales)) {
+      console.warn(`❌ Datos no válidos para filtrar: ${tipoData}`);
+      return [];
     }
 
-    return { año, mes };
-  };
+    const datosNormalizados = datosOriginales
+      .map(item => validarYNormalizarItem(item))
+      .filter(item => item !== null);
 
-  // Función mejorada para filtrar datos
-  const filtrarDatos = (datos, esFacTt = true) => {
-    if (!datos || !Array.isArray(datos)) return [];
+    if (APP_CONFIG.features.debugging) {
+      console.log(`🔍 Dashboard - Datos normalizados ${tipoData}:`, {
+        originales: datosOriginales.length,
+        normalizados: datosNormalizados.length,
+        ejemploNormalizado: datosNormalizados[0]
+      });
+    }
 
-    return datos.filter(item => {
-      if (!validarDatos(item)) return false;
-
-      const { año, mes } = obtenerAñoMes(item);
-
+    const datosFiltrados = datosNormalizados.filter(item => {
       // Filtro por año
       if (filtros.selectedYear !== 'todos') {
         const añoFiltro = parseInt(filtros.selectedYear);
-        if (año !== añoFiltro) return false;
+        if (item.eje !== añoFiltro) {
+          return false;
+        }
       }
 
       // Filtro por mes
       if (filtros.selectedMonth !== 'todos') {
         const mesFiltro = parseInt(filtros.selectedMonth);
-        if (mes !== mesFiltro) return false;
+        if (item.mes !== mesFiltro) {
+          return false;
+        }
       }
 
       // Filtro por rango de fechas
       if (filtros.dateFrom || filtros.dateTo) {
         const fechaItem = parseFechaRobusta(item.fch);
-        if (!fechaItem) return false;
+        if (!fechaItem) {
+          // Si no hay fecha válida, usar año/mes para crear una fecha aproximada
+          const fechaAproximada = new Date(item.eje, item.mes - 1, 15); // Día 15 del mes
+          if (!isNaN(fechaAproximada.getTime())) {
+            // Usar fecha aproximada para el filtrado
+            if (filtros.dateFrom) {
+              const fechaDesde = new Date(filtros.dateFrom);
+              fechaDesde.setHours(0, 0, 0, 0);
+              if (fechaAproximada < fechaDesde) return false;
+            }
 
-        if (filtros.dateFrom) {
-          const fechaDesde = new Date(filtros.dateFrom);
-          fechaDesde.setHours(0, 0, 0, 0);
-          if (fechaItem < fechaDesde) return false;
-        }
+            if (filtros.dateTo) {
+              const fechaHasta = new Date(filtros.dateTo);
+              fechaHasta.setHours(23, 59, 59, 999);
+              if (fechaAproximada > fechaHasta) return false;
+            }
+          } else {
+            return false; // Si no podemos crear fecha, excluir el item
+          }
+        } else {
+          // Usar fecha real
+          if (filtros.dateFrom) {
+            const fechaDesde = new Date(filtros.dateFrom);
+            fechaDesde.setHours(0, 0, 0, 0);
+            if (fechaItem < fechaDesde) return false;
+          }
 
-        if (filtros.dateTo) {
-          const fechaHasta = new Date(filtros.dateTo);
-          fechaHasta.setHours(23, 59, 59, 999);
-          if (fechaItem > fechaHasta) return false;
+          if (filtros.dateTo) {
+            const fechaHasta = new Date(filtros.dateTo);
+            fechaHasta.setHours(23, 59, 59, 999);
+            if (fechaItem > fechaHasta) return false;
+          }
         }
       }
 
       return true;
     });
+
+    if (APP_CONFIG.features.debugging) {
+      console.log(`🔍 Dashboard - Después del filtrado ${tipoData}:`, {
+        normalizados: datosNormalizados.length,
+        filtrados: datosFiltrados.length,
+        filtros: filtros
+      });
+    }
+
+    return datosFiltrados;
   };
 
   // Función mejorada para procesar datos del dashboard
   const processDashboardData = (ventasFiltradas, comprasFiltradas) => {
     // Calcular totales con validación
     const ventasTotales = ventasFiltradas.reduce((sum, v) => {
-      const total = parseFloat(v.tot) || 0;
+      const total = v.tot || 0;
       return sum + total;
     }, 0);
 
     const comprasTotales = comprasFiltradas.reduce((sum, c) => {
-      const total = parseFloat(c.tot_alb) || 0;
+      const total = c.tot_alb || 0;
       return sum + total;
     }, 0);
 
@@ -287,48 +312,42 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
 
     // Procesar ventas
     ventasFiltradas.forEach(venta => {
-      const { año, mes } = obtenerAñoMes(venta);
-      if (!año || !mes) return;
-
-      const claveMes = `${año}-${String(mes).padStart(2, '0')}`;
+      const claveMes = `${venta.eje}-${String(venta.mes).padStart(2, '0')}`;
       if (!datosPorMes[claveMes]) {
         datosPorMes[claveMes] = {
           periodo: claveMes,
           ventas: 0,
           compras: 0,
           balance: 0,
-          mes: mes,
-          año: año,
+          mes: venta.mes,
+          año: venta.eje,
           cantidadVentas: 0,
           cantidadCompras: 0
         };
       }
-      
-      const total = parseFloat(venta.tot) || 0;
+
+      const total = venta.tot || 0;
       datosPorMes[claveMes].ventas += total;
       datosPorMes[claveMes].cantidadVentas += 1;
     });
 
     // Procesar compras
     comprasFiltradas.forEach(compra => {
-      const { año, mes } = obtenerAñoMes(compra);
-      if (!año || !mes) return;
-
-      const claveMes = `${año}-${String(mes).padStart(2, '0')}`;
+      const claveMes = `${compra.eje}-${String(compra.mes).padStart(2, '0')}`;
       if (!datosPorMes[claveMes]) {
         datosPorMes[claveMes] = {
           periodo: claveMes,
           ventas: 0,
           compras: 0,
           balance: 0,
-          mes: mes,
-          año: año,
+          mes: compra.mes,
+          año: compra.eje,
           cantidadVentas: 0,
           cantidadCompras: 0
         };
       }
-      
-      const total = parseFloat(compra.tot_alb) || 0;
+
+      const total = compra.tot_alb || 0;
       datosPorMes[claveMes].compras += total;
       datosPorMes[claveMes].cantidadCompras += 1;
     });
@@ -466,8 +485,8 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
         }
 
         // Filtrar datos
-        const ventasFiltradas = filtrarDatos(ventasArray, true);
-        const comprasFiltradas = filtrarDatos(comprasArray, false);
+        const ventasFiltradas = filtrarDatos(ventasArray, 'fac_t');
+        const comprasFiltradas = filtrarDatos(comprasArray, 'com_alb_g');
 
         if (APP_CONFIG.features.debugging) {
           console.log('🔍 Dashboard - Después del filtrado:', {
@@ -506,7 +525,7 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
     }
 
     const datos = [];
-    
+
     if (dashboardData.ventasTotales > 0) {
       datos.push({
         name: 'Ventas',
@@ -546,17 +565,17 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
       dateFrom: '',
       dateTo: ''
     });
-    
+
     if (showNotification) {
       showNotification('Filtros reiniciados', 'info');
     }
   };
 
   // Verificar si hay filtros activos
-  const hayFiltrosActivos = filtros.selectedYear !== 'todos' || 
-                           filtros.selectedMonth !== 'todos' || 
-                           filtros.dateFrom || 
-                           filtros.dateTo;
+  const hayFiltrosActivos = filtros.selectedYear !== 'todos' ||
+    filtros.selectedMonth !== 'todos' ||
+    filtros.dateFrom ||
+    filtros.dateTo;
 
   // Estados de carga y error
   if (loading) {
@@ -669,8 +688,8 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
             <ResponsiveContainer width="100%" height={APP_CONFIG.ui.charts.defaultHeight}>
               <BarChart data={dashboardData.datosTemporales}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="nombrePeriodo" 
+                <XAxis
+                  dataKey="nombrePeriodo"
                   tick={{ fontSize: 12 }}
                   interval={0}
                   angle={-45}
@@ -690,8 +709,8 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
             <ResponsiveContainer width="100%" height={APP_CONFIG.ui.charts.defaultHeight}>
               <LineChart data={dashboardData.datosTemporales}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="nombrePeriodo" 
+                <XAxis
+                  dataKey="nombrePeriodo"
                   tick={{ fontSize: 12 }}
                   interval={0}
                   angle={-45}
@@ -754,10 +773,10 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
           </h3>
           {dashboardData.alertas.map((alerta, index) => (
             <div key={index} className={`alert alert-${alerta.tipo}`}>
-              <i className={`fas fa-${alerta.tipo === 'error' ? 'times-circle' : 
-                                    alerta.tipo === 'warning' ? 'exclamation-triangle' : 
-                                    alerta.tipo === 'success' ? 'check-circle' : 
-                                    'info-circle'}`}></i>
+              <i className={`fas fa-${alerta.tipo === 'error' ? 'times-circle' :
+                alerta.tipo === 'warning' ? 'exclamation-triangle' :
+                  alerta.tipo === 'success' ? 'check-circle' :
+                    'info-circle'}`}></i>
               <div>
                 <strong>{alerta.titulo}</strong>
                 <p>{alerta.mensaje}</p>

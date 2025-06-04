@@ -1,0 +1,41 @@
+/* ============================================
+   ESTILOS PRINCIPALES - BARDINA ANALYTICS
+   Sistema de Design Modular
+   ============================================ */
+
+/* === CORE === */
+@import './core/_variables.css';
+@import './core/_functions.css';
+@import './core/_reset.css';
+@import './core/_base.css';
+
+/* === LAYOUT === */
+@import './layout/_app-layout.css';
+@import './layout/_sidebar.css';
+@import './layout/_responsive.css';
+
+/* === COMPONENTS === */
+@import './components/_buttons.css';
+@import './components/_cards.css';
+@import './components/_forms.css';
+@import './components/_tables.css';
+@import './components/_charts.css';
+@import './components/_alerts.css';
+@import './components/_badges.css';
+@import './components/_loading.css';
+@import './components/_modals.css';
+
+/* === PAGES === */
+@import './pages/_dashboard.css';
+@import './pages/_ventas.css';
+@import './pages/_compras.css';
+@import './pages/_common-pages.css';
+
+/* === THEMES === */
+@import './themes/_light.css';
+@import './themes/_dark.css';
+
+/* === UTILITIES === */
+@import './utilities/_helpers.css';
+@import './utilities/_animations.css';
+@import './utilities/_print.css';
