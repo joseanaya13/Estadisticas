@@ -1,15 +1,20 @@
-// utils/formatters.js
+// utils/formatters.js - Versión mejorada para manejar datos inconsistentes
 /**
- * Formatea un valor numérico como moneda (EUR) - VERSIÓN CORREGIDA
+ * Formatea un valor numérico como moneda (EUR) - VERSIÓN ROBUSTA
  * @param {number} value - El valor a formatear
  * @param {number} decimals - Número de decimales (por defecto 2)
  * @returns {string} Valor formateado
  */
 export const formatCurrency = (value, decimals = 2) => {
-  if (value === undefined || value === null || isNaN(value)) return '€0,00';
+  // Validación robusta
+  if (value === undefined || value === null || value === '' || isNaN(value)) return '€0,00';
   
-  // Redondear AQUÍ para evitar problemas de precisión
-  const rounded = Math.round(value * Math.pow(10, decimals)) / Math.pow(10, decimals);
+  // Convertir a número si es string
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(numValue)) return '€0,00';
+  
+  // Redondear para evitar problemas de precisión
+  const rounded = Math.round(numValue * Math.pow(10, decimals)) / Math.pow(10, decimals);
   
   return `€${rounded.toLocaleString('es-ES', { 
     minimumFractionDigits: decimals,
@@ -37,7 +42,7 @@ export const parseFechaRobusta = (fechaInput) => {
   
   try {
     // Formato ISO (YYYY-MM-DD o YYYY-MM-DDTHH:mm:ss)
-    if (fechaStr.includes('-')) {
+    if (fechaStr.includes('-') && fechaStr.match(/^\d{4}-\d{2}-\d{2}/)) {
       fecha = new Date(fechaStr);
     }
     // Formato DD/MM/YYYY
@@ -149,29 +154,41 @@ export const formatDateTime = (date) => {
 };
 
 /**
- * Obtiene el nombre del mes a partir de su número
+ * Obtiene el nombre del mes a partir de su número - CON VALIDACIÓN
  * @param {number} numeroMes - Número del mes (1-12)
  * @returns {string} Nombre del mes
  */
 export const obtenerNombreMes = (numeroMes) => {
+  // Validación robusta
+  const num = typeof numeroMes === 'string' ? parseInt(numeroMes) : numeroMes;
+  if (isNaN(num) || num < 1 || num > 12) {
+    return `Mes ${numeroMes}`;
+  }
+  
   const meses = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
-  return meses[numeroMes - 1] || `Mes ${numeroMes}`;
+  return meses[num - 1];
 };
 
 /**
- * Obtiene el nombre corto del mes (3 letras)
+ * Obtiene el nombre corto del mes (3 letras) - CON VALIDACIÓN
  * @param {number} numeroMes - Número del mes (1-12)
  * @returns {string} Nombre corto del mes
  */
 export const obtenerNombreMesCorto = (numeroMes) => {
+  // Validación robusta
+  const num = typeof numeroMes === 'string' ? parseInt(numeroMes) : numeroMes;
+  if (isNaN(num) || num < 1 || num > 12) {
+    return `M${numeroMes}`;
+  }
+  
   const meses = [
     'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
     'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
   ];
-  return meses[numeroMes - 1] || `M${numeroMes}`;
+  return meses[num - 1];
 };
 
 /**
@@ -261,7 +278,10 @@ export const groupBy = (array, key) => {
  * @returns {number} Suma total redondeada
  */
 export const sumBy = (array, key) => {
-  const sum = array.reduce((sum, item) => sum + (item[key] || 0), 0);
+  const sum = array.reduce((sum, item) => {
+    const value = parseFloat(item[key]) || 0;
+    return sum + value;
+  }, 0);
   return Math.round(sum * 100) / 100; // Redondear a 2 decimales
 };
 
@@ -285,7 +305,7 @@ export const avgBy = (array, key) => {
  */
 export const minBy = (array, key) => {
   if (!array || array.length === 0) return 0;
-  return Math.min(...array.map(item => item[key] || 0));
+  return Math.min(...array.map(item => parseFloat(item[key]) || 0));
 };
 
 /**
@@ -296,7 +316,7 @@ export const minBy = (array, key) => {
  */
 export const maxBy = (array, key) => {
   if (!array || array.length === 0) return 0;
-  return Math.max(...array.map(item => item[key] || 0));
+  return Math.max(...array.map(item => parseFloat(item[key]) || 0));
 };
 
 /**
@@ -335,10 +355,13 @@ export const daysBetween = (date1, date2) => {
  * @returns {string} Trimestre (Q1, Q2, Q3, Q4)
  */
 export const getQuarter = (mes) => {
-  if (mes >= 1 && mes <= 3) return 'Q1';
-  if (mes >= 4 && mes <= 6) return 'Q2';
-  if (mes >= 7 && mes <= 9) return 'Q3';
-  if (mes >= 10 && mes <= 12) return 'Q4';
+  const num = typeof mes === 'string' ? parseInt(mes) : mes;
+  if (isNaN(num) || num < 1 || num > 12) return 'Q?';
+  
+  if (num >= 1 && num <= 3) return 'Q1';
+  if (num >= 4 && num <= 6) return 'Q2';
+  if (num >= 7 && num <= 9) return 'Q3';
+  if (num >= 10 && num <= 12) return 'Q4';
   return 'Q?';
 };
 
@@ -377,14 +400,122 @@ export const debugFecha = (fechaInput) => {
 };
 
 /**
- * NUEVA: Función auxiliar para redondear números con precisión
+ * Función auxiliar para redondear números con precisión
  * @param {number} value - Valor a redondear
  * @param {number} decimals - Número de decimales (por defecto 2)
  * @returns {number} Número redondeado
  */
 export const roundToPrecision = (value, decimals = 2) => {
   if (value === undefined || value === null || isNaN(value)) return 0;
-  return Math.round(value * Math.pow(10, decimals)) / Math.pow(10, decimals);
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(numValue)) return 0;
+  return Math.round(numValue * Math.pow(10, decimals)) / Math.pow(10, decimals);
+};
+
+/**
+ * Valida y normaliza un valor numérico
+ * @param {any} value - Valor a validar
+ * @param {number} defaultValue - Valor por defecto si es inválido
+ * @returns {number} Valor normalizado
+ */
+export const normalizeNumber = (value, defaultValue = 0) => {
+  if (value === undefined || value === null || value === '') return defaultValue;
+  
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(numValue)) return defaultValue;
+  
+  return numValue;
+};
+
+/**
+ * Valida y normaliza un año
+ * @param {any} year - Año a validar
+ * @param {number} defaultYear - Año por defecto
+ * @returns {number} Año normalizado
+ */
+export const normalizeYear = (year, defaultYear = new Date().getFullYear()) => {
+  const numYear = normalizeNumber(year, defaultYear);
+  
+  // Validar que esté en un rango razonable
+  if (numYear < 1900 || numYear > 2100) {
+    return defaultYear;
+  }
+  
+  return numYear;
+};
+
+/**
+ * Valida y normaliza un mes
+ * @param {any} month - Mes a validar
+ * @param {number} defaultMonth - Mes por defecto
+ * @returns {number} Mes normalizado (1-12)
+ */
+export const normalizeMonth = (month, defaultMonth = 1) => {
+  const numMonth = normalizeNumber(month, defaultMonth);
+  
+  // Validar que esté en el rango 1-12
+  if (numMonth < 1 || numMonth > 12) {
+    return defaultMonth;
+  }
+  
+  return numMonth;
+};
+
+/**
+ * Extrae año y mes de una fecha con fallback
+ * @param {Object} item - Objeto con propiedades eje, mes, fch
+ * @returns {Object} {año, mes} normalizados
+ */
+export const extractYearMonth = (item) => {
+  let año = item.eje;
+  let mes = item.mes;
+
+  // Si año o mes no son válidos, extraer de la fecha
+  if (!año || año <= 0 || !mes || mes <= 0 || mes > 12) {
+    const fecha = parseFechaRobusta(item.fch);
+    if (fecha) {
+      if (!año || año <= 0) {
+        año = fecha.getFullYear();
+      }
+      if (!mes || mes <= 0 || mes > 12) {
+        mes = fecha.getMonth() + 1; // getMonth() devuelve 0-11
+      }
+    }
+  }
+
+  return {
+    año: normalizeYear(año),
+    mes: normalizeMonth(mes)
+  };
+};
+
+// Exportar todo por defecto también para compatibilidad
+export default {
+  formatCurrency,
+  parseFechaRobusta,
+  formatDate,
+  formatDateTime,
+  obtenerNombreMes,
+  obtenerNombreMesCorto,
+  formatPercentage,
+  formatLargeNumber,
+  validarFecha,
+  compararFechas,
+  groupBy,
+  sumBy,
+  avgBy,
+  minBy,
+  maxBy,
+  formatDateRange,
+  daysBetween,
+  getQuarter,
+  toDateInputValue,
+  debugFecha,
+  roundToPrecision,
+  normalizeNumber,
+  normalizeYear,
+  normalizeMonth,
+  extractYearMonth
 };
 
 
