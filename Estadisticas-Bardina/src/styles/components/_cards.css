@@ -33,7 +33,7 @@
 }
 
 .card-header h3 {
-  margin: 0;
+  margin-right: 1;
   color: var(--text-primary);
   font-size: var(--text-2xl);
 }
