@@ -1,0 +1,160 @@
+/* ============================================
+   DARK THEME - BARDINA ANALYTICS
+   Tema oscuro para la aplicación
+   ============================================ */
+
+[data-theme="dark"] {
+  /* === COLORES DE SUPERFICIE === */
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --surface-primary: #1e293b;
+  --surface-secondary: #334155;
+  --surface-elevated: #475569;
+  --surface-hover: rgba(255, 255, 255, 0.05);
+  --surface-overlay: rgba(0, 0, 0, 0.8);
+
+  /* === COLORES DE TEXTO === */
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #94a3b8;
+  --text-disabled: #64748b;
+  --text-hint: #94a3b8;
+  --text-inverse: #0f172a;
+  --text-link: var(--primary-400);
+  --text-link-hover: var(--primary-300);
+
+  /* === COLORES DE BORDE === */
+  --border-color-light: #334155;
+  --border-color-medium: #475569;
+  --border-color-dark: #64748b;
+  --border-color-focus: var(--primary-500);
+
+  /* === COLORES AJUSTADOS PARA DARK MODE === */
+  --primary-50: #1e3a8a;
+  --primary-100: #1e40af;
+  --primary-600: #3b82f6;
+  --primary-700: #2563eb;
+
+  /* === COMPONENTES ESPECÍFICOS === */
+  --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  --table-header-bg: rgba(59, 130, 246, 0.1);
+  --table-row-hover: rgba(59, 130, 246, 0.05);
+  --table-border: var(--border-color-light);
+
+  /* === SIDEBAR DARK MODE === */
+  --sidebar-bg: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  --sidebar-border: #334155;
+  --nav-text: #cbd5e1;
+  --nav-text-hover: #f1f5f9;
+  --nav-bg-hover: rgba(255, 255, 255, 0.1);
+
+  /* === FORMULARIOS === */
+  --input-bg: var(--surface-secondary);
+  --input-border: var(--border-color-medium);
+  --input-focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.2);
+
+  /* === ALERTAS === */
+  --alert-info-bg: rgba(59, 130, 246, 0.1);
+  --alert-success-bg: rgba(34, 197, 94, 0.1);
+  --alert-warning-bg: rgba(251, 191, 36, 0.1);
+  --alert-error-bg: rgba(239, 68, 68, 0.1);
+}
+
+/* === MEDIA QUERIES PARA PREFERENCIA DEL SISTEMA === */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #334155;
+    --surface-primary: #1e293b;
+    --surface-secondary: #334155;
+    --surface-elevated: #475569;
+    --surface-hover: rgba(255, 255, 255, 0.05);
+
+    --text-primary: #f1f5f9;
+    --text-secondary: #cbd5e1;
+    --text-tertiary: #94a3b8;
+    --text-disabled: #64748b;
+    --text-hint: #94a3b8;
+    --text-inverse: #0f172a;
+
+    --border-color-light: #334155;
+    --border-color-medium: #475569;
+    --border-color-dark: #64748b;
+
+    --sidebar-bg: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    --sidebar-border: #334155;
+    --nav-text: #cbd5e1;
+    --nav-text-hover: #f1f5f9;
+    --nav-bg-hover: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* === COMPONENTES ESPECÍFICOS DARK MODE === */
+[data-theme="dark"] .mobile-tab-bar {
+  background: rgba(30, 41, 59, 0.95);
+  border-top-color: #334155;
+}
+
+[data-theme="dark"] .sidebar-footer {
+  background: rgba(15, 23, 42, 0.5);
+  border-top-color: #334155;
+}
+
+[data-theme="dark"] .app-footer-minimal {
+  background: rgba(30, 30, 30, 0.95);
+  border-color: var(--border-color-dark);
+  color: var(--text-inverse);
+}
+
+[data-theme="dark"] .debug-button {
+  background: rgba(255, 152, 0, 0.2);
+  color: #ffa726;
+}
+
+[data-theme="dark"] .filtros-activos-info {
+  background: rgba(30, 30, 30, 0.95);
+  border-color: var(--primary-400);
+  color: var(--text-inverse);
+}
+
+/* === SCROLLBARS DARK MODE === */
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--border-color-medium);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--border-color-dark);
+}
+
+/* === CÓDIGO Y PRE DARK MODE === */
+[data-theme="dark"] code {
+  background-color: var(--surface-secondary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] pre {
+  background-color: #0d1117;
+  color: #f0f6fc;
+}
+
+/* === SELECCIÓN DE TEXTO DARK MODE === */
+[data-theme="dark"] ::selection {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] ::-moz-selection {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: var(--text-primary);
+}
+
+/* === FOCUS VISIBLE DARK MODE === */
+[data-theme="dark"] :focus-visible {
+  outline-color: var(--primary-400);
+}

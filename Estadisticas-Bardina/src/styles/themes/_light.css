@@ -1,0 +1,161 @@
+/* ============================================
+   LIGHT THEME - BARDINA ANALYTICS
+   Tema claro (por defecto) para la aplicación
+   ============================================ */
+
+[data-theme="light"],
+:root {
+  /* === COLORES DE SUPERFICIE === */
+  --bg-primary: #fafafa;
+  --bg-secondary: #f5f5f5;
+  --bg-tertiary: #eeeeee;
+  --surface-primary: #ffffff;
+  --surface-secondary: #fefefe;
+  --surface-elevated: #ffffff;
+  --surface-hover: rgba(0, 0, 0, 0.04);
+  --surface-overlay: rgba(0, 0, 0, 0.5);
+
+  /* === COLORES DE TEXTO === */
+  --text-primary: #212121;
+  --text-secondary: #757575;
+  --text-tertiary: #9e9e9e;
+  --text-disabled: #bdbdbd;
+  --text-hint: #9e9e9e;
+  --text-inverse: #ffffff;
+  --text-link: var(--primary-700);
+  --text-link-hover: var(--primary-900);
+
+  /* === COLORES DE BORDE === */
+  --border-color-light: #e0e0e0;
+  --border-color-medium: #bdbdbd;
+  --border-color-dark: #9e9e9e;
+  --border-color-focus: var(--primary-600);
+
+  /* === COMPONENTES ESPECÍFICOS === */
+  --card-shadow: var(--shadow-lg);
+  --table-header-bg: var(--primary-50);
+  --table-row-hover: rgba(59, 130, 246, 0.05);
+  --table-border: var(--border-color-light);
+
+  /* === SIDEBAR LIGHT MODE === */
+  --sidebar-bg: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  --sidebar-border: #e2e8f0;
+  --nav-text: #475569;
+  --nav-text-hover: #1e293b;
+  --nav-bg-hover: #f1f5f9;
+
+  /* === FORMULARIOS === */
+  --input-bg: var(--surface-primary);
+  --input-border: var(--border-color-medium);
+  --input-focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.1);
+
+  /* === ALERTAS === */
+  --alert-info-bg: var(--info-50);
+  --alert-success-bg: var(--success-50);
+  --alert-warning-bg: var(--warning-50);
+  --alert-error-bg: var(--error-50);
+}
+
+/* === MEDIA QUERIES PARA PREFERENCIA DEL SISTEMA === */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --bg-primary: #fafafa;
+    --bg-secondary: #f5f5f5;
+    --surface-primary: #ffffff;
+    --surface-secondary: #fefefe;
+    --surface-hover: rgba(0, 0, 0, 0.04);
+
+    --text-primary: #212121;
+    --text-secondary: #757575;
+    --text-tertiary: #9e9e9e;
+    --text-disabled: #bdbdbd;
+    --text-inverse: #ffffff;
+
+    --border-color-light: #e0e0e0;
+    --border-color-medium: #bdbdbd;
+    --border-color-dark: #9e9e9e;
+  }
+}
+
+/* === COMPONENTES ESPECÍFICOS LIGHT MODE === */
+[data-theme="light"] .mobile-tab-bar {
+  background: rgba(255, 255, 255, 0.95);
+  border-top-color: var(--border-color-light);
+}
+
+[data-theme="light"] .sidebar-footer {
+  background: rgba(248, 250, 252, 0.5);
+  border-top-color: #f1f5f9;
+}
+
+[data-theme="light"] .app-footer-minimal {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--border-color-light);
+  color: var(--text-secondary);
+}
+
+/* === SCROLLBARS LIGHT MODE === */
+[data-theme="light"] ::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: var(--border-color-medium);
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--border-color-dark);
+}
+
+/* === CÓDIGO Y PRE LIGHT MODE === */
+[data-theme="light"] code {
+  background-color: var(--bg-secondary);
+  color: var(--error-700);
+}
+
+[data-theme="light"] pre {
+  background-color: var(--neutral-900);
+  color: var(--neutral-100);
+}
+
+/* === SELECCIÓN DE TEXTO LIGHT MODE === */
+[data-theme="light"] ::selection {
+  background-color: var(--primary-200);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] ::-moz-selection {
+  background-color: var(--primary-200);
+  color: var(--text-primary);
+}
+
+/* === FOCUS VISIBLE LIGHT MODE === */
+[data-theme="light"] :focus-visible {
+  outline-color: var(--primary-600);
+}
+
+/* === CONTRASTE ALTO === */
+@media (prefers-contrast: high) {
+  [data-theme="light"] {
+    --border-color-light: #999999;
+    --border-color-medium: #666666;
+    --text-secondary: #333333;
+    --text-tertiary: #555555;
+  }
+}
+
+/* === TRANSPARENCIA REDUCIDA === */
+@media (prefers-reduced-transparency: reduce) {
+  [data-theme="light"] {
+    --surface-overlay: #000000;
+    --sidebar-bg: #ffffff;
+  }
+  
+  [data-theme="light"] .mobile-tab-bar {
+    background: #ffffff;
+  }
+  
+  [data-theme="light"] .app-footer-minimal {
+    background: #ffffff;
+  }
+}
