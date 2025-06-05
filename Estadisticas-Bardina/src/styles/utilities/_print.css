@@ -1,0 +1,413 @@
+/* ============================================
+   UTILITIES - PRINT STYLES
+   Estilos para impresión
+   ============================================ */
+
+@media print {
+  /* === RESET BÁSICO PARA IMPRESIÓN === */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* === LAYOUT PRINCIPAL === */
+  html, body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt !important;
+    line-height: 1.4 !important;
+  }
+
+  /* === OCULTAR ELEMENTOS NO NECESARIOS === */
+  .sidebar,
+  .mobile-tab-bar,
+  .sidebar-navigation,
+  .app-warnings-banner,
+  .app-footer-minimal,
+  .filter-bar,
+  .nav-buttons,
+  .btn,
+  .button,
+  .form-actions,
+  .export-button-container,
+  .debug-button,
+  .sidebar-toggle,
+  .action-btn,
+  .no-print {
+    display: none !important;
+  }
+
+  /* === AJUSTAR CONTENIDO PRINCIPAL === */
+  .app-container {
+    display: block !important;
+  }
+
+  .app-content {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  /* === HEADERS Y TÍTULOS === */
+  .page-header {
+    border-bottom: 2px solid black !important;
+    margin-bottom: 20pt !important;
+    padding-bottom: 10pt !important;
+  }
+
+  .page-header h1 {
+    font-size: 18pt !important;
+    color: black !important;
+    margin-bottom: 5pt !important;
+  }
+
+  .page-subtitle {
+    font-size: 12pt !important;
+    color: #333 !important;
+  }
+
+  h1 { font-size: 18pt !important; page-break-after: avoid; }
+  h2 { font-size: 16pt !important; page-break-after: avoid; }
+  h3 { font-size: 14pt !important; page-break-after: avoid; }
+  h4 { font-size: 13pt !important; page-break-after: avoid; }
+  h5 { font-size: 12pt !important; page-break-after: avoid; }
+  h6 { font-size: 11pt !important; page-break-after: avoid; }
+
+  /* === CARDS Y CONTENEDORES === */
+  .card,
+  .data-card,
+  .chart-box,
+  .section {
+    border: 1px solid black !important;
+    margin-bottom: 15pt !important;
+    padding: 10pt !important;
+    page-break-inside: avoid;
+    background: white !important;
+    box-shadow: none !important;
+  }
+
+  .card-header {
+    border-bottom: 1px solid black !important;
+    margin-bottom: 10pt !important;
+    padding-bottom: 5pt !important;
+  }
+
+  .card-title {
+    font-size: 14pt !important;
+    font-weight: bold !important;
+    color: black !important;
+  }
+
+  /* === TABLAS === */
+  .table-wrapper {
+    overflow: visible !important;
+    box-shadow: none !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    border: 1px solid black !important;
+    margin-bottom: 15pt !important;
+    page-break-inside: auto;
+  }
+
+  th, td {
+    border: 1px solid black !important;
+    padding: 5pt !important;
+    text-align: left !important;
+    vertical-align: top !important;
+    font-size: 10pt !important;
+  }
+
+  th {
+    background: #f0f0f0 !important;
+    font-weight: bold !important;
+    color: black !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  tbody {
+    display: table-row-group !important;
+  }
+
+  tr {
+    page-break-inside: avoid;
+  }
+
+  /* === GRÁFICOS === */
+  .charts-container {
+    display: block !important;
+  }
+
+  .chart-box {
+    margin-bottom: 20pt !important;
+    page-break-inside: avoid;
+  }
+
+  /* Ocultar gráficos interactivos que no se imprimen bien */
+  .recharts-wrapper,
+  canvas,
+  svg {
+    max-height: 300pt !important;
+    page-break-inside: avoid;
+  }
+
+  /* === MÉTRICAS Y ESTADÍSTICAS === */
+  .summary-cards {
+    display: block !important;
+  }
+
+  .data-card {
+    display: inline-block !important;
+    width: 30% !important;
+    margin-right: 3% !important;
+    vertical-align: top !important;
+  }
+
+  .card-value {
+    font-size: 16pt !important;
+    font-weight: bold !important;
+    color: black !important;
+  }
+
+  .stats-info {
+    margin: 15pt 0 !important;
+    padding: 10pt !important;
+    border: 1px solid #ccc !important;
+  }
+
+  .stat-item {
+    display: inline-block !important;
+    margin-right: 15pt !important;
+    margin-bottom: 5pt !important;
+    font-size: 10pt !important;
+  }
+
+  /* === FILTROS Y ALERTAS === */
+  .filtros-activos-info {
+    border: 1px solid #ccc !important;
+    padding: 8pt !important;
+    margin-bottom: 15pt !important;
+    background: #f9f9f9 !important;
+    font-size: 10pt !important;
+  }
+
+  .alert {
+    border: 1px solid black !important;
+    padding: 8pt !important;
+    margin-bottom: 10pt !important;
+    page-break-inside: avoid;
+  }
+
+  .alert-warning {
+    background: #fff3cd !important;
+    border-color: #ffeaa7 !important;
+  }
+
+  .alert-error {
+    background: #f8d7da !important;
+    border-color: #f5c6cb !important;
+  }
+
+  .alert-success {
+    background: #d4edda !important;
+    border-color: #c3e6cb !important;
+  }
+
+  .alert-info {
+    background: #d1ecf1 !important;
+    border-color: #bee5eb !important;
+  }
+
+  /* === ICONOS === */
+  .fas, .fa, i[class*="fa-"] {
+    font-family: "FontAwesome" !important;
+  }
+
+  /* === ENLACES === */
+  a {
+    color: black !important;
+    text-decoration: underline !important;
+  }
+
+  a[href^="http"]:after {
+    content: " (" attr(href) ")" !important;
+    font-size: 9pt !important;
+    color: #666 !important;
+  }
+
+  /* === COLORES Y FONDOS === */
+  .bg-primary,
+  .bg-secondary,
+  .bg-success,
+  .bg-warning,
+  .bg-error,
+  .bg-info {
+    background: white !important;
+  }
+
+  .text-primary,
+  .text-secondary,
+  .text-success,
+  .text-warning,
+  .text-error,
+  .text-info {
+    color: black !important;
+  }
+
+  /* === PAGINACIÓN === */
+  .page-break-before {
+    page-break-before: always !important;
+  }
+
+  .page-break-after {
+    page-break-after: always !important;
+  }
+
+  .page-break-inside-avoid {
+    page-break-inside: avoid !important;
+  }
+
+  /* === TABLA DE VENDEDORES === */
+  .ventas-tabla-vendedores {
+    margin-top: 20pt !important;
+  }
+
+  .tabla-info {
+    border: 1px solid #ccc !important;
+    padding: 8pt !important;
+    margin-bottom: 10pt !important;
+    background: #f9f9f9 !important;
+  }
+
+  .info-item {
+    display: inline-block !important;
+    margin-right: 15pt !important;
+    font-size: 9pt !important;
+  }
+
+  .ventas-vendedores-table {
+    font-size: 9pt !important;
+  }
+
+  .vendedor-nombre {
+    font-weight: bold !important;
+  }
+
+  .totales-row {
+    background: #f0f0f0 !important;
+    font-weight: bold !important;
+  }
+
+  .porcentaje-bar {
+    display: none !important;
+  }
+
+  .porcentaje-text {
+    display: inline !important;
+    font-size: 9pt !important;
+  }
+
+  /* === DASHBOARD === */
+  .dashboard {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .charts-container {
+    display: block !important;
+    margin: 0 !important;
+  }
+
+  .chart-box {
+    width: 100% !important;
+    margin-bottom: 25pt !important;
+  }
+
+  /* === FOOTER IMPRESIÓN === */
+  @page {
+    margin: 2cm;
+    size: A4;
+  }
+
+  .print-footer {
+    position: fixed;
+    bottom: 1cm;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 9pt;
+    color: #666;
+    border-top: 1px solid #ccc;
+    padding-top: 5pt;
+  }
+
+  /* === OPTIMIZACIONES DE RENDIMIENTO === */
+  * {
+    background-attachment: scroll !important;
+  }
+
+  /* === CLASES ESPECÍFICAS PARA IMPRESIÓN === */
+  .print-only {
+    display: block !important;
+  }
+
+  .screen-only {
+    display: none !important;
+  }
+
+  .print-landscape {
+    page-break-before: always;
+  }
+
+  .print-portrait {
+    page-break-before: always;
+  }
+
+  /* === AJUSTES PARA COMPONENTES ESPECÍFICOS === */
+  .loading-spinner,
+  .spinner {
+    display: none !important;
+  }
+
+  .error-message {
+    border: 2px solid black !important;
+    padding: 10pt !important;
+    background: #f8f8f8 !important;
+  }
+
+  .no-data-message {
+    text-align: center !important;
+    padding: 20pt !important;
+    border: 1px dashed #ccc !important;
+  }
+}
+
+/* === CLASES DE UTILIDAD PARA IMPRESIÓN === */
+@media screen {
+  .print-only {
+    display: none !important;
+  }
+}
+
+.print-break-before {
+  page-break-before: always;
+}
+
+.print-break-after {
+  page-break-after: always;
+}
+
+.print-avoid-break {
+  page-break-inside: avoid;
+}
+
+.print-hide {
+  display: none !important;
+}
