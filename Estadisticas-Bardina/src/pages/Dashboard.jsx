@@ -373,12 +373,12 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
       const hoy = new Date();
       const mesActual = hoy.getMonth() + 1;
       const añoActual = hoy.getFullYear();
-      
+
       // Identificar si el último período es el mes actual incompleto
       const ultimoPeriodo = datosTemporales[datosTemporales.length - 1];
-      const esUltimoPeriodoIncompleto = 
-        ultimoPeriodo.año === añoActual && 
-        ultimoPeriodo.mes === mesActual && 
+      const esUltimoPeriodoIncompleto =
+        ultimoPeriodo.año === añoActual &&
+        ultimoPeriodo.mes === mesActual &&
         hoy.getDate() < 25; // Considerar incompleto si estamos antes del día 25
 
       let periodoReciente, periodoAnterior;
@@ -389,7 +389,7 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
         periodoAnterior = datosTemporales[datosTemporales.length - 3];
         tendencias.periodoComparacion = `${periodoAnterior.nombrePeriodo} vs ${periodoReciente.nombrePeriodo}`;
         tendencias.esComparacionValida = true;
-        
+
         if (APP_CONFIG.features.debugging) {
           console.log('📊 Comparando períodos completos:', {
             anterior: periodoAnterior.nombrePeriodo,
@@ -403,7 +403,7 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
         periodoAnterior = datosTemporales[datosTemporales.length - 2];
         tendencias.periodoComparacion = `${periodoAnterior.nombrePeriodo} vs ${periodoReciente.nombrePeriodo}`;
         tendencias.esComparacionValida = true;
-        
+
         if (APP_CONFIG.features.debugging) {
           console.log('📊 Comparando períodos:', {
             anterior: periodoAnterior.nombrePeriodo,
@@ -438,10 +438,10 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
       // Calcular variaciones
       tendencias.variacionVentas = periodoAnterior.ventas > 0 ?
         ((periodoReciente.ventas - periodoAnterior.ventas) / periodoAnterior.ventas) * 100 : 0;
-        
+
       tendencias.variacionCompras = periodoAnterior.compras > 0 ?
         ((periodoReciente.compras - periodoAnterior.compras) / periodoAnterior.compras) * 100 : 0;
-        
+
       tendencias.variacionBalance = periodoAnterior.balance !== 0 ?
         ((periodoReciente.balance - periodoAnterior.balance) / Math.abs(periodoAnterior.balance)) * 100 : 0;
 
@@ -551,7 +551,7 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
         ventasFiltradas: ventasFiltradas.length,
         comprasFiltradas: comprasFiltradas.length,
         periodosConDatos: datosTemporales.length,
-        comparacionValida: tendencias.esComparacionValida,        periodoComparacion: tendencias.periodoComparacion
+        comparacionValida: tendencias.esComparacionValida, periodoComparacion: tendencias.periodoComparacion
       }
     };
   }, [initialVentasData, initialComprasData]);
@@ -612,7 +612,7 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
       } finally {
         setLoading(false);
       }
-    };    loadDashboardData();
+    }; loadDashboardData();
   }, [initialVentasData, initialComprasData, filtros, filtrarDatos, processDashboardData, showNotification]);
 
   // Datos para gráfico de pie con validación

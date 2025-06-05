@@ -4,7 +4,7 @@
 
 /* Form Groups */
 .form-group {
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--space-6);
 }
 
 .form-group:last-child {
@@ -14,13 +14,13 @@
 .form-group-inline {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--space-4);
 }
 
 .form-row {
   display: flex;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
 }
 
 .form-row .form-group {
@@ -31,70 +31,70 @@
 /* Labels */
 .form-label {
   display: block;
-  margin-bottom: var(--spacing-sm);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   color: var(--text-primary);
   line-height: 1.4;
 }
 
 .form-label.required::after {
-  content: ' *';
-  color: var(--danger-color);
+  content: " *";
+  color: var(--color-error);
 }
 
 .form-label-inline {
   display: inline-block;
   margin-bottom: 0;
-  margin-right: var(--spacing-sm);
+  margin-right: var(--space-2);
 }
 
 /* Form Controls */
 .form-control {
   display: block;
   width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-normal);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-base);
+  font-weight: var(--font-normal);
   line-height: 1.5;
   color: var(--text-primary);
-  background: var(--input-bg);
-  border: var(--border-width) solid var(--border-color);
-  border-radius: var(--border-radius-md);
-  transition: all var(--transition-base);
+  background: var(--surface-primary);
+  border: var(--border-1) solid var(--border-color-light);
+  border-radius: var(--radius-md);
+  transition: var(--transition-all);
   appearance: none;
 }
 
 .form-control:focus {
   outline: none;
-  border-color: var(--primary-color);
-  box-shadow: var(--focus-shadow);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-outline);
 }
 
 .form-control:disabled,
 .form-control[readonly] {
-  background: var(--input-disabled-bg);
+  background: var(--neutral-100);
   color: var(--text-disabled);
   cursor: not-allowed;
   opacity: 0.6;
 }
 
 .form-control::placeholder {
-  color: var(--text-placeholder);
+  color: var(--text-tertiary);
   opacity: 1;
 }
 
 /* Form Control Sizes */
 .form-control-sm {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  font-size: var(--font-size-sm);
-  border-radius: var(--border-radius-sm);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-sm);
+  border-radius: var(--radius-sm);
 }
 
 .form-control-lg {
-  padding: var(--spacing-md) var(--spacing-lg);
-  font-size: var(--font-size-lg);
-  border-radius: var(--border-radius-lg);
+  padding: var(--space-4) var(--space-6);
+  font-size: var(--text-lg);
+  border-radius: var(--radius-lg);
 }
 
 /* Textarea */
@@ -463,12 +463,12 @@ textarea.form-control {
   .form-row {
     flex-direction: column;
   }
-  
+
   .form-actions {
     flex-direction: column-reverse;
     align-items: stretch;
   }
-  
+
   .form-actions .btn {
     width: 100%;
     justify-content: center;

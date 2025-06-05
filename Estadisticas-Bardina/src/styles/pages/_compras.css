@@ -31,82 +31,6 @@
   animation: fadeInUp 0.6s ease-out 0.2s both;
 }
 
-/* === RESUMEN DE COMPRAS === */
-.compras-resumen {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-}
-
-.compras-resumen .summary-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--space-8);
-  margin-bottom: var(--space-6);
-}
-
-.compras-resumen .stats-info {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-4);
-  margin: var(--space-6) 0;
-  padding: var(--space-6);
-  background: var(--surface-primary);
-  border-radius: var(--radius-2xl);
-  border: var(--border-1) solid var(--border-color-light);
-  box-shadow: var(--shadow-md);
-  position: relative;
-}
-
-.compras-resumen .stats-info::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, 
-    var(--secondary-600) 0%,
-    var(--warning-600) 50%,
-    var(--info-600) 100%);
-}
-
-.compras-resumen .stat-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  background: linear-gradient(135deg, var(--secondary-50), var(--secondary-100));
-  border-radius: var(--radius-lg);
-  font-size: var(--text-sm);
-  color: var(--secondary-800);
-  font-weight: var(--font-medium);
-  transition: var(--transition-all);
-  cursor: pointer;
-  border: var(--border-1) solid var(--secondary-200);
-  min-width: 200px;
-}
-
-.compras-resumen .stat-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(216, 27, 96, 0.2);
-  background: linear-gradient(135deg, var(--secondary-100), var(--secondary-200));
-}
-
-.compras-resumen .stat-item i {
-  font-size: var(--text-lg);
-  color: var(--secondary-600);
-  background: var(--surface-primary);
-  padding: var(--space-2);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 /* === GRÁFICOS DE COMPRAS === */
 .graficos-compras {
   animation: fadeInUp 0.8s ease-out;
@@ -153,7 +77,11 @@
 }
 
 .proveedor-card {
-  background: linear-gradient(135deg, var(--surface-primary), var(--surface-secondary));
+  background: linear-gradient(
+    135deg,
+    var(--surface-primary),
+    var(--surface-secondary)
+  );
   border: var(--border-1) solid var(--border-color-light);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
@@ -177,7 +105,11 @@
 .proveedor-icon {
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, var(--secondary-600), var(--secondary-800));
+  background: linear-gradient(
+    135deg,
+    var(--secondary-600),
+    var(--secondary-800)
+  );
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
@@ -241,8 +173,8 @@
 }
 
 .compras-temporales h3 i {
-  color: var(--info-600);
-  background: var(--info-50);
+  color: var(--color-info);
+  background: var(--color-info-lighter);
   padding: var(--space-2);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
@@ -258,20 +190,28 @@
   text-align: center;
   padding: var(--space-3);
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--info-50), var(--info-100));
-  border: var(--border-1) solid var(--info-200);
+  background: linear-gradient(
+    135deg,
+    var(--color-info-lighter),
+    var(--color-info-light)
+  );
+  border: var(--border-1) solid var(--color-info-light);
   transition: var(--transition-all);
 }
 
 .timeline-item:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
-  background: linear-gradient(135deg, var(--info-100), var(--info-200));
+  background: linear-gradient(
+    135deg,
+    var(--color-info-light),
+    var(--color-info)
+  );
 }
 
 .timeline-period {
   font-size: var(--text-xs);
-  color: var(--info-700);
+  color: var(--color-info-dark);
   font-weight: var(--font-medium);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -281,13 +221,13 @@
 .timeline-value {
   font-size: var(--text-lg);
   font-weight: var(--font-bold);
-  color: var(--info-800);
+  color: var(--color-info-darker);
   margin-bottom: var(--space-1);
 }
 
 .timeline-count {
   font-size: var(--text-xs);
-  color: var(--info-600);
+  color: var(--color-info);
 }
 
 /* === MÉTRICAS DE COMPRAS === */
@@ -317,7 +257,11 @@
   width: 48px;
   height: 48px;
   margin: 0 auto var(--space-3);
-  background: linear-gradient(135deg, var(--warning-600), var(--warning-800));
+  background: linear-gradient(
+    135deg,
+    var(--color-warning),
+    var(--color-warning-dark)
+  );
   border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
@@ -390,33 +334,19 @@
 }
 
 @media (max-width: 768px) {
-  .compras-resumen .summary-cards {
-    grid-template-columns: 1fr;
-  }
-  
-  .compras-resumen .stats-info {
-    flex-direction: column;
-    gap: var(--space-3);
-    padding: var(--space-4);
-  }
-  
-  .compras-resumen .stat-item {
-    min-width: unset;
-    justify-content: center;
-  }
-  
+
   .proveedores-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .timeline-grid {
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   }
-  
+
   .compras-metricas {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   }
-  
+
   .compras-por-proveedor,
   .compras-temporales {
     padding: var(--space-4);
@@ -428,49 +358,39 @@
   .estadisticas-container {
     gap: var(--space-4);
   }
-  
-  .compras-resumen .stats-info .stat-item {
-    padding: var(--space-2) var(--space-3);
-  }
-  
-  .compras-resumen .stats-info .stat-item i {
-    width: 32px;
-    height: 32px;
-    font-size: var(--text-base);
-  }
-  
+
   .proveedor-card {
     padding: var(--space-3);
   }
-  
+
   .proveedor-icon {
     width: 32px;
     height: 32px;
     font-size: var(--text-sm);
   }
-  
+
   .metrica-compra {
     padding: var(--space-3);
   }
-  
+
   .metrica-icon {
     width: 40px;
     height: 40px;
     font-size: var(--text-lg);
   }
-  
+
   .metrica-value {
     font-size: var(--text-xl);
   }
-  
+
   .compras-empty {
     padding: var(--space-8) var(--space-4);
   }
-  
+
   .compras-empty i {
     font-size: var(--text-4xl);
   }
-  
+
   .compras-empty h3 {
     font-size: var(--text-xl);
   }

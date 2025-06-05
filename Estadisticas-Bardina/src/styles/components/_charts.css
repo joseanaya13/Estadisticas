@@ -318,42 +318,6 @@
   color: var(--text-primary);
 }
 
-/* === GRAFICOS VENTAS ESPECÍFICOS === */
-.graficos-ventas {
-  animation: fadeInUp 0.8s ease-out;
-}
-
-.graficos-ventas .charts-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-  gap: var(--space-8);
-  margin-bottom: var(--space-10);
-}
-
-.graficos-ventas .chart-box {
-  position: relative;
-  overflow: hidden;
-  transition: var(--transition-all);
-}
-
-.graficos-ventas .chart-box::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, 
-    var(--primary-600) 0%,
-    var(--secondary-600) 50%,
-    var(--success-600) 100%);
-  opacity: 0;
-  transition: var(--transition-opacity);
-}
-
-.graficos-ventas .chart-box:hover::before {
-  opacity: 1;
-}
 
 /* === NO DATA MESSAGE === */
 .no-data-message {

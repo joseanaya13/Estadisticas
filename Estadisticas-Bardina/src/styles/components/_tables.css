@@ -25,13 +25,13 @@
 }
 
 .table-wrapper::-webkit-scrollbar-thumb {
-  background: var(--primary-600);
+  background: var(--color-primary);
   border-radius: var(--radius-sm);
   border: 2px solid var(--bg-secondary);
 }
 
 .table-wrapper::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-800);
+  background: var(--color-primary-dark);
 }
 
 .table {
@@ -52,8 +52,12 @@
 }
 
 .table th {
-  background: linear-gradient(135deg, var(--primary-50), var(--primary-100));
-  color: var(--primary-800);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-light),
+    var(--color-primary-lighter)
+  );
+  color: var(--color-primary-dark);
   font-weight: var(--font-semibold);
   font-size: var(--text-xs);
   text-transform: uppercase;
@@ -88,9 +92,13 @@
   gap: var(--space-4);
   margin-bottom: var(--space-6);
   padding: var(--space-4) var(--space-6);
-  background: linear-gradient(135deg, var(--primary-50), var(--primary-100));
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-light),
+    var(--color-primary-lighter)
+  );
   border-radius: var(--radius-lg);
-  border-left: var(--border-4) solid var(--primary-600);
+  border-left: var(--border-4) solid var(--color-primary);
   box-shadow: var(--shadow-sm);
 }
 
@@ -98,7 +106,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  color: var(--primary-800);
+  color: var(--color-primary-dark);
   font-weight: var(--font-medium);
   font-size: var(--text-sm);
   padding: var(--space-2) var(--space-3);
@@ -113,20 +121,24 @@
 }
 
 .info-item i {
-  color: var(--primary-600);
+  color: var(--color-primary);
   font-size: var(--text-base);
   width: 16px;
   text-align: center;
 }
 
 .info-item.warning {
-  background: linear-gradient(135deg, var(--warning-100), var(--warning-200));
-  border: var(--border-1) solid var(--warning-300);
-  color: var(--warning-800);
+  background: linear-gradient(
+    135deg,
+    var(--color-warning-light),
+    var(--color-warning-lighter)
+  );
+  border: var(--border-1) solid var(--color-warning);
+  color: var(--color-warning-dark);
 }
 
 .info-item.warning i {
-  color: var(--warning-600);
+  color: var(--color-warning);
 }
 
 /* === TABLA VENDEDORES ESPECÍFICA === */
@@ -146,8 +158,12 @@
 }
 
 .ventas-vendedores-table th {
-  background: linear-gradient(135deg, var(--primary-50), var(--primary-100));
-  color: var(--primary-800);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-light),
+    var(--color-primary-lighter)
+  );
+  color: var(--color-primary-dark);
   font-weight: var(--font-semibold);
   font-size: var(--text-xs);
   text-transform: uppercase;
@@ -165,7 +181,11 @@
 }
 
 .ventas-vendedores-table th.clickable:hover {
-  background: linear-gradient(135deg, var(--primary-100), var(--primary-200));
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-lighter),
+    var(--color-primary-light)
+  );
   transform: translateY(-1px);
 }
 
@@ -224,7 +244,7 @@
 }
 
 .vendedor-info i {
-  color: var(--primary-600);
+  color: var(--color-primary);
   font-size: var(--text-sm);
   width: 16px;
   text-align: center;
@@ -267,16 +287,16 @@
 .valor-porcentaje {
   font-size: var(--text-xs);
   color: var(--text-secondary);
-  background: var(--primary-50);
+  background: var(--color-primary-light);
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-full);
-  border: var(--border-1) solid var(--primary-200);
+  border: var(--border-1) solid var(--color-primary-lighter);
   font-weight: var(--font-medium);
 }
 
 .con-ventas {
   background-color: rgba(76, 175, 80, 0.1);
-  border-left: var(--border-2) solid var(--success-500);
+  border-left: var(--border-2) solid var(--color-success);
 }
 
 .sin-ventas {
@@ -287,10 +307,14 @@
 
 /* Total vendedor */
 .total-vendedor {
-  background: linear-gradient(135deg, rgba(25, 118, 210, 0.1), rgba(25, 118, 210, 0.2));
+  background: linear-gradient(
+    135deg,
+    rgba(25, 118, 210, 0.1),
+    rgba(25, 118, 210, 0.2)
+  );
   font-weight: var(--font-semibold);
-  color: var(--primary-800);
-  border-left: var(--border-2) solid var(--primary-500);
+  color: var(--color-primary-dark);
+  border-left: var(--border-2) solid var(--color-primary);
 }
 
 /* Barra de porcentaje */
@@ -316,14 +340,18 @@
   left: 0;
   top: 0;
   height: 100%;
-  background: linear-gradient(90deg, var(--primary-600), var(--secondary-600));
+  background: linear-gradient(
+    90deg,
+    var(--color-primary),
+    var(--color-secondary)
+  );
   border-radius: var(--radius-xl);
   transition: width 0.8s var(--ease-out-expo);
   box-shadow: 0 1px 3px rgba(25, 118, 210, 0.3);
 }
 
 .porcentaje-fill::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -350,10 +378,14 @@
 
 /* Fila de totales */
 .totales-row {
-  background: linear-gradient(135deg, var(--success-50), var(--success-100));
+  background: linear-gradient(
+    135deg,
+    var(--color-success-light),
+    var(--color-success-lighter)
+  );
   font-weight: var(--font-semibold);
-  border-top: var(--border-2) solid var(--primary-600);
-  border-bottom: var(--border-2) solid var(--primary-600);
+  border-top: var(--border-2) solid var(--color-primary);
+  border-bottom: var(--border-2) solid var(--color-primary);
   position: sticky;
   bottom: 0;
   z-index: var(--z-10);
@@ -362,12 +394,12 @@
 .totales-row td {
   border-bottom: none;
   padding: var(--space-4) var(--space-2);
-  color: var(--success-800);
+  color: var(--color-success-dark);
 }
 
 .total-label {
   text-align: left !important;
-  color: var(--primary-800);
+  color: var(--color-primary-dark);
   font-size: var(--text-sm);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -375,26 +407,38 @@
 
 .total-label i {
   margin-right: var(--space-2);
-  color: var(--primary-600);
+  color: var(--color-primary);
 }
 
 .total-mes {
-  background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(76, 175, 80, 0.3));
-  border-left: var(--border-2) solid var(--success-500);
+  background: linear-gradient(
+    135deg,
+    rgba(76, 175, 80, 0.2),
+    rgba(76, 175, 80, 0.3)
+  );
+  border-left: var(--border-2) solid var(--color-success);
 }
 
 .total-general {
-  background: linear-gradient(135deg, rgba(25, 118, 210, 0.2), rgba(25, 118, 210, 0.3));
+  background: linear-gradient(
+    135deg,
+    rgba(25, 118, 210, 0.2),
+    rgba(25, 118, 210, 0.3)
+  );
   font-size: var(--text-base);
-  color: var(--primary-800);
-  border-left: var(--border-2) solid var(--primary-600);
+  color: var(--color-primary-dark);
+  border-left: var(--border-2) solid var(--color-primary);
 }
 
 .porcentaje-total {
-  background: linear-gradient(135deg, rgba(255, 152, 0, 0.2), rgba(255, 152, 0, 0.3));
+  background: linear-gradient(
+    135deg,
+    rgba(255, 152, 0, 0.2),
+    rgba(255, 152, 0, 0.3)
+  );
   font-size: var(--text-base);
-  color: var(--warning-800);
-  border-left: var(--border-2) solid var(--warning-600);
+  color: var(--color-warning-dark);
+  border-left: var(--border-2) solid var(--color-warning);
 }
 
 /* === ESTADOS DE TABLA === */
@@ -405,7 +449,7 @@
 }
 
 .table-loading::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -494,11 +538,11 @@
   .ventas-vendedores-table {
     font-size: var(--text-xs);
   }
-  
+
   .vendedor-col {
     min-width: 150px;
   }
-  
+
   .mes-col {
     min-width: 100px;
   }
@@ -510,39 +554,39 @@
     gap: var(--space-2);
     padding: var(--space-3);
   }
-  
+
   .info-item {
     justify-content: center;
     width: 100%;
   }
-  
+
   .table-wrapper {
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-md);
   }
-  
+
   .ventas-vendedores-table th,
   .ventas-vendedores-table td {
     padding: var(--space-2) var(--space-1);
     font-size: var(--text-xs);
   }
-  
+
   .vendedor-col {
     min-width: 120px;
   }
-  
+
   .mes-col {
     min-width: 80px;
   }
-  
+
   .valor-porcentaje {
     display: none;
   }
-  
+
   .porcentaje-bar {
     height: 24px;
   }
-  
+
   .porcentaje-text {
     font-size: 10px;
   }
@@ -553,26 +597,26 @@
     margin: 0 -var(--space-2);
     border-radius: 0;
   }
-  
+
   .ventas-vendedores-table th,
   .ventas-vendedores-table td {
     padding: var(--space-1);
     font-size: 10px;
   }
-  
+
   .vendedor-col {
     min-width: 100px;
     max-width: 120px;
   }
-  
+
   .vendedor-nombre {
     font-size: 10px;
   }
-  
+
   .porcentaje-bar {
     height: 20px;
   }
-  
+
   .valor-container {
     gap: 2px;
   }

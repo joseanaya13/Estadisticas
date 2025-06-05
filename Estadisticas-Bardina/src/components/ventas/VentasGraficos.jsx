@@ -6,7 +6,7 @@ import {
   AreaChart, Area, ComposedChart 
 } from 'recharts';
 import { ChartContainer } from '../common';
-import { formatCurrency, obtenerNombreMes, parseFechaRobusta, formatDate, roundToPrecision } from '../../utils/formatters';
+import { formatCurrency, obtenerNombreMes, formatDate, roundToPrecision } from '../../utils/formatters';
 import { analizarDuplicados } from '../../utils/usuariosUtils';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#ff7300'];
@@ -545,7 +545,7 @@ const VentasGraficos = ({
 
   if (!ventasData.length) {
     return (
-      <div className="graficos-ventas">
+      <div className="charts-container">
         <div className="no-data-message">
           <i className="fas fa-chart-bar"></i>
           <h3>No hay datos para mostrar</h3>
@@ -556,7 +556,7 @@ const VentasGraficos = ({
   }
   
   return (
-    <div className="graficos-ventas">
+    <div>
       <div className="charts-container">
         
         {/* Gráfico temporal principal */}

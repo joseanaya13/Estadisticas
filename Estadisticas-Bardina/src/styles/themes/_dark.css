@@ -21,14 +21,14 @@
   --text-disabled: #64748b;
   --text-hint: #94a3b8;
   --text-inverse: #0f172a;
-  --text-link: var(--primary-400);
-  --text-link-hover: var(--primary-300);
+  --text-link: var(--color-primary-lighter);
+  --text-link-hover: var(--color-primary-light);
 
   /* === COLORES DE BORDE === */
   --border-color-light: #334155;
   --border-color-medium: #475569;
   --border-color-dark: #64748b;
-  --border-color-focus: var(--primary-500);
+  --border-color-focus: var(--color-primary-light);
 
   /* === COLORES AJUSTADOS PARA DARK MODE === */
   --primary-50: #1e3a8a;
@@ -37,7 +37,8 @@
   --primary-700: #2563eb;
 
   /* === COMPONENTES ESPECÍFICOS === */
-  --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3),
+    0 4px 6px -2px rgba(0, 0, 0, 0.2);
   --table-header-bg: rgba(59, 130, 246, 0.1);
   --table-row-hover: rgba(59, 130, 246, 0.05);
   --table-border: var(--border-color-light);
@@ -115,7 +116,7 @@
 
 [data-theme="dark"] .filtros-activos-info {
   background: rgba(30, 30, 30, 0.95);
-  border-color: var(--primary-400);
+  border-color: var(--color-primary-lighter);
   color: var(--text-inverse);
 }
 

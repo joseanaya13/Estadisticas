@@ -9,8 +9,6 @@ import {
 } from "../utils/formatters";
 import {
   empresasService,
-  contactosService,
-  usuariosService,
   formasPagoService,
 } from "../services/maestros";
 import { analizarDuplicados } from "../utils/usuariosUtils";
@@ -588,7 +586,7 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
       )}
 
       {/* Navegación entre vistas */}
-      <div className="ventas-navigation">
+      <div className="navigation">
         <div className="nav-buttons">
           <button
             className={`nav-btn ${activeView === "resumen" ? "active" : ""}`}
