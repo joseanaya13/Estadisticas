@@ -81,13 +81,6 @@
   gap: var(--space-6);
 }
 
-.resumen-ventas .summary-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--space-8);
-  margin-bottom: var(--space-6);
-}
-
 .resumen-ventas .stats-info {
   display: flex;
   flex-wrap: wrap;
@@ -337,55 +330,6 @@
   margin-top: var(--space-1);
 }
 
-/* === FILTROS ACTIVOS === */
-.filtros-activos-info {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(240, 248, 255, 0.95));
-  border: var(--border-2) solid var(--info-300);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4) var(--space-6);
-  margin-bottom: var(--space-6);
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  font-size: var(--text-sm);
-  box-shadow: 0 4px 15px rgba(49, 130, 206, 0.15);
-  backdrop-filter: blur(10px);
-  position: relative;
-  overflow: hidden;
-  animation: slideInFromTop 0.4s ease-out;
-}
-
-.filtros-activos-info::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: linear-gradient(to bottom, var(--info-600), var(--info-700));
-}
-
-.filtros-activos-info i {
-  color: var(--info-600);
-  font-size: var(--text-lg);
-}
-
-.filtros-activos-info span {
-  background: var(--info-600);
-  color: var(--text-inverse);
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-  margin-right: var(--space-2);
-  box-shadow: 0 2px 4px rgba(49, 130, 206, 0.3);
-}
-
-.filtros-count {
-  font-weight: var(--font-semibold);
-  color: var(--info-800);
-}
-
 /* === ANIMACIONES === */
 @keyframes fadeInUp {
   from {
@@ -427,10 +371,6 @@
     width: 100%;
   }
   
-  .resumen-ventas .summary-cards {
-    grid-template-columns: 1fr;
-  }
-  
   .resumen-ventas .stats-info {
     flex-direction: column;
     gap: var(--space-3);
@@ -457,16 +397,6 @@
     grid-template-columns: 1fr;
   }
   
-  .filtros-activos-info {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-3);
-    padding: var(--space-3);
-  }
-  
-  .filtros-activos-info span {
-    margin-bottom: var(--space-1);
-  }
 }
 
 @media (max-width: 480px) {

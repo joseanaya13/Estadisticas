@@ -24,6 +24,9 @@
 @import './components/_badges.css';
 @import './components/_loading.css';
 @import './components/_modals.css';
+@import './components/_error-states.css';
+@import './components/_filters.css';
+@import './components/_navigation.css';
 
 /* === PAGES === */
 @import './pages/_dashboard.css';
@@ -39,3 +42,6 @@
 @import './utilities/_helpers.css';
 @import './utilities/_animations.css';
 @import './utilities/_print.css';
+@import './utilities/_colors.css';
+@import './utilities/_spacing.css';
+@import './utilities/_typography.css';

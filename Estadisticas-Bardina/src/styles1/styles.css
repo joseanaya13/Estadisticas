@@ -207,14 +207,6 @@
   color: var(--primary-600);
 }
 
-/* === SUMMARY CARDS GRID === */
-.summary-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--space-6);
-  margin-bottom: var(--space-8);
-}
-
 /* === CHARTS CONTAINER === */
 .charts-container {
   display: grid;
@@ -391,9 +383,6 @@
     display: none; /* Ocultar en móvil ya que tenemos el tab bar */
   }
   
-  .summary-cards {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 480px) {

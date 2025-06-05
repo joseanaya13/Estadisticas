@@ -99,7 +99,7 @@
 .alert-info {
   background: linear-gradient(135deg, var(--info-50), var(--info-100));
   border-color: var(--info-300);
-  color: var(--info-800);
+  color: var(--info-800) !important;
 }
 
 .alert-info i {

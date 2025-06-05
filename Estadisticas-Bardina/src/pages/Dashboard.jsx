@@ -631,7 +631,7 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
         <div className="alert alert-info">
           <i className="fas fa-bug"></i>
           <div>
-            <strong>Debug Info:</strong>
+            Debug Info:
             <ul>
               <li>Ventas originales: {dashboardData.debug.ventasOriginales}</li>
               <li>Compras originales: {dashboardData.debug.comprasOriginales}</li>
