@@ -1,0 +1,586 @@
+/* ================================================
+   BADGE COMPONENTS
+   ================================================ */
+
+/* Base Badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: var(--border-radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all var(--transition-base);
+}
+
+/* Badge Variants */
+.badge-primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+.badge-secondary {
+  background: var(--secondary-color);
+  color: white;
+}
+
+.badge-success {
+  background: var(--success-color);
+  color: white;
+}
+
+.badge-warning {
+  background: var(--warning-color);
+  color: var(--text-primary);
+}
+
+.badge-danger {
+  background: var(--danger-color);
+  color: white;
+}
+
+.badge-info {
+  background: var(--info-color);
+  color: white;
+}
+
+.badge-light {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+  border: var(--border-width) solid var(--border-color);
+}
+
+.badge-dark {
+  background: var(--text-primary);
+  color: var(--surface-color);
+}
+
+/* Outline Badges */
+.badge-outline-primary {
+  background: transparent;
+  color: var(--primary-color);
+  border: var(--border-width) solid var(--primary-color);
+}
+
+.badge-outline-secondary {
+  background: transparent;
+  color: var(--secondary-color);
+  border: var(--border-width) solid var(--secondary-color);
+}
+
+.badge-outline-success {
+  background: transparent;
+  color: var(--success-color);
+  border: var(--border-width) solid var(--success-color);
+}
+
+.badge-outline-warning {
+  background: transparent;
+  color: var(--warning-color);
+  border: var(--border-width) solid var(--warning-color);
+}
+
+.badge-outline-danger {
+  background: transparent;
+  color: var(--danger-color);
+  border: var(--border-width) solid var(--danger-color);
+}
+
+.badge-outline-info {
+  background: transparent;
+  color: var(--info-color);
+  border: var(--border-width) solid var(--info-color);
+}
+
+/* Soft Badges */
+.badge-soft-primary {
+  background: var(--primary-bg-light);
+  color: var(--primary-color);
+}
+
+.badge-soft-secondary {
+  background: var(--secondary-bg-light);
+  color: var(--secondary-color);
+}
+
+.badge-soft-success {
+  background: var(--success-bg-light);
+  color: var(--success-color);
+}
+
+.badge-soft-warning {
+  background: var(--warning-bg-light);
+  color: var(--warning-color);
+}
+
+.badge-soft-danger {
+  background: var(--danger-bg-light);
+  color: var(--danger-color);
+}
+
+.badge-soft-info {
+  background: var(--info-bg-light);
+  color: var(--info-color);
+}
+
+/* Badge Sizes */
+.badge-xs {
+  padding: calc(var(--spacing-xs) / 2) var(--spacing-xs);
+  font-size: 0.6rem;
+}
+
+.badge-sm {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-xs);
+}
+
+.badge-lg {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+}
+
+.badge-xl {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--font-size-base);
+}
+
+/* Badge Shapes */
+.badge-square {
+  border-radius: var(--border-radius-sm);
+}
+
+.badge-rounded {
+  border-radius: var(--border-radius-md);
+}
+
+/* Notification Badge */
+.badge-notification {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 var(--spacing-xs);
+  font-size: 0.7rem;
+  font-weight: var(--font-weight-bold);
+  background: var(--danger-color);
+  color: white;
+  border: 2px solid var(--surface-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.badge-notification-sm {
+  top: -6px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  font-size: 0.6rem;
+}
+
+.badge-notification-lg {
+  top: -10px;
+  right: -10px;
+  min-width: 24px;
+  height: 24px;
+  font-size: 0.75rem;
+}
+
+/* Dot Badge */
+.badge-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.badge-dot-sm {
+  width: 6px;
+  height: 6px;
+}
+
+.badge-dot-lg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Pulsing Badge */
+.badge-pulse {
+  animation: badgePulse 2s infinite;
+}
+
+.badge-pulse::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  background: inherit;
+  animation: badgePulseRing 2s infinite;
+}
+
+/* Badge with Icon */
+.badge-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.badge-icon .icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.badge-sm.badge-icon .icon {
+  width: 10px;
+  height: 10px;
+}
+
+.badge-lg.badge-icon .icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Closable Badge */
+.badge-closable {
+  padding-right: calc(var(--spacing-sm) + 16px);
+  position: relative;
+}
+
+.badge-close {
+  position: absolute;
+  top: 50%;
+  right: var(--spacing-xs);
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: all var(--transition-base);
+}
+
+.badge-close:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Status Badges */
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+.badge-status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.badge-status.badge-online::before {
+  background: var(--success-color);
+  box-shadow: 0 0 0 2px var(--success-bg-light);
+}
+
+.badge-status.badge-offline::before {
+  background: var(--text-secondary);
+  box-shadow: 0 0 0 2px var(--surface-hover);
+}
+
+.badge-status.badge-busy::before {
+  background: var(--danger-color);
+  box-shadow: 0 0 0 2px var(--danger-bg-light);
+}
+
+.badge-status.badge-away::before {
+  background: var(--warning-color);
+  box-shadow: 0 0 0 2px var(--warning-bg-light);
+}
+
+/* Number Badge */
+.badge-number {
+  min-width: 1.5em;
+  height: 1.5em;
+  padding: 0;
+  font-weight: var(--font-weight-bold);
+  font-size: 0.7rem;
+}
+
+.badge-number-sm {
+  min-width: 1.2em;
+  height: 1.2em;
+  font-size: 0.6rem;
+}
+
+.badge-number-lg {
+  min-width: 2em;
+  height: 2em;
+  font-size: 0.8rem;
+}
+
+/* Badge Group */
+.badge-group {
+  display: inline-flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.badge-group-stacked {
+  display: inline-flex;
+  margin-right: calc(var(--spacing-xs) * -1);
+}
+
+.badge-group-stacked .badge {
+  margin-right: calc(var(--spacing-xs) * -1);
+  border: 2px solid var(--surface-color);
+  z-index: 1;
+}
+
+.badge-group-stacked .badge:first-child {
+  z-index: 3;
+}
+
+.badge-group-stacked .badge:nth-child(2) {
+  z-index: 2;
+}
+
+/* Interactive Badges */
+.badge-clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.badge-clickable:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.badge-clickable:active {
+  transform: translateY(0);
+}
+
+/* Toggle Badge */
+.badge-toggle {
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.badge-toggle.active {
+  background: var(--primary-color);
+  color: white;
+}
+
+.badge-toggle:not(.active) {
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+}
+
+/* Progress Badge */
+.badge-progress {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.badge-progress::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--progress, 0%);
+  background: var(--primary-color);
+  transition: width 0.3s ease;
+  z-index: -1;
+}
+
+/* Gradient Badge */
+.badge-gradient-primary {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  color: white;
+}
+
+.badge-gradient-success {
+  background: linear-gradient(135deg, var(--success-color), var(--success-dark));
+  color: white;
+}
+
+.badge-gradient-warning {
+  background: linear-gradient(135deg, var(--warning-color), var(--warning-dark));
+  color: var(--text-primary);
+}
+
+.badge-gradient-danger {
+  background: linear-gradient(135deg, var(--danger-color), var(--danger-dark));
+  color: white;
+}
+
+/* Badge in Buttons */
+.btn .badge {
+  margin-left: var(--spacing-xs);
+  font-size: 0.7em;
+}
+
+/* Badge in Nav Items */
+.nav-link .badge {
+  margin-left: auto;
+}
+
+/* Badge Animations */
+.badge-bounce {
+  animation: badgeBounce 0.6s ease-out;
+}
+
+.badge-fadeIn {
+  animation: badgeFadeIn 0.3s ease-out;
+}
+
+.badge-slideIn {
+  animation: badgeSlideIn 0.3s ease-out;
+}
+
+/* Custom Badge Styles */
+.badge-new {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.badge-new::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+.badge-hot {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  color: white;
+  animation: badgePulse 1.5s infinite;
+}
+
+.badge-trending {
+  background: linear-gradient(135deg, #feca57, #ff9ff3);
+  color: var(--text-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+/* Animations */
+@keyframes badgePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes badgePulseRing {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes badgeBounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  40%, 43% {
+    transform: translate3d(0, -8px, 0);
+  }
+  70% {
+    transform: translate3d(0, -4px, 0);
+  }
+  90% {
+    transform: translate3d(0, -2px, 0);
+  }
+}
+
+@keyframes badgeFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes badgeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .badge {
+    font-size: 0.65rem;
+    padding: calc(var(--spacing-xs) / 2) var(--spacing-xs);
+  }
+  
+  .badge-lg {
+    font-size: var(--font-size-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+  
+  .badge-notification {
+    top: -6px;
+    right: -6px;
+    min-width: 18px;
+    height: 18px;
+    font-size: 0.65rem;
+  }
+  
+  .badge-group {
+    gap: calc(var(--spacing-xs) / 2);
+  }
+}
