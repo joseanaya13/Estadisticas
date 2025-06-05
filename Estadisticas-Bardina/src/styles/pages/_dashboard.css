@@ -12,16 +12,18 @@
 }
 
 .dashboard::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 200px;
-  background: linear-gradient(135deg, 
-    var(--primary-50) 0%, 
+  background: linear-gradient(
+    135deg,
+    var(--primary-50) 0%,
     rgba(255, 255, 255, 0.1) 50%,
-    transparent 100%);
+    transparent 100%
+  );
   border-radius: 0 0 var(--radius-2xl) var(--radius-2xl);
   pointer-events: none;
   opacity: 0.7;
@@ -41,7 +43,11 @@
   font-weight: var(--font-bold);
   color: var(--text-primary);
   margin-bottom: var(--space-2);
-  background: linear-gradient(135deg, var(--primary-600), var(--secondary-600));
+  background: linear-gradient(
+    135deg,
+    var(--color-primary),
+    var(--color-secondary)
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -72,16 +78,18 @@
 }
 
 .dashboard .stats-info::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, 
-    var(--primary-600) 0%,
-    var(--secondary-600) 50%,
-    var(--success-600) 100%);
+  background: linear-gradient(
+    90deg,
+    var(--color-primary) 0%,
+    var(--color-secondary) 50%,
+    var(--color-success) 100%
+  );
 }
 
 .dashboard .stats-info .stat-item {
@@ -103,13 +111,13 @@
 }
 
 .dashboard .stats-info .stat-item::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   width: 4px;
   height: 100%;
-  background: var(--primary-600);
+  background: var(--color-primary);
   transform: scaleY(0);
   transition: transform 0.3s ease;
 }
@@ -127,7 +135,7 @@
 
 .dashboard .stats-info .stat-item i {
   font-size: var(--text-xl);
-  color: var(--primary-600);
+  color: var(--color-primary);
   background: var(--surface-primary);
   padding: var(--space-3);
   border-radius: var(--radius-md);
@@ -139,72 +147,9 @@
   justify-content: center;
 }
 
-/* === CONTENEDOR DE GRÁFICOS === */
+/* === LAYOUT DEL DASHBOARD === */
 .dashboard .charts-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-  gap: var(--space-8);
   margin-bottom: var(--space-10);
-}
-
-.dashboard .charts-container .chart-box {
-  position: relative;
-  overflow: hidden;
-  transition: var(--transition-all);
-  animation: chartFadeIn 0.8s ease-out;
-}
-
-.dashboard .charts-container .chart-box:nth-child(1) { animation-delay: 0.2s; }
-.dashboard .charts-container .chart-box:nth-child(2) { animation-delay: 0.4s; }
-.dashboard .charts-container .chart-box:nth-child(3) { animation-delay: 0.6s; }
-.dashboard .charts-container .chart-box:nth-child(4) { animation-delay: 0.8s; }
-
-.dashboard .charts-container .chart-box::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, 
-    var(--primary-600) 0%,
-    var(--secondary-600) 50%,
-    var(--success-600) 100%);
-  opacity: 0;
-  transition: var(--transition-opacity);
-}
-
-.dashboard .charts-container .chart-box:hover::before {
-  opacity: 1;
-}
-
-.dashboard .charts-container .chart-box h3 {
-  position: relative;
-  margin-bottom: var(--space-6);
-}
-
-.dashboard .charts-container .chart-box h3::after {
-  content: '';
-  position: absolute;
-  bottom: -12px;
-  left: 0;
-  width: 60px;
-  height: 3px;
-  background: var(--primary-600);
-  border-radius: var(--radius-sm);
-  transition: width 0.3s ease;
-}
-
-.dashboard .charts-container .chart-box:hover h3::after {
-  width: 120px;
-}
-
-.dashboard .charts-container .chart-box h3 i {
-  background: linear-gradient(135deg, var(--primary-50), var(--primary-100));
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  border: var(--border-1) solid var(--primary-200);
 }
 
 /* === ALERTAS DEL DASHBOARD === */
@@ -220,16 +165,18 @@
 }
 
 .dashboard-alerts::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, 
-    var(--warning-500) 0%,
-    var(--error-500) 50%,
-    var(--info-500) 100%);
+  background: linear-gradient(
+    90deg,
+    var(--color-warning) 0%,
+    var(--color-error) 50%,
+    var(--color-info) 100%
+  );
 }
 
 .dashboard-alerts h3 {
@@ -243,56 +190,12 @@
 }
 
 .dashboard-alerts h3 i {
-  color: var(--warning-600);
+  color: var(--color-warning);
   background: var(--warning-50);
   padding: var(--space-3);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   border: var(--border-1) solid var(--warning-200);
-}
-
-.dashboard-alerts .alert {
-  margin-bottom: var(--space-4);
-  border-radius: var(--radius-lg);
-  transition: var(--transition-all);
-  position: relative;
-  overflow: hidden;
-}
-
-.dashboard-alerts .alert::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 5px;
-  border-radius: var(--radius-sm);
-  transition: width 0.3s ease;
-}
-
-.dashboard-alerts .alert-warning::before {
-  background: var(--warning-600);
-}
-
-.dashboard-alerts .alert-error::before {
-  background: var(--error-600);
-}
-
-.dashboard-alerts .alert-success::before {
-  background: var(--success-600);
-}
-
-.dashboard-alerts .alert-info::before {
-  background: var(--info-600);
-}
-
-.dashboard-alerts .alert:hover {
-  transform: translateX(8px);
-  box-shadow: var(--shadow-lg);
-}
-
-.dashboard-alerts .alert:hover::before {
-  width: 8px;
 }
 
 /* === MÉTRICAS DESTACADAS === */
@@ -304,7 +207,11 @@
 }
 
 .metric-card {
-  background: linear-gradient(135deg, var(--surface-primary), var(--surface-secondary));
+  background: linear-gradient(
+    135deg,
+    var(--surface-primary),
+    var(--surface-secondary)
+  );
   border-radius: var(--radius-xl);
   padding: var(--space-6);
   text-align: center;
@@ -316,15 +223,17 @@
 }
 
 .metric-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 100%;
-  background: linear-gradient(135deg, 
+  background: linear-gradient(
+    135deg,
     rgba(255, 255, 255, 0.1) 0%,
-    transparent 50%);
+    transparent 50%
+  );
   pointer-events: none;
 }
 
@@ -337,7 +246,11 @@
   width: 64px;
   height: 64px;
   margin: 0 auto var(--space-4);
-  background: linear-gradient(135deg, var(--primary-600), var(--secondary-600));
+  background: linear-gradient(
+    135deg,
+    var(--color-primary),
+    var(--color-secondary)
+  );
   border-radius: var(--radius-xl);
   display: flex;
   align-items: center;
@@ -352,7 +265,11 @@
   font-weight: var(--font-bold);
   color: var(--text-primary);
   margin-bottom: var(--space-2);
-  background: linear-gradient(135deg, var(--primary-600), var(--secondary-600));
+  background: linear-gradient(
+    135deg,
+    var(--color-primary),
+    var(--color-secondary)
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -377,11 +294,11 @@
 }
 
 .metric-change.positive {
-  color: var(--success-600);
+  color: var(--color-success);
 }
 
 .metric-change.negative {
-  color: var(--error-600);
+  color: var(--color-error);
 }
 
 .metric-change.neutral {
@@ -400,7 +317,7 @@
 
 .dashboard-empty i {
   font-size: var(--text-5xl);
-  color: var(--primary-600);
+  color: var(--color-primary);
   margin-bottom: var(--space-6);
   opacity: 0.6;
 }
@@ -433,7 +350,11 @@
 }
 
 .dashboard-action {
-  background: linear-gradient(135deg, var(--surface-primary), var(--surface-secondary));
+  background: linear-gradient(
+    135deg,
+    var(--surface-primary),
+    var(--surface-secondary)
+  );
   border: var(--border-1) solid var(--border-color-light);
   border-radius: var(--radius-lg);
   padding: var(--space-4) var(--space-6);
@@ -453,12 +374,12 @@
   box-shadow: var(--shadow-lg);
   border-color: var(--primary-300);
   text-decoration: none;
-  color: var(--primary-600);
+  color: var(--color-primary);
 }
 
 .dashboard-action i {
   font-size: var(--text-lg);
-  color: var(--primary-600);
+  color: var(--color-primary);
 }
 
 /* === ANIMACIONES === */
@@ -484,21 +405,10 @@
   }
 }
 
-@keyframes chartFadeIn {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
 /* === RESPONSIVE DESIGN === */
 @media (max-width: 1400px) {
-  .dashboard .charts-container {
-    grid-template-columns: 1fr;
+  .dashboard .stats-info {
+    gap: var(--space-3);
   }
 }
 
@@ -512,60 +422,60 @@
   .dashboard::before {
     height: 120px;
   }
-  
+
   .dashboard-title {
     font-size: var(--text-3xl);
   }
-  
+
   .dashboard-subtitle {
     font-size: var(--text-base);
   }
-  
+
   .dashboard .stats-info {
     flex-direction: column;
     gap: var(--space-3);
     padding: var(--space-4);
   }
-  
+
   .dashboard .stats-info .stat-item {
     min-width: unset;
     justify-content: center;
   }
-  
+
   .dashboard .charts-container {
     gap: var(--space-4);
     margin-bottom: var(--space-6);
   }
-  
+
   .dashboard-alerts {
     padding: var(--space-4);
     margin-top: var(--space-6);
   }
-  
+
   .dashboard-metrics {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: var(--space-4);
   }
-  
+
   .metric-card {
     padding: var(--space-4);
   }
-  
+
   .metric-icon {
     width: 48px;
     height: 48px;
     font-size: var(--text-xl);
   }
-  
+
   .metric-value {
     font-size: var(--text-2xl);
   }
-  
+
   .dashboard-actions {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .dashboard-action {
     min-width: unset;
     width: 100%;
@@ -577,48 +487,48 @@
   .dashboard {
     padding-bottom: var(--space-4);
   }
-  
+
   .dashboard-title {
     font-size: var(--text-2xl);
   }
-  
+
   .dashboard .summary-cards {
     margin-bottom: var(--space-4);
   }
-  
+
   .dashboard .stats-info .stat-item {
     padding: var(--space-2) var(--space-3);
     min-width: unset;
   }
-  
+
   .dashboard .stats-info .stat-item i {
     width: 40px;
     height: 40px;
     font-size: var(--text-base);
   }
-  
+
   .dashboard-empty {
     padding: var(--space-8) var(--space-4);
   }
-  
+
   .dashboard-empty i {
     font-size: var(--text-4xl);
   }
-  
+
   .dashboard-empty h3 {
     font-size: var(--text-xl);
   }
-  
+
   .metric-card {
     padding: var(--space-3);
   }
-  
+
   .metric-icon {
     width: 40px;
     height: 40px;
     font-size: var(--text-lg);
   }
-  
+
   .metric-value {
     font-size: var(--text-xl);
   }

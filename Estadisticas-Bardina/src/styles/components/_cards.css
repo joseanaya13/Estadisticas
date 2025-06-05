@@ -4,12 +4,12 @@
 
 /* Base Card */
 .card {
-  background: var(--surface-color);
-  border: var(--border-width) solid var(--border-color);
-  border-radius: var(--border-radius-lg);
+  background: var(--surface-primary);
+  border: var(--border-1) solid var(--border-color-light);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
-  transition: all var(--transition-base);
+  transition: var(--transition-all);
 }
 
 .card:hover {
@@ -18,13 +18,13 @@
 
 /* Card Header */
 .card-header {
-  padding: var(--spacing-lg);
-  background: var(--card-header-bg);
-  border-bottom: var(--border-width) solid var(--border-color);
+  padding: var(--space-6);
+  background: var(--surface-primary);
+  border-bottom: var(--border-1) solid var(--border-color-light);
   display: flex;
   align-items: center;
   justify-content: start;
-  gap: var(--spacing-md);
+  gap: var(--space-4);
 }
 
 .card-header i {
@@ -33,57 +33,57 @@
 }
 
 .card-header h3 {
-  margin-right: 1;
+  margin: 0;
   color: var(--text-primary);
-  font-size: var(--text-2xl);
+  font-size: var(--text-4xl);
 }
 
 .card-title {
   margin: 0;
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
   color: var(--text-primary);
   line-height: 1.2;
 }
 
 .card-subtitle {
-  margin: var(--spacing-xs) 0 0 0;
-  font-size: var(--font-size-sm);
+  margin: var(--space-1) 0 0 0;
+  font-size: var(--text-sm);
   color: var(--text-secondary);
-  font-weight: var(--font-weight-normal);
+  font-weight: var(--font-normal);
 }
 
 .card-actions {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--space-2);
   flex-shrink: 0;
 }
 
 /* Card Body */
 .card-body {
-  padding: var(--spacing-lg);
+  padding: var(--space-6);
 }
 
 .card-body:first-child {
-  border-top-left-radius: var(--border-radius-lg);
-  border-top-right-radius: var(--border-radius-lg);
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
 }
 
 .card-body:last-child {
-  border-bottom-left-radius: var(--border-radius-lg);
-  border-bottom-right-radius: var(--border-radius-lg);
+  border-bottom-left-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
 }
 
 /* Card Footer */
 .card-footer {
-  padding: var(--spacing-md) var(--spacing-lg);
-  background: var(--card-footer-bg);
-  border-top: var(--border-width) solid var(--border-color);
+  padding: var(--space-4) var(--space-6);
+  background: var(--surface-secondary);
+  border-top: var(--border-1) solid var(--border-color-light);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--spacing-md);
+  gap: var(--space-4);
 }
 
 /* Data Card (Stats) */
@@ -92,7 +92,7 @@
   border-radius: var(--radius-xl);
   padding: var(--space-6);
   box-shadow: var(--shadow-lg);
-  border: var(--border-width-1) solid var(--border-light);
+  border: var(--border-1) solid var(--border-color-light);
   transition: var(--transition-all);
   position: relative;
   overflow: hidden;
@@ -119,12 +119,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--space-4);
 }
 
 .data-card-title {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   color: var(--text-secondary);
   margin: 0;
   text-transform: uppercase;
@@ -139,8 +139,8 @@
 }
 
 .data-card-value {
-  font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-bold);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
   color: var(--text-primary);
   margin: 0;
   line-height: 1.1;
@@ -149,18 +149,18 @@
 .data-card-change {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  margin-top: var(--spacing-sm);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
 }
 
 .data-card-change.positive {
-  color: var(--success-color);
+  color: var(--color-success);
 }
 
 .data-card-change.negative {
-  color: var(--danger-color);
+  color: var(--color-error);
 }
 
 .data-card-change.neutral {
@@ -174,53 +174,53 @@
 
 /* Card Variants */
 .card-primary {
-  border-color: var(--primary-color);
+  border-color: var(--color-primary);
 }
 
 .card-primary .card-header {
-  background: var(--primary-bg-light);
-  color: var(--primary-color);
+  background: var(--primary-100);
+  color: var(--color-primary);
 }
 
 .card-success {
-  border-color: var(--success-color);
+  border-color: var(--color-success);
 }
 
 .card-success .card-header {
-  background: var(--success-bg-light);
-  color: var(--success-color);
+  background: var(--success-100);
+  color: var(--color-success);
 }
 
 .card-warning {
-  border-color: var(--warning-color);
+  border-color: var(--color-warning);
 }
 
 .card-warning .card-header {
-  background: var(--warning-bg-light);
-  color: var(--warning-color);
+  background: var(--warning-100);
+  color: var(--color-warning);
 }
 
 .card-danger {
-  border-color: var(--danger-color);
+  border-color: var(--color-error);
 }
 
 .card-danger .card-header {
-  background: var(--danger-bg-light);
-  color: var(--danger-color);
+  background: var(--error-100);
+  color: var(--color-error);
 }
 
 .card-info {
-  border-color: var(--info-color);
+  border-color: var(--color-info);
 }
 
 .card-info .card-header {
-  background: var(--info-bg-light);
-  color: var(--info-color);
+  background: var(--info-100);
+  color: var(--color-info);
 }
 
 /* Data Card Variants */
 .data-card-primary {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--primary-800) 100%);
   color: white;
   border: none;
 }
@@ -235,7 +235,7 @@
 }
 
 .data-card-success {
-  background: linear-gradient(135deg, var(--success-color) 0%, var(--success-dark) 100%);
+  background: linear-gradient(135deg, var(--color-success) 0%, var(--success-800) 100%);
   color: white;
   border: none;
 }
@@ -250,7 +250,7 @@
 }
 
 .data-card-warning {
-  background: linear-gradient(135deg, var(--warning-color) 0%, var(--warning-dark) 100%);
+  background: linear-gradient(135deg, var(--color-warning) 0%, var(--warning-800) 100%);
   color: var(--text-primary);
   border: none;
 }
@@ -261,7 +261,7 @@
 }
 
 .data-card-danger {
-  background: linear-gradient(135deg, var(--danger-color) 0%, var(--danger-dark) 100%);
+  background: linear-gradient(135deg, var(--color-error) 0%, var(--error-800) 100%);
   color: white;
   border: none;
 }
@@ -277,11 +277,11 @@
 
 /* Compact Card */
 .card-compact {
-  padding: var(--spacing-md);
+  padding: var(--space-4);
 }
 
 .card-compact .card-header {
-  padding: 0 0 var(--spacing-md) 0;
+  padding: 0 0 var(--space-4) 0;
   border-bottom: none;
   background: transparent;
 }
@@ -293,7 +293,7 @@
 /* Clickable Card */
 .card-clickable {
   cursor: pointer;
-  transition: all var(--transition-base);
+  transition: var(--transition-all);
 }
 
 .card-clickable:hover {
@@ -310,8 +310,8 @@
   width: 100%;
   height: 200px;
   object-fit: cover;
-  border-top-left-radius: var(--border-radius-lg);
-  border-top-right-radius: var(--border-radius-lg);
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
 }
 
 .card-image-sm {
@@ -347,7 +347,7 @@
 /* Card Grid */
 .card-grid {
   display: grid;
-  gap: var(--spacing-lg);
+  gap: var(--space-6);
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
@@ -363,7 +363,7 @@
 .card-deck {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--spacing-lg);
+  gap: var(--space-6);
 }
 
 .card-deck .card {
@@ -384,25 +384,25 @@
 /* Responsive */
 @media (max-width: 768px) {
   .card-header {
-    padding: var(--spacing-md);
+    padding: var(--space-4);
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--spacing-sm);
+    gap: var(--space-2);
   }
   
   .card-body {
-    padding: var(--spacing-md);
+    padding: var(--space-4);
   }
   
   .card-footer {
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: var(--space-2) var(--space-4);
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--spacing-sm);
+    gap: var(--space-2);
   }
   
   .data-card {
-    padding: var(--spacing-md);
+    padding: var(--space-4);
   }
   
   .card-grid {

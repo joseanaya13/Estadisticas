@@ -1,5 +1,5 @@
 // src/pages/Dashboard.jsx - Versión con filtros corregidos
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
@@ -7,11 +7,10 @@ import {
 
 // Componentes actualizados con nuevas rutas
 import { ChartContainer, DataCard, LoadingSpinner, ErrorMessage, FilterBar } from '../components/common';
-import { formatCurrency, obtenerNombreMes, parseFechaRobusta, formatDate, normalizeNumber, normalizeYear, normalizeMonth } from '../utils/formatters';
+import { formatCurrency, obtenerNombreMes, parseFechaRobusta, normalizeNumber, normalizeYear, normalizeMonth } from '../utils/formatters';
 
 // Servicios y hooks actualizados
-import { useNotifications, useFilters } from '../hooks';
-import useAppStore from '../stores/useAppStore';
+import { useNotifications } from '../hooks';
 
 // Configuración centralizada
 import { APP_CONFIG, CONSTANTS } from '../config/app.config';
@@ -50,9 +49,8 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
       });
     }
   }, [initialVentasData, initialComprasData]);
-
   // Función mejorada para validar y normalizar datos
-  const validarYNormalizarItem = (item) => {
+  const validarYNormalizarItem = useMemo(() => (item) => {
     if (!item || typeof item !== 'object') return null;
 
     // Normalizar campos críticos
@@ -94,8 +92,7 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
     }
 
     return itemNormalizado;
-  };
-
+  }, []);
   // Función para obtener años disponibles con validación robusta
   const añosDisponibles = useMemo(() => {
     const años = new Set();
@@ -135,8 +132,7 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
       value: año.toString(),
       label: año.toString()
     }));
-  }, [initialVentasData, initialComprasData]);
-
+  }, [initialVentasData, initialComprasData, validarYNormalizarItem]);
   // Función para obtener meses disponibles con validación
   const mesesDisponibles = useMemo(() => {
     const meses = new Set();
@@ -162,7 +158,7 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
     }
 
     return Array.from(meses).sort((a, b) => a - b);
-  }, [initialVentasData, initialComprasData]);
+  }, [initialVentasData, initialComprasData, validarYNormalizarItem]);
 
   // Configuración de filtros mejorada
   const filterConfig = [
@@ -202,9 +198,8 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
       value: filtros.dateTo
     }
   ];
-
   // Función mejorada para filtrar datos
-  const filtrarDatos = (datosOriginales, tipoData = 'fac_t') => {
+  const filtrarDatos = useCallback((datosOriginales, tipoData = 'fac_t') => {
     if (!datosOriginales || !Array.isArray(datosOriginales)) {
       console.warn(`❌ Datos no válidos para filtrar: ${tipoData}`);
       return [];
@@ -289,10 +284,9 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
     }
 
     return datosFiltrados;
-  };
-
+  }, [filtros, validarYNormalizarItem]);
   // Función mejorada para procesar datos del dashboard
-  const processDashboardData = (ventasFiltradas, comprasFiltradas) => {
+  const processDashboardData = useCallback((ventasFiltradas, comprasFiltradas) => {
     // Calcular totales con validación
     const ventasTotales = ventasFiltradas.reduce((sum, v) => {
       const total = v.tot || 0;
@@ -359,31 +353,117 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
         balance: periodo.ventas - periodo.compras,
         nombrePeriodo: obtenerNombreMes(periodo.mes) + ' ' + periodo.año
       }))
-      .sort((a, b) => a.periodo.localeCompare(b.periodo));
+      .sort((a, b) => a.periodo.localeCompare(b.periodo));    // Función para calcular tendencias inteligentes
+    const calcularTendenciasInteligentes = (datosTemporales) => {
+      let tendencias = {
+        variacionVentas: 0,
+        variacionCompras: 0,
+        variacionBalance: 0,
+        periodoComparacion: null,
+        esComparacionValida: false
+      };
 
-    // Calcular tendencias mejoradas
-    let tendencias = {
-      tendenciaVentas: 0,
-      tendenciaCompras: 0,
-      tendenciaBalance: 0,
-      variacionVentas: 0,
-      variacionCompras: 0,
-      variacionBalance: 0
+      if (datosTemporales.length < 2) {
+        if (APP_CONFIG.features.debugging) {
+          console.log('ℹ️ No hay suficientes períodos para calcular tendencias');
+        }
+        return tendencias;
+      }
+
+      const hoy = new Date();
+      const mesActual = hoy.getMonth() + 1;
+      const añoActual = hoy.getFullYear();
+      
+      // Identificar si el último período es el mes actual incompleto
+      const ultimoPeriodo = datosTemporales[datosTemporales.length - 1];
+      const esUltimoPeriodoIncompleto = 
+        ultimoPeriodo.año === añoActual && 
+        ultimoPeriodo.mes === mesActual && 
+        hoy.getDate() < 25; // Considerar incompleto si estamos antes del día 25
+
+      let periodoReciente, periodoAnterior;
+
+      if (esUltimoPeriodoIncompleto && datosTemporales.length >= 3) {
+        // Caso: Mes actual incompleto - comparar penúltimo vs antepenúltimo
+        periodoReciente = datosTemporales[datosTemporales.length - 2];
+        periodoAnterior = datosTemporales[datosTemporales.length - 3];
+        tendencias.periodoComparacion = `${periodoAnterior.nombrePeriodo} vs ${periodoReciente.nombrePeriodo}`;
+        tendencias.esComparacionValida = true;
+        
+        if (APP_CONFIG.features.debugging) {
+          console.log('📊 Comparando períodos completos:', {
+            anterior: periodoAnterior.nombrePeriodo,
+            reciente: periodoReciente.nombrePeriodo,
+            motivo: 'Mes actual incompleto'
+          });
+        }
+      } else if (!esUltimoPeriodoIncompleto && datosTemporales.length >= 2) {
+        // Caso: Mes actual completo - comparar último vs penúltimo
+        periodoReciente = datosTemporales[datosTemporales.length - 1];
+        periodoAnterior = datosTemporales[datosTemporales.length - 2];
+        tendencias.periodoComparacion = `${periodoAnterior.nombrePeriodo} vs ${periodoReciente.nombrePeriodo}`;
+        tendencias.esComparacionValida = true;
+        
+        if (APP_CONFIG.features.debugging) {
+          console.log('📊 Comparando períodos:', {
+            anterior: periodoAnterior.nombrePeriodo,
+            reciente: periodoReciente.nombrePeriodo,
+            motivo: 'Mes actual completo'
+          });
+        }
+      } else {
+        // No hay suficientes datos para una comparación válida
+        if (APP_CONFIG.features.debugging) {
+          console.log('⚠️ No hay suficientes períodos completos para comparar', {
+            totalPeriodos: datosTemporales.length,
+            ultimoIncompleto: esUltimoPeriodoIncompleto
+          });
+        }
+        return tendencias;
+      }
+
+      // Validar que ambos períodos tengan datos significativos
+      if (periodoReciente.cantidadVentas < 1 && periodoReciente.cantidadCompras < 1) {
+        console.log('⚠️ Período reciente sin datos significativos');
+        tendencias.esComparacionValida = false;
+        return tendencias;
+      }
+
+      if (periodoAnterior.cantidadVentas < 1 && periodoAnterior.cantidadCompras < 1) {
+        console.log('⚠️ Período anterior sin datos significativos');
+        tendencias.esComparacionValida = false;
+        return tendencias;
+      }
+
+      // Calcular variaciones
+      tendencias.variacionVentas = periodoAnterior.ventas > 0 ?
+        ((periodoReciente.ventas - periodoAnterior.ventas) / periodoAnterior.ventas) * 100 : 0;
+        
+      tendencias.variacionCompras = periodoAnterior.compras > 0 ?
+        ((periodoReciente.compras - periodoAnterior.compras) / periodoAnterior.compras) * 100 : 0;
+        
+      tendencias.variacionBalance = periodoAnterior.balance !== 0 ?
+        ((periodoReciente.balance - periodoAnterior.balance) / Math.abs(periodoAnterior.balance)) * 100 : 0;
+
+      if (APP_CONFIG.features.debugging) {
+        console.log('📈 Tendencias calculadas:', {
+          ventas: `${tendencias.variacionVentas.toFixed(1)}%`,
+          compras: `${tendencias.variacionCompras.toFixed(1)}%`,
+          balance: `${tendencias.variacionBalance.toFixed(1)}%`,
+          valoresReales: {
+            ventasAnterior: formatCurrency(periodoAnterior.ventas),
+            ventasReciente: formatCurrency(periodoReciente.ventas),
+            comprasAnterior: formatCurrency(periodoAnterior.compras),
+            comprasReciente: formatCurrency(periodoReciente.compras)
+          }
+        });
+      }
+
+      return tendencias;
     };
 
-    if (datosTemporales.length >= 2) {
-      const ultimo = datosTemporales[datosTemporales.length - 1];
-      const penultimo = datosTemporales[datosTemporales.length - 2];
-
-      tendencias.variacionVentas = penultimo.ventas > 0 ?
-        ((ultimo.ventas - penultimo.ventas) / penultimo.ventas) * 100 : 0;
-      tendencias.variacionCompras = penultimo.compras > 0 ?
-        ((ultimo.compras - penultimo.compras) / penultimo.compras) * 100 : 0;
-      tendencias.variacionBalance = penultimo.balance !== 0 ?
-        ((ultimo.balance - penultimo.balance) / Math.abs(penultimo.balance)) * 100 : 0;
-    }
-
-    // Generar alertas mejoradas
+    // Calcular tendencias usando la nueva función
+    const tendencias = calcularTendenciasInteligentes(datosTemporales);    // Generar alertas mejoradas
     const alertas = [];
 
     if (ventasFiltradas.length === 0 && comprasFiltradas.length === 0) {
@@ -410,11 +490,30 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
       });
     }
 
-    if (tendencias.variacionVentas < -10) {
+    // Alerta de caída en ventas MEJORADA - solo si la comparación es válida
+    if (tendencias.esComparacionValida && tendencias.variacionVentas < -10) {
       alertas.push({
         tipo: 'error',
         titulo: 'Caída en Ventas',
-        mensaje: `Las ventas han disminuido un ${Math.abs(tendencias.variacionVentas).toFixed(1)}%`
+        mensaje: `Las ventas han disminuido un ${Math.abs(tendencias.variacionVentas).toFixed(1)}% (${tendencias.periodoComparacion})`
+      });
+    }
+
+    // Alerta de crecimiento excepcional
+    if (tendencias.esComparacionValida && tendencias.variacionVentas > 25) {
+      alertas.push({
+        tipo: 'success',
+        titulo: 'Crecimiento Excepcional',
+        mensaje: `Las ventas han crecido un ${tendencias.variacionVentas.toFixed(1)}% (${tendencias.periodoComparacion})`
+      });
+    }
+
+    // Alerta de caída significativa en compras
+    if (tendencias.esComparacionValida && tendencias.variacionCompras < -20) {
+      alertas.push({
+        tipo: 'warning',
+        titulo: 'Reducción en Compras',
+        mensaje: `Las compras han disminuido un ${Math.abs(tendencias.variacionCompras).toFixed(1)}% (${tendencias.periodoComparacion})`
       });
     }
 
@@ -445,17 +544,17 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
       promedioAlbaran: comprasFiltradas.length > 0 ? comprasTotales / comprasFiltradas.length : 0,
       datosTemporales,
       tendencias,
-      alertas,
-      // Información adicional para debug
+      alertas,      // Información adicional para debug
       debug: {
         ventasOriginales: initialVentasData?.fac_t?.length || 0,
         comprasOriginales: initialComprasData?.com_alb_g?.length || 0,
         ventasFiltradas: ventasFiltradas.length,
         comprasFiltradas: comprasFiltradas.length,
-        periodosConDatos: datosTemporales.length
+        periodosConDatos: datosTemporales.length,
+        comparacionValida: tendencias.esComparacionValida,        periodoComparacion: tendencias.periodoComparacion
       }
     };
-  };
+  }, [initialVentasData, initialComprasData]);
 
   // Efecto principal para procesar datos
   useEffect(() => {
@@ -513,10 +612,8 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
       } finally {
         setLoading(false);
       }
-    };
-
-    loadDashboardData();
-  }, [initialVentasData, initialComprasData, filtros]);
+    };    loadDashboardData();
+  }, [initialVentasData, initialComprasData, filtros, filtrarDatos, processDashboardData, showNotification]);
 
   // Datos para gráfico de pie con validación
   const datosPie = useMemo(() => {
@@ -624,9 +721,7 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
             ({dashboardData.totalFacturas} facturas, {dashboardData.totalAlbaranes} albaranes)
           </span>
         </div>
-      )}
-
-      {/* Debug info si está habilitado */}
+      )}      {/* Debug info si está habilitado */}
       {APP_CONFIG.features.debugging && dashboardData.debug && (
         <div className="alert alert-info">
           <i className="fas fa-bug"></i>
@@ -638,6 +733,10 @@ const Dashboard = ({ ventasData: initialVentasData, comprasData: initialComprasD
               <li>Ventas filtradas: {dashboardData.debug.ventasFiltradas}</li>
               <li>Compras filtradas: {dashboardData.debug.comprasFiltradas}</li>
               <li>Períodos con datos: {dashboardData.debug.periodosConDatos}</li>
+              <li>Comparación válida: {dashboardData.debug.comparacionValida ? 'Sí' : 'No'}</li>
+              {dashboardData.debug.periodoComparacion && (
+                <li>Períodos comparados: {dashboardData.debug.periodoComparacion}</li>
+              )}
             </ul>
           </div>
         </div>
