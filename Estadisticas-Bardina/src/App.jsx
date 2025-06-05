@@ -22,8 +22,10 @@ import useAppStore from './stores/useAppStore';
 import { APP_CONFIG } from './config/app.config';
 
 // Estilos
-import './styles1/styles.css';
-
+ import './styles1/styles.css';
+ import './styles1/utils.css';
+ import './styles1/sidebar.css';
+// import './styles/index.css';
 
 function AppContent() {
   const { data, loading, errors, isDataLoaded, isInitialized, stats, loadAllData } = useAppData();
