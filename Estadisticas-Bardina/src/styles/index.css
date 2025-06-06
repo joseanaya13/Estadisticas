@@ -34,6 +34,7 @@
 @import './pages/_ventas.css';
 @import './pages/_compras.css';
 @import './pages/_common-pages.css';
+@import './pages/_proveedores.css';
 
 /* === THEMES === */
 @import './themes/_light.css';

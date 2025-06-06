@@ -1,7 +1,8 @@
-// pages/EstadisticasVentas.jsx - REORGANIZADA Y SIMPLIFICADA
+// pages/EstadisticasVentas.jsx - CON PROVEEDORES INTEGRADO
 import React, { useState, useEffect, useMemo } from "react";
 import { LoadingSpinner, ErrorMessage, FilterBar } from "../components/common";
 import { VentasResumen, VentasGraficos, VentasTablaVendedores } from "../components/ventas";
+import { ProveedoresContainer } from "../components/ventas/proveedores";
 import {
   formatDate,
   obtenerNombreMes,
@@ -376,7 +377,7 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
           Análisis de Ventas
         </h1>
         <p className="page-subtitle">
-          Dashboard completo con métricas, gráficos y análisis de vendedores
+          Dashboard completo con métricas, gráficos y análisis detallado por vendedores y proveedores
         </p>
       </div>
 
@@ -413,7 +414,7 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
         </div>
       )}
 
-      {/* Navegación entre vistas - COMPLETA CON TODAS LAS SECCIONES */}
+      {/* Navegación entre vistas - CON PROVEEDORES HABILITADO */}
       <div className="ventas-navigation">
         <div className="nav-buttons">
           <button
@@ -440,12 +441,9 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
           <button
             className={`nav-btn ${activeView === "proveedores" ? "active" : ""}`}
             onClick={() => handleViewChange("proveedores")}
-            disabled
-            title="Funcionalidad en desarrollo"
           >
             <i className="fas fa-industry"></i>
             Por Proveedores
-            <span className="badge-desarrollo">PRÓXIMO</span>
           </button>
           <button
             className={`nav-btn ${activeView === "marcas" ? "active" : ""}`}
@@ -526,35 +524,16 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
           </div>
         )}
 
-        {/* Secciones pendientes de implementar */}
         {!loading && activeView === "proveedores" && (
-          <div className="seccion-en-desarrollo">
-            <div className="desarrollo-placeholder">
-              <i className="fas fa-industry"></i>
-              <h3>📊 Análisis por Proveedores</h3>
-              <p>Esta funcionalidad permitirá analizar las ventas segmentadas por proveedor.</p>
-              <div className="desarrollo-features">
-                <div className="feature-item">
-                  <i className="fas fa-chart-pie"></i>
-                  <span>Distribución de ventas por proveedor</span>
-                </div>
-                <div className="feature-item">
-                  <i className="fas fa-trending-up"></i>
-                  <span>Evolución temporal por proveedor</span>
-                </div>
-                <div className="feature-item">
-                  <i className="fas fa-trophy"></i>
-                  <span>Ranking de rendimiento</span>
-                </div>
-              </div>
-              <div className="desarrollo-nota">
-                <i className="fas fa-info-circle"></i>
-                <span>Se implementará cuando estén disponibles los datos de líneas de factura</span>
-              </div>
-            </div>
+          <div className="proveedores-view">
+            <ProveedoresContainer
+              filtros={filtros}
+              filtrosActivos={filtrosActivos}
+            />
           </div>
         )}
 
+        {/* Secciones pendientes de implementar */}
         {!loading && activeView === "marcas" && (
           <div className="seccion-en-desarrollo">
             <div className="desarrollo-placeholder">

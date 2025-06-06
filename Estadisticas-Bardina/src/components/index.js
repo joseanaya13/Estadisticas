@@ -12,7 +12,6 @@ export * from './ventas';
 export * from './dashboard';
 
 // 🆕 Nuevos módulos (descomentar cuando estén listos)
-// export * from './ventasDetalladas';
 // export * from './compras';
 // export * from './sellout';
 // export * from './inventario';

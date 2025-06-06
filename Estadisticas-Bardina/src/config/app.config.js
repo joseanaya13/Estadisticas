@@ -203,7 +203,7 @@ export const VENTAS_VIEWS = {
     label: 'Por Proveedores',
     icon: 'industry',
     description: 'Análisis de ventas segmentado por proveedor',
-    enabled: false,
+    enabled: true,
     requiredData: ['fac_l', 'prv_m'],
     badge: 'PRÓXIMO'
   },
