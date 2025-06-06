@@ -1,4 +1,4 @@
-// pages/EstadisticasVentas.jsx - Corregido y actualizado
+// pages/EstadisticasVentas.jsx - REORGANIZADA Y SIMPLIFICADA
 import React, { useState, useEffect, useMemo } from "react";
 import { LoadingSpinner, ErrorMessage, FilterBar } from "../components/common";
 import { VentasResumen, VentasGraficos, VentasTablaVendedores } from "../components/ventas";
@@ -27,7 +27,7 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [activeView, setActiveView] = useState("resumen"); // resumen, graficos, tabla
+  const [activeView, setActiveView] = useState("dashboard"); // dashboard, graficos, vendedores, proveedores, marcas, temporadas
 
   // Estados para datos de referencia
   const [empresas, setEmpresas] = useState([]);
@@ -47,7 +47,7 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
       try {
         setLoadingReferenceData(true);
 
-        // Cargar empresas y formas de pago (los contactos y usuarios ya vienen como props)
+        // Cargar empresas y formas de pago
         const [empresasData, formasPagoData] = await Promise.all([
           empresasService.getEmpresas(),
           formasPagoService.getFormasPago(),
@@ -74,12 +74,9 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
         // Mapa de usuarios (con detección de duplicados)
         if (usuarios?.usr_m) {
           const usuariosList = usuarios.usr_m.filter((u) => u.id && u.name);
-
-          // Analizar duplicados
           const analisisDuplicados = analizarDuplicados(usuariosList);
           setDuplicadosDetectados(analisisDuplicados.duplicados);
 
-          // Crear mapa consolidado
           usuariosList.forEach((usuario) => {
             if (usuario.id && usuario.name) {
               mapaUsuariosData[usuario.id] = usuario.name;
@@ -133,7 +130,7 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
       }));
   }, [data]);
 
-  // Opciones para filtros
+  // Opciones simplificadas para filtros
   const opcionesMes = useMemo(() => {
     if (!data || !data.fac_t) return [];
 
@@ -153,64 +150,13 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
     ];
   }, [data]);
 
-  const opcionesTienda = useMemo(() => {
-    if (!empresas.length)
-      return [{ value: "todas", label: "Cargando tiendas..." }];
-
-    const opciones = [{ value: "todas", label: "Todas las tiendas" }];
-
-    empresas
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .forEach((empresa) => {
-        const prefijo = empresa.es_emp ? "🏢" : "🏪";
-        opciones.push({
-          value: empresa.id.toString(),
-          label: `${prefijo} ${empresa.name}`,
-        });
-      });
-
-    return opciones;
-  }, [empresas]);
-
-  const opcionesCliente = useMemo(() => {
-    if (!data || !data.fac_t || !Object.keys(mapaContactos).length) {
-      return [{ value: "todos", label: "Cargando clientes..." }];
-    }
-
-    const clientesEnVentas = new Set();
-    data.fac_t.forEach((item) => {
-      if (item.clt) clientesEnVentas.add(item.clt);
-    });
-
-    const opciones = [{ value: "todos", label: "Todos los clientes" }];
-
-    Array.from(clientesEnVentas)
-      .sort((a, b) => {
-        const nombreA = mapaContactos[a] || `Cliente ${a}`;
-        const nombreB = mapaContactos[b] || `Cliente ${b}`;
-        return nombreA.localeCompare(nombreB);
-      })
-      .forEach((clienteId) => {
-        const nombreCliente =
-          mapaContactos[clienteId] || `Cliente ${clienteId}`;
-        opciones.push({
-          value: clienteId.toString(),
-          label: nombreCliente,
-        });
-      });
-
-    return opciones;
-  }, [data, mapaContactos]);
-
-  // Construcción de las opciones del selector de vendedores
   const opcionesVendedor = useMemo(() => {
     if (!data || !data.fac_t || !Object.keys(mapaUsuarios).length) {
       return [{ value: "todos", label: "Cargando vendedores..." }];
     }
 
-    // Primero calcular totales de ventas por vendedor
+    // Calcular totales de ventas por vendedor
     const ventasPorVendedor = {};
-
     data.fac_t.forEach((item) => {
       if (item.alt_usr !== undefined && item.alt_usr !== null) {
         const vendedorId = item.alt_usr.toString();
@@ -221,13 +167,13 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
       }
     });
 
-    // Filtrar solo vendedores con ventas totales > 0
+    // Filtrar solo vendedores con ventas > 0
     const vendedoresConVentasPositivas = Object.keys(ventasPorVendedor).filter(
       (vendedorId) => ventasPorVendedor[vendedorId] > 0
     );
 
     const opciones = [{ value: "todos", label: "Todos los vendedores" }];
-    const nombresUsados = new Set(); // Para evitar duplicados por nombre
+    const nombresUsados = new Set();
 
     vendedoresConVentasPositivas
       .sort((a, b) => {
@@ -236,10 +182,8 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
         return nombreA.localeCompare(nombreB);
       })
       .forEach((vendedorId) => {
-        const nombreVendedor =
-          mapaUsuarios[vendedorId] || `Vendedor ${vendedorId}`;
+        const nombreVendedor = mapaUsuarios[vendedorId] || `Vendedor ${vendedorId}`;
 
-        // Solo agregar si el nombre no ha sido usado antes
         if (!nombresUsados.has(nombreVendedor)) {
           nombresUsados.add(nombreVendedor);
           opciones.push({
@@ -249,14 +193,10 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
         }
       });
 
-    console.log(
-      "Opciones de vendedores (solo ventas > 0, sin duplicados):",
-      opciones
-    );
     return opciones;
   }, [data, mapaUsuarios]);
 
-  // Configuración de filtros
+  // Configuración de filtros simplificada
   const filterConfig = [
     {
       id: "año",
@@ -274,20 +214,6 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
       type: "select",
       value: filtros.mes,
       options: opcionesMes,
-    },
-    {
-      id: "tienda",
-      label: "Tienda",
-      type: "select",
-      value: filtros.tienda,
-      options: opcionesTienda,
-    },
-    {
-      id: "cliente",
-      label: "Cliente",
-      type: "select",
-      value: filtros.cliente,
-      options: opcionesCliente,
     },
     {
       id: "vendedor",
@@ -322,7 +248,7 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
       console.log("Aplicando filtros a ventas:", filtros);
       console.log(`Total registros iniciales: ${filtered.length}`);
 
-      // Función auxiliar para parsear fechas de forma robusta
+      // Función auxiliar para parsear fechas
       const parseFecha = (fechaString) => {
         return parseFechaRobusta(fechaString);
       };
@@ -331,146 +257,52 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
       if (filtros.año !== "todos") {
         const año = parseInt(filtros.año);
         filtered = filtered.filter((item) => {
-          const itemAño =
-            typeof item.eje === "string" ? parseInt(item.eje) : item.eje;
+          const itemAño = typeof item.eje === "string" ? parseInt(item.eje) : item.eje;
           return itemAño === año;
         });
-        console.log(
-          `Después de filtro año ${año}: ${filtered.length} registros`
-        );
       }
 
       // Filtrar por mes
       if (filtros.mes !== "todos") {
         const mes = parseInt(filtros.mes);
         filtered = filtered.filter((item) => {
-          const itemMes =
-            typeof item.mes === "string" ? parseInt(item.mes) : item.mes;
+          const itemMes = typeof item.mes === "string" ? parseInt(item.mes) : item.mes;
           return itemMes === mes;
         });
-        console.log(
-          `Después de filtro mes ${mes}: ${filtered.length} registros`
-        );
-      }
-
-      // Filtrar por tienda
-      if (filtros.tienda !== "todas") {
-        const tiendaId = filtros.tienda;
-        filtered = filtered.filter((item) => {
-          return (
-            item.emp?.toString() === tiendaId ||
-            item.emp_div?.toString() === tiendaId
-          );
-        });
-        console.log(
-          `Después de filtro tienda ${tiendaId}: ${filtered.length} registros`
-        );
-      }
-
-      // Filtrar por cliente
-      if (filtros.cliente !== "todos") {
-        const clienteId = filtros.cliente;
-        filtered = filtered.filter((item) => {
-          return item.clt?.toString() === clienteId;
-        });
-        console.log(
-          `Después de filtro cliente ${clienteId}: ${filtered.length} registros`
-        );
       }
 
       // Filtrar por vendedor
       if (filtros.vendedor !== "todos") {
         const vendedorIdSeleccionado = filtros.vendedor;
-
         filtered = filtered.filter((item) => {
           const itemVendedor = item.alt_usr;
           if (itemVendedor === undefined || itemVendedor === null) return false;
-
-          // Comparar directamente por ID (string)
           return itemVendedor.toString() === vendedorIdSeleccionado;
         });
-        console.log(
-          `Después de filtro vendedor ${vendedorIdSeleccionado}: ${filtered.length} registros`
-        );
       }
 
-      // Filtrar por rango de fechas - VERSIÓN MEJORADA
+      // Filtrar por rango de fechas
       if (filtros.fechaDesde) {
         const fechaDesde = new Date(filtros.fechaDesde);
         fechaDesde.setHours(0, 0, 0, 0);
 
-        console.log("Aplicando filtro fechaDesde:", fechaDesde);
-
-        const filteredCount = filtered.length;
         filtered = filtered.filter((item) => {
           const fechaItem = parseFecha(item.fch);
-          if (!fechaItem) {
-            console.log("Fecha inválida encontrada:", item.fch);
-            return false;
-          }
-
-          const cumpleFiltro = fechaItem >= fechaDesde;
-          if (!cumpleFiltro) {
-            console.log(
-              "Fecha excluida:",
-              fechaItem,
-              "es menor que",
-              fechaDesde
-            );
-          }
-
-          return cumpleFiltro;
+          return fechaItem && fechaItem >= fechaDesde;
         });
-
-        console.log(
-          `Filtro fechaDesde: ${filteredCount} -> ${filtered.length} registros`
-        );
       }
 
       if (filtros.fechaHasta) {
         const fechaHasta = new Date(filtros.fechaHasta);
         fechaHasta.setHours(23, 59, 59, 999);
 
-        console.log("Aplicando filtro fechaHasta:", fechaHasta);
-
-        const filteredCount = filtered.length;
         filtered = filtered.filter((item) => {
           const fechaItem = parseFecha(item.fch);
-          if (!fechaItem) {
-            console.log("Fecha inválida encontrada:", item.fch);
-            return false;
-          }
-
-          const cumpleFiltro = fechaItem <= fechaHasta;
-          if (!cumpleFiltro) {
-            console.log(
-              "Fecha excluida:",
-              fechaItem,
-              "es mayor que",
-              fechaHasta
-            );
-          }
-
-          return cumpleFiltro;
-        });
-
-        console.log(
-          `Filtro fechaHasta: ${filteredCount} -> ${filtered.length} registros`
-        );
-      }
-
-      console.log(
-        `Total registros después de todos los filtros: ${filtered.length}`
-      );
-
-      // Mostrar algunas fechas de ejemplo para debug
-      if (filtered.length > 0) {
-        console.log("Ejemplos de fechas en datos filtrados:");
-        filtered.slice(0, 3).forEach((item, idx) => {
-          console.log(`  ${idx + 1}:`, item.fch, "->", parseFecha(item.fch));
+          return fechaItem && fechaItem <= fechaHasta;
         });
       }
 
+      console.log(`Total registros después de filtros: ${filtered.length}`);
       setFilteredData(filtered);
     } catch (err) {
       console.error("Error al filtrar datos:", err);
@@ -483,8 +315,6 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
   // Detectar qué filtros están activos
   const filtrosActivos = useMemo(() => {
     const activos = {
-      tiendaEspecifica: filtros.tienda !== "todas",
-      clienteEspecifico: filtros.cliente !== "todos",
       vendedorEspecifico: filtros.vendedor !== "todos",
       mesEspecifico: filtros.mes !== "todos",
       añoEspecifico: filtros.año !== "todos",
@@ -525,7 +355,7 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
 
   if (loadingReferenceData) {
     return (
-      <LoadingSpinner text="Cargando información de referencia (tiendas, formas de pago)..." />
+      <LoadingSpinner text="Cargando información de referencia..." />
     );
   }
 
@@ -539,6 +369,17 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
 
   return (
     <div className="estadisticas-ventas-container">
+      {/* Header de la página */}
+      <div className="page-header">
+        <h1>
+          <i className="fas fa-shopping-cart"></i>
+          Análisis de Ventas
+        </h1>
+        <p className="page-subtitle">
+          Dashboard completo con métricas, gráficos y análisis de vendedores
+        </p>
+      </div>
+
       {/* Filtros */}
       <FilterBar
         filters={filterConfig}
@@ -555,22 +396,9 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
           {filtros.mes !== "todos" && (
             <span>Mes: {obtenerNombreMes(parseInt(filtros.mes))}</span>
           )}
-          {filtros.tienda !== "todas" && (
-            <span>
-              Tienda:{" "}
-              {mapaEmpresas[filtros.tienda] || `Tienda ${filtros.tienda}`}
-            </span>
-          )}
-          {filtros.cliente !== "todos" && (
-            <span>
-              Cliente:{" "}
-              {mapaContactos[filtros.cliente] || `Cliente ${filtros.cliente}`}
-            </span>
-          )}
           {filtros.vendedor !== "todos" && (
             <span>
-              Vendedor:{" "}
-              {mapaUsuarios[filtros.vendedor] || `Vendedor ${filtros.vendedor}`}
+              Vendedor: {mapaUsuarios[filtros.vendedor] || `Vendedor ${filtros.vendedor}`}
             </span>
           )}
           {filtros.fechaDesde && (
@@ -580,34 +408,64 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
             <span>Hasta: {formatDate(filtros.fechaHasta)}</span>
           )}
           <span className="filtros-count">
-            ({filteredData.length} facturas filtradas)
+            ({filteredData.length} facturas)
           </span>
         </div>
       )}
 
-      {/* Navegación entre vistas */}
-      <div className="navigation">
+      {/* Navegación entre vistas - COMPLETA CON TODAS LAS SECCIONES */}
+      <div className="ventas-navigation">
         <div className="nav-buttons">
           <button
-            className={`nav-btn ${activeView === "resumen" ? "active" : ""}`}
-            onClick={() => handleViewChange("resumen")}
+            className={`nav-btn ${activeView === "dashboard" ? "active" : ""}`}
+            onClick={() => handleViewChange("dashboard")}
           >
-            <i className="fas fa-chart-pie"></i>
-            Resumen
+            <i className="fas fa-tachometer-alt"></i>
+            Dashboard
           </button>
           <button
             className={`nav-btn ${activeView === "graficos" ? "active" : ""}`}
             onClick={() => handleViewChange("graficos")}
           >
-            <i className="fas fa-chart-bar"></i>
-            Gráficos
+            <i className="fas fa-chart-line"></i>
+            Análisis Temporal
           </button>
           <button
-            className={`nav-btn ${activeView === "tabla" ? "active" : ""}`}
-            onClick={() => handleViewChange("tabla")}
+            className={`nav-btn ${activeView === "vendedores" ? "active" : ""}`}
+            onClick={() => handleViewChange("vendedores")}
           >
-            <i className="fas fa-table"></i>
-            Vendedores
+            <i className="fas fa-users"></i>
+            Ranking Vendedores
+          </button>
+          <button
+            className={`nav-btn ${activeView === "proveedores" ? "active" : ""}`}
+            onClick={() => handleViewChange("proveedores")}
+            disabled
+            title="Funcionalidad en desarrollo"
+          >
+            <i className="fas fa-industry"></i>
+            Por Proveedores
+            <span className="badge-desarrollo">PRÓXIMO</span>
+          </button>
+          <button
+            className={`nav-btn ${activeView === "marcas" ? "active" : ""}`}
+            onClick={() => handleViewChange("marcas")}
+            disabled
+            title="Funcionalidad en desarrollo"
+          >
+            <i className="fas fa-tags"></i>
+            Por Marcas
+            <span className="badge-desarrollo">PRÓXIMO</span>
+          </button>
+          <button
+            className={`nav-btn ${activeView === "temporadas" ? "active" : ""}`}
+            onClick={() => handleViewChange("temporadas")}
+            disabled
+            title="Funcionalidad en desarrollo"
+          >
+            <i className="fas fa-calendar-alt"></i>
+            Por Temporadas
+            <span className="badge-desarrollo">PRÓXIMO</span>
           </button>
         </div>
       </div>
@@ -616,36 +474,144 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
       <div className="ventas-content">
         {loading && <LoadingSpinner text="Aplicando filtros..." />}
 
-        {!loading && activeView === "resumen" && (
-          <VentasResumen
-            ventasData={filteredData}
-            mapaContactos={mapaContactos}
-            mapaUsuarios={mapaUsuarios}
-            mapaFormasPago={mapaFormasPago}
-            filtrosActivos={filtrosActivos}
-          />
+        {!loading && activeView === "dashboard" && (
+          <div className="dashboard-view">
+            {/* Resumen principal */}
+            <VentasResumen
+              ventasData={filteredData}
+              mapaContactos={mapaContactos}
+              mapaUsuarios={mapaUsuarios}
+              mapaFormasPago={mapaFormasPago}
+              filtrosActivos={filtrosActivos}
+            />
+
+            {/* Vista rápida de gráficos principales */}
+            <div className="dashboard-charts">
+              <VentasGraficos
+                ventasData={filteredData}
+                mapaContactos={mapaContactos}
+                mapaUsuarios={mapaUsuarios}
+                mapaFormasPago={mapaFormasPago}
+                mapaEmpresas={mapaEmpresas}
+                filtrosActivos={filtrosActivos}
+                filtros={filtros}
+                viewMode="dashboard" // Solo mostrar gráficos principales
+              />
+            </div>
+          </div>
         )}
 
         {!loading && activeView === "graficos" && (
-          <VentasGraficos
-            ventasData={filteredData}
-            mapaContactos={mapaContactos}
-            mapaUsuarios={mapaUsuarios}
-            mapaFormasPago={mapaFormasPago}
-            mapaEmpresas={mapaEmpresas} // Add this line
-            filtrosActivos={filtrosActivos}
-            filtros={filtros} // Add this line
-          />
+          <div className="graficos-view">
+            <VentasGraficos
+              ventasData={filteredData}
+              mapaContactos={mapaContactos}
+              mapaUsuarios={mapaUsuarios}
+              mapaFormasPago={mapaFormasPago}
+              mapaEmpresas={mapaEmpresas}
+              filtrosActivos={filtrosActivos}
+              filtros={filtros}
+              viewMode="full" // Mostrar todos los gráficos
+            />
+          </div>
         )}
 
-        {!loading && activeView === "tabla" && (
-          <VentasTablaVendedores
-            ventasData={filteredData}
-            mapaUsuarios={mapaUsuarios}
-            filtros={filtros}
-          />
+        {!loading && activeView === "vendedores" && (
+          <div className="vendedores-view">
+            <VentasTablaVendedores
+              ventasData={filteredData}
+              mapaUsuarios={mapaUsuarios}
+              filtros={filtros}
+            />
+          </div>
+        )}
+
+        {/* Secciones pendientes de implementar */}
+        {!loading && activeView === "proveedores" && (
+          <div className="seccion-en-desarrollo">
+            <div className="desarrollo-placeholder">
+              <i className="fas fa-industry"></i>
+              <h3>📊 Análisis por Proveedores</h3>
+              <p>Esta funcionalidad permitirá analizar las ventas segmentadas por proveedor.</p>
+              <div className="desarrollo-features">
+                <div className="feature-item">
+                  <i className="fas fa-chart-pie"></i>
+                  <span>Distribución de ventas por proveedor</span>
+                </div>
+                <div className="feature-item">
+                  <i className="fas fa-trending-up"></i>
+                  <span>Evolución temporal por proveedor</span>
+                </div>
+                <div className="feature-item">
+                  <i className="fas fa-trophy"></i>
+                  <span>Ranking de rendimiento</span>
+                </div>
+              </div>
+              <div className="desarrollo-nota">
+                <i className="fas fa-info-circle"></i>
+                <span>Se implementará cuando estén disponibles los datos de líneas de factura</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!loading && activeView === "marcas" && (
+          <div className="seccion-en-desarrollo">
+            <div className="desarrollo-placeholder">
+              <i className="fas fa-tags"></i>
+              <h3>🏷️ Análisis por Marcas</h3>
+              <p>Esta funcionalidad permitirá analizar las ventas segmentadas por marca de productos.</p>
+              <div className="desarrollo-features">
+                <div className="feature-item">
+                  <i className="fas fa-chart-bar"></i>
+                  <span>Ventas por marca y categoría</span>
+                </div>
+                <div className="feature-item">
+                  <i className="fas fa-star"></i>
+                  <span>Marcas más vendidas</span>
+                </div>
+                <div className="feature-item">
+                  <i className="fas fa-percentage"></i>
+                  <span>Márgenes por marca</span>
+                </div>
+              </div>
+              <div className="desarrollo-nota">
+                <i className="fas fa-info-circle"></i>
+                <span>Se implementará cuando estén disponibles los datos de líneas de factura y productos</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!loading && activeView === "temporadas" && (
+          <div className="seccion-en-desarrollo">
+            <div className="desarrollo-placeholder">
+              <i className="fas fa-calendar-alt"></i>
+              <h3>🌱 Análisis por Temporadas</h3>
+              <p>Esta funcionalidad permitirá analizar las ventas según temporadas y períodos específicos.</p>
+              <div className="desarrollo-features">
+                <div className="feature-item">
+                  <i className="fas fa-chart-area"></i>
+                  <span>Comparativa entre temporadas</span>
+                </div>
+                <div className="feature-item">
+                  <i className="fas fa-leaf"></i>
+                  <span>Productos estacionales</span>
+                </div>
+                <div className="feature-item">
+                  <i className="fas fa-clock"></i>
+                  <span>Ciclos de venta por temporada</span>
+                </div>
+              </div>
+              <div className="desarrollo-nota">
+                <i className="fas fa-info-circle"></i>
+                <span>Se implementará cuando estén disponibles los datos de temporadas y clasificación de productos</span>
+              </div>
+            </div>
+          </div>
         )}
       </div>
+
     </div>
   );
 };

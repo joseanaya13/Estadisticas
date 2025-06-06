@@ -131,51 +131,139 @@ export const NAVIGATION = [
     label: 'Dashboard',
     icon: 'tachometer-alt',
     order: 1,
-    enabled: true
+    enabled: true,
+    description: 'Vista general del negocio'
   },
   {
     id: 'ventas',
     path: '/ventas',
-    label: 'Ventas',
-    icon: 'shopping-cart',
-    order: 2,
-    enabled: true
-  },
-  {
-    id: 'ventas-detalladas',
-    path: '/ventas-detalladas',
-    label: 'Ventas Detalladas',
+    label: 'Análisis de Ventas',
     icon: 'chart-line',
-    order: 3,
+    order: 2,
     enabled: true,
+    description: 'Dashboard completo de ventas con métricas, gráficos y ranking de vendedores'
   },
   {
     id: 'compras',
     path: '/compras',
     label: 'Compras',
     icon: 'truck',
-    order: 4,
-    enabled: true
+    order: 3,
+    enabled: true,
+    description: 'Análisis de compras por proveedor y período'
   },
+  // Funcionalidades futuras - DESHABILITADAS
   {
     id: 'sellout',
     path: '/sellout',
     label: 'Sell Out',
     icon: 'chart-area',
-    order: 5,
-    enabled: false, // Deshabilitar hasta implementar
-    badge: 'NUEVO'
+    order: 4,
+    enabled: false,
+    badge: 'PRÓXIMO',
+    description: 'Análisis de rotación y rendimiento de inventario'
   },
   {
     id: 'inventario',
     path: '/inventario',
     label: 'Inventario',
     icon: 'boxes',
-    order: 6,
-    enabled: false, // Deshabilitar hasta implementar
-    badge: 'NUEVO'
+    order: 5,
+    enabled: false,
+    badge: 'PRÓXIMO',
+    description: 'Control y análisis de stock por ubicación y marca'
   }
 ];
+
+// Configuración de vistas dentro de la página de ventas
+export const VENTAS_VIEWS = {
+  DASHBOARD: {
+    id: 'dashboard',
+    label: 'Dashboard',
+    icon: 'tachometer-alt',
+    description: 'Resumen ejecutivo con KPIs principales',
+    enabled: true
+  },
+  GRAFICOS: {
+    id: 'graficos',
+    label: 'Análisis Temporal',
+    icon: 'chart-line',
+    description: 'Gráficos detallados de tendencias y evolución',
+    enabled: true
+  },
+  VENDEDORES: {
+    id: 'vendedores',
+    label: 'Ranking Vendedores',
+    icon: 'users',
+    description: 'Tabla detallada con performance por vendedor',
+    enabled: true
+  },
+  PROVEEDORES: {
+    id: 'proveedores',
+    label: 'Por Proveedores',
+    icon: 'industry',
+    description: 'Análisis de ventas segmentado por proveedor',
+    enabled: false,
+    requiredData: ['fac_l', 'prv_m'],
+    badge: 'PRÓXIMO'
+  },
+  MARCAS: {
+    id: 'marcas',
+    label: 'Por Marcas',
+    icon: 'tags',
+    description: 'Análisis de ventas segmentado por marca',
+    enabled: false,
+    requiredData: ['fac_l', 'art_m', 'mar_m'],
+    badge: 'PRÓXIMO'
+  },
+  TEMPORADAS: {
+    id: 'temporadas',
+    label: 'Por Temporadas',
+    icon: 'calendar-alt',
+    description: 'Análisis de ventas por temporadas y períodos',
+    enabled: false,
+    requiredData: ['fac_l', 'tmp_m', 'art_m'],
+    badge: 'PRÓXIMO'
+  }
+};
+
+// Configuración de filtros por página
+export const FILTROS_CONFIG = {
+  DASHBOARD: [
+    'año',
+    'mes',
+    'fechaDesde',
+    'fechaHasta'
+  ],
+  VENTAS: [
+    'año',
+    'mes', 
+    'vendedor',
+    'fechaDesde',
+    'fechaHasta'
+  ],
+  COMPRAS: [
+    'año',
+    'mes',
+    'proveedor'
+  ]
+};
+
+// Configuración de gráficos por vista
+export const GRAFICOS_CONFIG = {
+  DASHBOARD_VENTAS: [
+    'ventasPorMes',
+    'topVendedores'
+  ],
+  FULL_VENTAS: [
+    'ventasPorMes',
+    'topVendedores',
+    'ticketPromedio',
+    'ventasPorDias',
+    'topClientes',
+    'formasPago'
+  ]
+};
 
 // Constantes de uso común
 export const CONSTANTS = {
