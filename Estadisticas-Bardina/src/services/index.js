@@ -8,5 +8,5 @@ export * from './core';
 export * from './maestros';
 
 // 🆕 Nuevos módulos (descomentar cuando estén listos)
-// export * from './transaccionales';
+export * from './transaccionales';
 // export * from './analytics';
