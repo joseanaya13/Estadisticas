@@ -9,7 +9,6 @@ import {
   Dashboard, 
   EstadisticasVentas, 
   EstadisticasCompras, 
-  VentasDetalladas,
   SellOut,
   Inventario
 } from './pages';
@@ -247,18 +246,6 @@ function AppContent() {
                   </button>
                 </div>
               )
-            } 
-          />
-
-          {/* Nuevas rutas */}
-          <Route 
-            path="/ventas-detalladas" 
-            element={
-              <VentasDetalladas 
-                data={data.ventas} 
-                contactos={data.contactos} 
-                usuarios={data.usuarios}
-              />
             } 
           />
           
