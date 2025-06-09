@@ -1,0 +1,494 @@
+/* styles/components/_adaptive-filters.css */
+
+/* =============================================
+   FILTROS ADAPTABLES - BARDINA ANALYTICS
+   Sistema de filtros contextual y responsive
+   ============================================= */
+
+.filter-bar {
+  background: var(--surface-primary);
+  border: 1px solid var(--border-color-light);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-6);
+  box-shadow: var(--shadow-md);
+  transition: var(--transition-all);
+}
+
+/* === HEADER DE FILTROS === */
+.filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border-color-light);
+}
+
+.filter-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary) !important;
+}
+
+.filter-title i {
+  color: var(--primary-600);
+  font-size: 1.1em;
+}
+
+.active-filters-badge {
+  background: var(--primary-600);
+  color: white;
+  font-size: var(--text-xs);
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-full);
+  margin-left: var(--space-2);
+  font-weight: var(--font-bold);
+  min-width: 1.25rem;
+  text-align: center;
+  animation: pulse 2s infinite;
+}
+
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.btn-filter-toggle,
+.btn-filter-reset,
+.btn-filter-collapse {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-color-light);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  white-space: nowrap;
+}
+
+.btn-filter-toggle:hover,
+.btn-filter-reset:hover,
+.btn-filter-collapse:hover {
+  border-color: var(--primary-400);
+  color: var(--primary-700);
+}
+
+.btn-filter-toggle.active {
+  background: var(--primary-600);
+  color: white;
+  border-color: var(--primary-600);
+}
+
+.btn-filter-reset {
+  color: var(--error-600);
+}
+
+.btn-filter-reset:hover {
+  background: var(--error-50);
+  border-color: var(--error-400);
+  color: var(--error-700);
+}
+
+/* === CONTENIDO DE FILTROS === */
+.filter-content {
+  padding: var(--space-6);
+}
+
+/* === FILTROS PRIMARIOS === */
+.primary-filters {
+  margin-bottom: var(--space-6);
+}
+
+.filters-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+  align-items: end;
+}
+
+/* === CAMPOS DE FILTRO === */
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background-color: var(--surface-primary);
+}
+
+.filter-label {
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.filter-select,
+.filter-date,
+.filter-text,
+.filter-number {
+  padding: var(--space-3);
+  border: 1px solid var(--border-color-light);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  transition: var(--transition-fast);
+  height: 2.5rem;
+}
+
+.filter-select:focus,
+.filter-date:focus,
+.filter-text:focus,
+.filter-number:focus {
+  outline: none;
+  border-color: var(--primary-400);
+  box-shadow: 0 0 0 3px var(--primary-100);
+}
+
+.filter-select:hover,
+.filter-date:hover,
+.filter-text:hover,
+.filter-number:hover {
+  border-color: var(--primary-300);
+}
+
+/* === FILTROS DE RANGO === */
+.filter-range .range-inputs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.filter-range .filter-number {
+  flex: 1;
+}
+
+.range-separator {
+  color: var(--text-secondary);
+  font-weight: var(--font-medium);
+}
+
+/* === FILTROS AVANZADOS === */
+.advanced-filters {
+  border-top: 1px solid var(--border-color-light);
+  padding-top: var(--space-6);
+  margin-top: var(--space-6);
+}
+
+.advanced-filters-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.advanced-filters-header i {
+  color: var(--primary-600);
+}
+
+/* === GRUPOS DE FILTROS === */
+.filter-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-6);
+}
+
+.filter-group {
+  border: 1px solid var(--border-color-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.filter-group-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-color-light);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.filter-group-header i {
+  color: var(--primary-600);
+  width: 1rem;
+  text-align: center;
+}
+
+.filter-group-title {
+  text-transform: capitalize;
+}
+
+.filter-group-fields {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* === RESUMEN DE FILTROS === */
+.filter-summary {
+  margin-top: var(--space-6);
+  padding: var(--space-4);
+}
+
+.filter-summary-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.filter-summary-content > span {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: var(--font-medium);
+  color: var(--info-700);
+}
+
+.filter-summary-content i {
+  color: var(--info-600);
+}
+
+.active-filters-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.active-filter-tag {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: 1px solid var(--info-300);
+  color: var(--info-800);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.remove-filter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  background: none;
+  border: none;
+  color: var(--info-600);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-fast);
+}
+
+.remove-filter:hover {
+  background: var(--error-100);
+  color: var(--error-600);
+}
+
+/* === ESTADO COLAPSADO === */
+.filter-bar.collapsed .filter-content {
+  display: none;
+}
+
+.collapsed-filters-indicator {
+  padding: var(--space-3) var(--space-4);
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  border-top: 1px solid var(--border-color-light);
+}
+
+.collapsed-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .filter-header {
+    flex-direction: column;
+    gap: var(--space-3);
+    align-items: stretch;
+  }
+  
+  .filter-controls {
+    justify-content: center;
+  }
+  
+  .filters-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .filter-groups {
+    grid-template-columns: 1fr;
+  }
+  
+  .active-filters-list {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .active-filter-tag {
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-bar {
+    margin: 0 calc(-1 * var(--space-4));
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+  
+  .filter-content {
+    padding: var(--space-4);
+  }
+  
+  .btn-filter-toggle,
+  .btn-filter-reset,
+  .btn-filter-collapse {
+    font-size: var(--text-xs);
+    padding: var(--space-2);
+  }
+  
+  .btn-filter-toggle span,
+  .btn-filter-reset span {
+    display: none;
+  }
+}
+
+/* === ANIMACIONES === */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.advanced-filters {
+  animation: slideDown var(--transition-medium);
+}
+
+/* === TEMAS === */
+[data-theme="dark"] .filter-bar {
+  background: var(--surface-primary);
+  border-color: var(--border-color-light);
+}
+
+[data-theme="dark"] .filter-header {
+  background: linear-gradient(135deg, var(--primary-900) 0%, var(--primary-800) 100%);
+  border-color: var(--border-color-light);
+}
+
+[data-theme="dark"] .filter-select,
+[data-theme="dark"] .filter-date,
+[data-theme="dark"] .filter-text,
+[data-theme="dark"] .filter-number {
+  background: var(--surface-primary);
+  border-color: var(--border-color-light);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .filter-group {
+  background: var(--surface-primary);
+  border-color: var(--border-color-light);
+}
+
+[data-theme="dark"] .filter-group-header {
+  background: var(--surface-secondary);
+  border-color: var(--border-color-light);
+}
+
+[data-theme="dark"] .filter-summary {
+  background: var(--info-900);
+  border-color: var(--info-700);
+}
+
+[data-theme="dark"] .active-filter-tag {
+  background: var(--surface-secondary);
+  border-color: var(--border-color-light);
+  color: var(--text-primary);
+}
+
+/* === ESTADOS DE CARGA === */
+.filter-bar.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.filter-bar.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+}
+
+/* === ACCESIBILIDAD === */
+.filter-bar button:focus-visible,
+.filter-select:focus-visible,
+.filter-date:focus-visible,
+.filter-text:focus-visible,
+.filter-number:focus-visible {
+  outline: 2px solid var(--primary-600);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-bar,
+  .filter-bar *,
+  .active-filters-badge {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* === UTILIDADES === */
+.filter-field.required .filter-label::after {
+  content: ' *';
+  color: var(--error-600);
+}
+
+.filter-field.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.filter-field.error .filter-select,
+.filter-field.error .filter-date,
+.filter-field.error .filter-text,
+.filter-field.error .filter-number {
+  border-color: var(--error-400);
+  box-shadow: 0 0 0 3px var(--error-100);
+}

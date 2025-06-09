@@ -26,8 +26,8 @@
 @import './components/_loading.css';
 @import './components/_modals.css';
 @import './components/_error-states.css';
-@import './components/_filters.css';
 @import './components/_navigation.css';
+@import './components/_adaptive-filters.css';
 
 /* === PAGES === */
 @import './pages/_dashboard.css';
