@@ -10,11 +10,64 @@ const FilterBar = ({
   onChange, 
   onReset,
   showAdvanced = false,
-  className = ''
+  className = '',
+  // Compatibilidad con el sistema anterior
+  filters = null // Si se pasa filters, usamos el sistema anterior
 }) => {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(showAdvanced);
   const [isCollapsed, setIsCollapsed] = useState(false);
   
+  // Compatibilidad: Si se pasan filters, usar el sistema anterior
+  if (filters) {
+    return (
+      <div className={`filter-bar legacy ${className}`}>
+        <div className="filter-content">
+          <div className="filters-row">
+            {filters.map(filter => (
+              <div key={filter.id} className="filter-field">
+                <label htmlFor={filter.id} className="filter-label">
+                  {filter.label}
+                </label>
+                {filter.type === 'select' ? (
+                  <select
+                    id={filter.id}
+                    className="filter-select"
+                    value={filter.value}
+                    onChange={(e) => onChange(filter.id, e.target.value)}
+                  >
+                    {filter.options.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : filter.type === 'date' ? (
+                  <input
+                    id={filter.id}
+                    type="date"
+                    className="filter-date"
+                    value={filter.value}
+                    onChange={(e) => onChange(filter.id, e.target.value)}
+                  />
+                ) : null}
+              </div>
+            ))}
+            <div className="filter-actions">
+              <button
+                className="btn-filter-reset"
+                onClick={onReset}
+                title="Limpiar filtros"
+              >
+                <i className="fas fa-times"></i>
+                Limpiar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Obtener configuración de filtros adaptables
   const filterConfig = useAdaptiveFilters(context, data, mapas, filtros);
   

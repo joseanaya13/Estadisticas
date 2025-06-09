@@ -14,6 +14,11 @@ export const useAdaptiveFilters = (context, data, mapas = {}, filtros = {}) => {
   const filterConfig = useMemo(() => {
     // Configuraciones base por contexto
     const contextConfigs = {
+      dashboard: {
+        primary: ['año', 'mes', 'empresa'],
+        secondary: ['fechaDesde', 'fechaHasta'],
+        exclude: ['vendedor', 'cliente', 'proveedor', 'comprador', 'categoria', 'marca']
+      },
       ventas: {
         primary: ['año', 'mes', 'vendedor', 'cliente', 'tienda'],
         secondary: ['fechaDesde', 'fechaHasta', 'formaPago', 'empresa'],
