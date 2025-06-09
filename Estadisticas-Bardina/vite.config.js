@@ -15,20 +15,6 @@ export default defineConfig({
       }
     }
   },
-  resolve: {
-    alias: {
-      '@': resolve(__dirname, 'src'),
-      '@components': resolve(__dirname, 'src/components'),
-      '@services': resolve(__dirname, 'src/services'),
-      '@utils': resolve(__dirname, 'src/utils'),
-      '@hooks': resolve(__dirname, 'src/hooks'),
-      '@context': resolve(__dirname, 'src/context'),
-      '@config': resolve(__dirname, 'src/config'),
-      '@pages': resolve(__dirname, 'src/pages'),
-      '@stores': resolve(__dirname, 'src/stores'),
-      '@styles': resolve(__dirname, 'src/styles')
-    }
-  },
   build: {
     rollupOptions: {
       output: {

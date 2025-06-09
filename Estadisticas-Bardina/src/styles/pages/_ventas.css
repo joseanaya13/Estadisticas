@@ -50,18 +50,6 @@
   margin-bottom: var(--space-8);
 }
 
-/* === OVERRIDES ESPECÍFICOS PARA VENTAS === */
-.ventas-navigation .nav-buttons {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  box-shadow: var(--shadow-xl);
-  border: var(--border-1) solid rgba(255, 255, 255, 0.3);
-}
-
-
-.ventas-navigation .nav-btn:hover:not(:disabled)::before {
-  left: 100%;
-}
 
 /* === BADGE ESPECÍFICO PARA DESARROLLO === */
 .badge-desarrollo {
