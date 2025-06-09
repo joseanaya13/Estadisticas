@@ -1,17 +1,19 @@
-// pages/EstadisticasVentas.jsx - CON PROVEEDORES INTEGRADO
+// pages/EstadisticasVentas.jsx - ADAPTADO AL NUEVO SISTEMA DE FILTROS
 import React, { useState, useEffect, useMemo } from "react";
-import { LoadingSpinner, ErrorMessage, FilterBar } from "../components/common";
-import { VentasResumen, VentasGraficos, VentasTablaVendedores } from "../components/ventas";
+import { LoadingSpinner, ErrorMessage } from "../components/common";
+import FilterBar from "../components/common/FilterBar"; // ← CAMBIO: Usar nuevo FilterBar
+import {
+  VentasResumen,
+  VentasGraficos,
+  VentasTablaVendedores,
+} from "../components/ventas";
 import { ProveedoresContainer } from "../components/ventas/proveedores";
 import {
   formatDate,
   obtenerNombreMes,
   parseFechaRobusta,
 } from "../utils/formatters";
-import {
-  empresasService,
-  formasPagoService,
-} from "../services/maestros";
+import { empresasService, formasPagoService } from "../services/maestros";
 import { analizarDuplicados } from "../utils/usuariosUtils";
 
 const EstadisticasVentas = ({ data, contactos, usuarios }) => {
@@ -23,12 +25,18 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
     vendedor: "todos",
     fechaDesde: "",
     fechaHasta: "",
+    // ← CAMBIO: Agregar filtros adicionales para contextos
+    formaPago: "todas",
+    empresa: "todas",
+    proveedor: "todos",
+    categoria: "todas",
+    marca: "todas",
   });
 
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [activeView, setActiveView] = useState("dashboard"); // dashboard, graficos, vendedores, proveedores, marcas, temporadas
+  const [activeView, setActiveView] = useState("dashboard");
 
   // Estados para datos de referencia
   const [empresas, setEmpresas] = useState([]);
@@ -36,11 +44,13 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
   const [loadingReferenceData, setLoadingReferenceData] = useState(true);
   const [duplicadosDetectados, setDuplicadosDetectados] = useState([]);
 
-  // Mapas para conversión ID -> Nombre
-  const [mapaContactos, setMapaContactos] = useState({});
-  const [mapaUsuarios, setMapaUsuarios] = useState({});
-  const [mapaEmpresas, setMapaEmpresas] = useState({});
-  const [mapaFormasPago, setMapaFormasPago] = useState({});
+  // ← CAMBIO: Estructura de mapas compatible con nuevo sistema
+  const [mapas, setMapas] = useState({
+    mapaContactos: {},
+    mapaUsuarios: {},
+    mapaEmpresas: {},
+    mapaFormasPago: {},
+  });
 
   // Cargar datos de referencia al montar el componente
   useEffect(() => {
@@ -99,10 +109,13 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
           }
         });
 
-        setMapaContactos(mapaContactosData);
-        setMapaUsuarios(mapaUsuariosData);
-        setMapaEmpresas(mapaEmpresasData);
-        setMapaFormasPago(mapaFormasPagoData);
+        // ← CAMBIO: Actualizar estructura de mapas
+        setMapas({
+          mapaContactos: mapaContactosData,
+          mapaUsuarios: mapaUsuariosData,
+          mapaEmpresas: mapaEmpresasData,
+          mapaFormasPago: mapaFormasPagoData,
+        });
       } catch (err) {
         console.error("Error al cargar datos de referencia:", err);
         setError(err.message || "Error al cargar datos de referencia");
@@ -114,128 +127,18 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
     loadReferenceData();
   }, [contactos, usuarios]);
 
-  // Obtener años únicos de los datos
-  const añosDisponibles = useMemo(() => {
-    if (!data || !data.fac_t) return [];
-
-    const años = new Set();
-    data.fac_t.forEach((item) => {
-      if (item.eje) años.add(item.eje);
-    });
-
-    return Array.from(años)
-      .sort((a, b) => b - a)
-      .map((año) => ({
-        value: año.toString(),
-        label: año.toString(),
-      }));
-  }, [data]);
-
-  // Opciones simplificadas para filtros
-  const opcionesMes = useMemo(() => {
-    if (!data || !data.fac_t) return [];
-
-    const meses = new Set();
-    data.fac_t.forEach((item) => {
-      if (item.mes) meses.add(item.mes);
-    });
-
-    return [
-      { value: "todos", label: "Todos los meses" },
-      ...Array.from(meses)
-        .sort((a, b) => a - b)
-        .map((mes) => ({
-          value: mes.toString(),
-          label: obtenerNombreMes(mes),
-        })),
-    ];
-  }, [data]);
-
-  const opcionesVendedor = useMemo(() => {
-    if (!data || !data.fac_t || !Object.keys(mapaUsuarios).length) {
-      return [{ value: "todos", label: "Cargando vendedores..." }];
-    }
-
-    // Calcular totales de ventas por vendedor
-    const ventasPorVendedor = {};
-    data.fac_t.forEach((item) => {
-      if (item.alt_usr !== undefined && item.alt_usr !== null) {
-        const vendedorId = item.alt_usr.toString();
-        if (!ventasPorVendedor[vendedorId]) {
-          ventasPorVendedor[vendedorId] = 0;
-        }
-        ventasPorVendedor[vendedorId] += item.tot || 0;
-      }
-    });
-
-    // Filtrar solo vendedores con ventas > 0
-    const vendedoresConVentasPositivas = Object.keys(ventasPorVendedor).filter(
-      (vendedorId) => ventasPorVendedor[vendedorId] > 0
-    );
-
-    const opciones = [{ value: "todos", label: "Todos los vendedores" }];
-    const nombresUsados = new Set();
-
-    vendedoresConVentasPositivas
-      .sort((a, b) => {
-        const nombreA = mapaUsuarios[a] || `Vendedor ${a}`;
-        const nombreB = mapaUsuarios[b] || `Vendedor ${b}`;
-        return nombreA.localeCompare(nombreB);
-      })
-      .forEach((vendedorId) => {
-        const nombreVendedor = mapaUsuarios[vendedorId] || `Vendedor ${vendedorId}`;
-
-        if (!nombresUsados.has(nombreVendedor)) {
-          nombresUsados.add(nombreVendedor);
-          opciones.push({
-            value: vendedorId,
-            label: nombreVendedor,
-          });
-        }
-      });
-
-    return opciones;
-  }, [data, mapaUsuarios]);
-
-  // Configuración de filtros simplificada
-  const filterConfig = [
-    {
-      id: "año",
-      label: "Año",
-      type: "select",
-      value: filtros.año,
-      options: [
-        { value: "todos", label: "Todos los años" },
-        ...añosDisponibles,
-      ],
-    },
-    {
-      id: "mes",
-      label: "Mes",
-      type: "select",
-      value: filtros.mes,
-      options: opcionesMes,
-    },
-    {
-      id: "vendedor",
-      label: "Vendedor",
-      type: "select",
-      value: filtros.vendedor,
-      options: opcionesVendedor,
-    },
-    {
-      id: "fechaDesde",
-      label: "Desde",
-      type: "date",
-      value: filtros.fechaDesde,
-    },
-    {
-      id: "fechaHasta",
-      label: "Hasta",
-      type: "date",
-      value: filtros.fechaHasta,
-    },
-  ];
+  // ← CAMBIO: Obtener contexto para filtros según la vista activa
+  const getFilterContext = () => {
+    const contextMap = {
+      dashboard: "ventas",
+      graficos: "ventas",
+      vendedores: "ventas",
+      proveedores: "proveedores",
+      marcas: "productos",
+      temporadas: "productos",
+    };
+    return contextMap[activeView] || "ventas";
+  };
 
   // Aplicar filtros a los datos
   useEffect(() => {
@@ -258,7 +161,8 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
       if (filtros.año !== "todos") {
         const año = parseInt(filtros.año);
         filtered = filtered.filter((item) => {
-          const itemAño = typeof item.eje === "string" ? parseInt(item.eje) : item.eje;
+          const itemAño =
+            typeof item.eje === "string" ? parseInt(item.eje) : item.eje;
           return itemAño === año;
         });
       }
@@ -267,7 +171,8 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
       if (filtros.mes !== "todos") {
         const mes = parseInt(filtros.mes);
         filtered = filtered.filter((item) => {
-          const itemMes = typeof item.mes === "string" ? parseInt(item.mes) : item.mes;
+          const itemMes =
+            typeof item.mes === "string" ? parseInt(item.mes) : item.mes;
           return itemMes === mes;
         });
       }
@@ -281,6 +186,31 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
           return itemVendedor.toString() === vendedorIdSeleccionado;
         });
       }
+
+      // ← CAMBIO: Agregar filtros adicionales según contexto
+      const context = getFilterContext();
+
+      if (context === "ventas") {
+        // Filtros específicos de ventas
+        if (filtros.cliente !== "todos") {
+          filtered = filtered.filter((item) => item.cnt === filtros.cliente);
+        }
+
+        if (filtros.tienda !== "todas") {
+          filtered = filtered.filter((item) => item.emp === filtros.tienda);
+        }
+
+        if (filtros.formaPago !== "todas") {
+          filtered = filtered.filter((item) => item.fpa === filtros.formaPago);
+        }
+
+        if (filtros.empresa !== "todas") {
+          filtered = filtered.filter((item) => item.emp === filtros.empresa);
+        }
+      }
+
+      // Para proveedores y productos, los filtros específicos se aplicarían aquí
+      // según la estructura de datos disponible
 
       // Filtrar por rango de fechas
       if (filtros.fechaDesde) {
@@ -311,7 +241,7 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
     } finally {
       setLoading(false);
     }
-  }, [data, filtros]);
+  }, [data, filtros, activeView]); // ← CAMBIO: Agregar activeView como dependencia
 
   // Detectar qué filtros están activos
   const filtrosActivos = useMemo(() => {
@@ -336,17 +266,43 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
     setFiltros((prev) => ({ ...prev, [id]: value }));
   };
 
-  // Resetear filtros
+  // ← CAMBIO: Resetear filtros según el contexto
   const handleResetFilters = () => {
-    setFiltros({
+    const baseReset = {
       año: "todos",
       mes: "todos",
-      cliente: "todos",
-      tienda: "todas",
-      vendedor: "todos",
       fechaDesde: "",
       fechaHasta: "",
-    });
+    };
+
+    const contextResets = {
+      ventas: {
+        ...baseReset,
+        cliente: "todos",
+        tienda: "todas",
+        vendedor: "todos",
+        formaPago: "todas",
+        empresa: "todas",
+      },
+      proveedores: {
+        ...baseReset,
+        proveedor: "todos",
+        categoria: "todas",
+        marca: "todas",
+      },
+      productos: {
+        ...baseReset,
+        categoria: "todas",
+        marca: "todas",
+        proveedor: "todos",
+      },
+    };
+
+    const context = getFilterContext();
+    setFiltros((prev) => ({
+      ...prev,
+      ...(contextResets[context] || contextResets.ventas),
+    }));
   };
 
   // Cambiar vista activa
@@ -355,9 +311,7 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
   };
 
   if (loadingReferenceData) {
-    return (
-      <LoadingSpinner text="Cargando información de referencia..." />
-    );
+    return <LoadingSpinner text="Cargando información de referencia..." />;
   }
 
   if (!data || !data.fac_t) {
@@ -377,15 +331,20 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
           Análisis de Ventas
         </h1>
         <p className="page-subtitle">
-          Dashboard completo con métricas, gráficos y análisis detallado por vendedores y proveedores
+          Dashboard completo con métricas, gráficos y análisis detallado por
+          vendedores y proveedores
         </p>
       </div>
 
-      {/* Filtros */}
+      {/* ← CAMBIO: Nuevo sistema de filtros adaptables */}
       <FilterBar
-        filters={filterConfig}
+        context={getFilterContext()} // ← Cambia según activeView
+        data={data}
+        mapas={mapas}
+        filtros={filtros}
         onChange={handleFilterChange}
         onReset={handleResetFilters}
+        showAdvanced={activeView === "proveedores" || activeView === "marcas"}
       />
 
       {/* Información de filtros activos */}
@@ -399,7 +358,9 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
           )}
           {filtros.vendedor !== "todos" && (
             <span>
-              Vendedor: {mapaUsuarios[filtros.vendedor] || `Vendedor ${filtros.vendedor}`}
+              Vendedor:{" "}
+              {mapas.mapaUsuarios[filtros.vendedor] ||
+                `Vendedor ${filtros.vendedor}`}
             </span>
           )}
           {filtros.fechaDesde && (
@@ -439,7 +400,9 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
             Ranking Vendedores
           </button>
           <button
-            className={`nav-btn ${activeView === "proveedores" ? "active" : ""}`}
+            className={`nav-btn ${
+              activeView === "proveedores" ? "active" : ""
+            }`}
             onClick={() => handleViewChange("proveedores")}
           >
             <i className="fas fa-industry"></i>
@@ -477,9 +440,9 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
             {/* Resumen principal */}
             <VentasResumen
               ventasData={filteredData}
-              mapaContactos={mapaContactos}
-              mapaUsuarios={mapaUsuarios}
-              mapaFormasPago={mapaFormasPago}
+              mapaContactos={mapas.mapaContactos}
+              mapaUsuarios={mapas.mapaUsuarios}
+              mapaFormasPago={mapas.mapaFormasPago}
               filtrosActivos={filtrosActivos}
             />
 
@@ -487,10 +450,10 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
             <div className="dashboard-charts">
               <VentasGraficos
                 ventasData={filteredData}
-                mapaContactos={mapaContactos}
-                mapaUsuarios={mapaUsuarios}
-                mapaFormasPago={mapaFormasPago}
-                mapaEmpresas={mapaEmpresas}
+                mapaContactos={mapas.mapaContactos}
+                mapaUsuarios={mapas.mapaUsuarios}
+                mapaFormasPago={mapas.mapaFormasPago}
+                mapaEmpresas={mapas.mapaEmpresas}
                 filtrosActivos={filtrosActivos}
                 filtros={filtros}
                 viewMode="dashboard" // Solo mostrar gráficos principales
@@ -503,10 +466,10 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
           <div className="graficos-view">
             <VentasGraficos
               ventasData={filteredData}
-              mapaContactos={mapaContactos}
-              mapaUsuarios={mapaUsuarios}
-              mapaFormasPago={mapaFormasPago}
-              mapaEmpresas={mapaEmpresas}
+              mapaContactos={mapas.mapaContactos}
+              mapaUsuarios={mapas.mapaUsuarios}
+              mapaFormasPago={mapas.mapaFormasPago}
+              mapaEmpresas={mapas.mapaEmpresas}
               filtrosActivos={filtrosActivos}
               filtros={filtros}
               viewMode="full" // Mostrar todos los gráficos
@@ -518,7 +481,7 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
           <div className="vendedores-view">
             <VentasTablaVendedores
               ventasData={filteredData}
-              mapaUsuarios={mapaUsuarios}
+              mapaUsuarios={mapas.mapaUsuarios}
               filtros={filtros}
             />
           </div>
@@ -539,7 +502,10 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
             <div className="desarrollo-placeholder">
               <i className="fas fa-tags"></i>
               <h3>🏷️ Análisis por Marcas</h3>
-              <p>Esta funcionalidad permitirá analizar las ventas segmentadas por marca de productos.</p>
+              <p>
+                Esta funcionalidad permitirá analizar las ventas segmentadas por
+                marca de productos.
+              </p>
               <div className="desarrollo-features">
                 <div className="feature-item">
                   <i className="fas fa-chart-bar"></i>
@@ -556,7 +522,10 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
               </div>
               <div className="desarrollo-nota">
                 <i className="fas fa-info-circle"></i>
-                <span>Se implementará cuando estén disponibles los datos de líneas de factura y productos</span>
+                <span>
+                  Se implementará cuando estén disponibles los datos de líneas
+                  de factura y productos
+                </span>
               </div>
             </div>
           </div>
@@ -567,7 +536,10 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
             <div className="desarrollo-placeholder">
               <i className="fas fa-calendar-alt"></i>
               <h3>🌱 Análisis por Temporadas</h3>
-              <p>Esta funcionalidad permitirá analizar las ventas según temporadas y períodos específicos.</p>
+              <p>
+                Esta funcionalidad permitirá analizar las ventas según
+                temporadas y períodos específicos.
+              </p>
               <div className="desarrollo-features">
                 <div className="feature-item">
                   <i className="fas fa-chart-area"></i>
@@ -584,13 +556,15 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
               </div>
               <div className="desarrollo-nota">
                 <i className="fas fa-info-circle"></i>
-                <span>Se implementará cuando estén disponibles los datos de temporadas y clasificación de productos</span>
+                <span>
+                  Se implementará cuando estén disponibles los datos de
+                  temporadas y clasificación de productos
+                </span>
               </div>
             </div>
           </div>
         )}
       </div>
-
     </div>
   );
 };

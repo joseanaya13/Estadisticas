@@ -7,9 +7,10 @@ import { useMemo } from 'react';
  * @param {object} data - Datos disponibles para generar opciones
  * @param {object} mapas - Mapas de conversión ID -> Nombre
  * @param {object} filtros - Estado actual de los filtros
+ * @param {array} empresasData - Array completo de empresas con flag es_emp
  * @returns {array} Configuración de filtros adaptada al contexto
  */
-export const useAdaptiveFilters = (context, data, mapas = {}, filtros = {}) => {
+export const useAdaptiveFilters = (context, data, mapas = {}, filtros = {}, empresasData = []) => {
   
   const filterConfig = useMemo(() => {
     // Configuraciones base por contexto
@@ -130,7 +131,7 @@ export const useAdaptiveFilters = (context, data, mapas = {}, filtros = {}) => {
         label: "Tienda",
         type: "select",
         value: filtros.tienda || "todas",
-        options: generateTiendaOptions(data, mapas.mapaEmpresas),
+        options: generateTiendaOptions(data, mapas.mapaEmpresas, empresasData),
         group: "ubicacion",
         priority: 9
       },
@@ -175,7 +176,7 @@ export const useAdaptiveFilters = (context, data, mapas = {}, filtros = {}) => {
         label: "Empresa",
         type: "select", 
         value: filtros.empresa || "todas",
-        options: generateEmpresaOptions(data, mapas.mapaEmpresas),
+        options: generateEmpresaOptions(data, mapas.mapaEmpresas, empresasData),
         group: "comercial",
         priority: 14
       },
@@ -236,7 +237,7 @@ export const useAdaptiveFilters = (context, data, mapas = {}, filtros = {}) => {
     // Ordenar por prioridad
     return selectedFilters.sort((a, b) => a.priority - b.priority);
     
-  }, [context, data, mapas, filtros]);
+  }, [context, data, mapas, filtros, empresasData]);
 
   return filterConfig;
 };
@@ -274,74 +275,117 @@ const generateMonthOptions = () => {
 };
 
 const generateVendedorOptions = (data, mapaUsuarios = {}) => {
-  if (!data || !data.fac_t) return [{ value: "todos", label: "Todos los vendedores" }];
-  
-  const vendedores = [...new Set(
-    data.fac_t.map(item => item.usr).filter(usr => usr)
-  )].sort((a, b) => {
-    const nombreA = mapaUsuarios[a] || `Vendedor ${a}`;
-    const nombreB = mapaUsuarios[b] || `Vendedor ${b}`;
-    return nombreA.localeCompare(nombreB);
+  if (!data || !data.fac_t || !Object.keys(mapaUsuarios).length) {
+    return [{ value: "todos", label: "Cargando vendedores..." }];
+  }
+
+  // Calcular totales de ventas por vendedor (usando alt_usr)
+  const ventasPorVendedor = {};
+  data.fac_t.forEach((item) => {
+    if (item.alt_usr !== undefined && item.alt_usr !== null) {
+      const vendedorId = item.alt_usr.toString();
+      if (!ventasPorVendedor[vendedorId]) {
+        ventasPorVendedor[vendedorId] = 0;
+      }
+      ventasPorVendedor[vendedorId] += item.tot || 0;
+    }
   });
 
-  return [
-    { value: "todos", label: "Todos los vendedores" },
-    ...vendedores.map(vendedorId => ({
-      value: vendedorId,
-      label: mapaUsuarios[vendedorId] || `Vendedor ${vendedorId}`
-    }))
-  ];
+  // Filtrar solo vendedores con ventas > 0
+  const vendedoresConVentasPositivas = Object.keys(ventasPorVendedor).filter(
+    (vendedorId) => ventasPorVendedor[vendedorId] > 0
+  );
+
+  const opciones = [{ value: "todos", label: "Todos los vendedores" }];
+  const nombresUsados = new Set();
+
+  vendedoresConVentasPositivas
+    .sort((a, b) => {
+      const nombreA = mapaUsuarios[a] || `Vendedor ${a}`;
+      const nombreB = mapaUsuarios[b] || `Vendedor ${b}`;
+      return nombreA.localeCompare(nombreB);
+    })
+    .forEach((vendedorId) => {
+      const nombreVendedor = mapaUsuarios[vendedorId] || `Vendedor ${vendedorId}`;
+
+      if (!nombresUsados.has(nombreVendedor)) {
+        nombresUsados.add(nombreVendedor);
+        opciones.push({
+          value: vendedorId,
+          label: nombreVendedor,
+        });
+      }
+    });
+
+  return opciones;
 };
 
 const generateClienteOptions = (data, mapaContactos = {}) => {
-  if (!data || !data.fac_t) return [{ value: "todos", label: "Todos los clientes" }];
+  if (!data || !data.fac_t || !Object.keys(mapaContactos).length) {
+    return [{ value: "todos", label: "Cargando clientes..." }];
+  }
   
+  // Obtener clientes únicos que tienen facturas (usando cnt)
   const clientes = [...new Set(
-    data.fac_t.map(item => item.cnt).filter(cnt => cnt)
-  )].sort((a, b) => {
-    const nombreA = mapaContactos[a] || `Cliente ${a}`;
-    const nombreB = mapaContactos[b] || `Cliente ${b}`;
-    return nombreA.localeCompare(nombreB);
-  });
+    data.fac_t.map(item => item.cnt).filter(cnt => cnt && cnt !== '')
+  )];
 
   return [
     { value: "todos", label: "Todos los clientes" },
-    ...clientes.map(clienteId => ({
-      value: clienteId,
-      label: mapaContactos[clienteId] || `Cliente ${clienteId}`
-    }))
+    ...clientes
+      .sort((a, b) => {
+        const nombreA = mapaContactos[a] || `Cliente ${a}`;
+        const nombreB = mapaContactos[b] || `Cliente ${b}`;
+        return nombreA.localeCompare(nombreB);
+      })
+      .map(clienteId => ({
+        value: clienteId,
+        label: mapaContactos[clienteId] || `Cliente ${clienteId}`
+      }))
   ];
 };
 
 const generateProveedorOptions = (data, mapaProveedores = {}) => {
-  // Esta función necesitará adaptarse según la estructura de datos de proveedores
+  // TODO: Implementar según la estructura de datos de proveedores
   return [
     { value: "todos", label: "Todos los proveedores" }
-    // TODO: Implementar lógica específica para proveedores
   ];
 };
 
 const generateCompradorOptions = (data, mapaUsuarios = {}) => {
-  // Similar a vendedores pero para el contexto de compras
+  // TODO: Implementar lógica específica para compradores
   return [
     { value: "todos", label: "Todos los compradores" }
-    // TODO: Implementar lógica específica para compradores
   ];
 };
 
-const generateTiendaOptions = (data, mapaEmpresas = {}) => {
-  if (!data || !data.fac_t) return [{ value: "todas", label: "Todas las tiendas" }];
+const generateTiendaOptions = (data, mapaEmpresas = {}, empresasData = []) => {
+  if (!data || !data.fac_t || !Object.keys(mapaEmpresas).length) {
+    return [{ value: "todas", label: "Cargando tiendas..." }];
+  }
   
+  // Filtrar solo tiendas (es_emp: false) de empresasData
+  const tiendasDisponibles = empresasData.filter(emp => emp.es_emp === false);
+  const idsValidosTiendas = new Set(tiendasDisponibles.map(t => t.id));
+  
+  // Obtener tiendas únicas que tienen facturas y son tiendas reales
   const tiendas = [...new Set(
-    data.fac_t.map(item => item.emp).filter(emp => emp)
+    data.fac_t.map(item => item.emp)
+      .filter(emp => emp && emp !== '' && idsValidosTiendas.has(emp))
   )];
 
   return [
     { value: "todas", label: "Todas las tiendas" },
-    ...tiendas.map(tiendaId => ({
-      value: tiendaId,
-      label: mapaEmpresas[tiendaId] || `Tienda ${tiendaId}`
-    }))
+    ...tiendas
+      .sort((a, b) => {
+        const nombreA = mapaEmpresas[a] || `Tienda ${a}`;
+        const nombreB = mapaEmpresas[b] || `Tienda ${b}`;
+        return nombreA.localeCompare(nombreB);
+      })
+      .map(tiendaId => ({
+        value: tiendaId,
+        label: mapaEmpresas[tiendaId] || `Tienda ${tiendaId}`
+      }))
   ];
 };
 
@@ -367,23 +411,58 @@ const generateMarcaOptions = (data) => {
 };
 
 const generateFormaPagoOptions = (data, mapaFormasPago = {}) => {
-  if (!data || !data.fac_t) return [{ value: "todas", label: "Todas las formas de pago" }];
+  if (!data || !data.fac_t || !Object.keys(mapaFormasPago).length) {
+    return [{ value: "todas", label: "Cargando formas de pago..." }];
+  }
   
+  // Obtener formas de pago únicas que se han usado (usando fpa)
   const formasPago = [...new Set(
-    data.fac_t.map(item => item.fpa).filter(fpa => fpa)
+    data.fac_t.map(item => item.fpa).filter(fpa => fpa && fpa !== '')
   )];
 
   return [
     { value: "todas", label: "Todas las formas de pago" },
-    ...formasPago.map(formaId => ({
-      value: formaId,
-      label: mapaFormasPago[formaId] || `Forma ${formaId}`
-    }))
+    ...formasPago
+      .sort((a, b) => {
+        const nombreA = mapaFormasPago[a] || `Forma ${a}`;
+        const nombreB = mapaFormasPago[b] || `Forma ${b}`;
+        return nombreA.localeCompare(nombreB);
+      })
+      .map(formaId => ({
+        value: formaId,
+        label: mapaFormasPago[formaId] || `Forma ${formaId}`
+      }))
   ];
 };
 
-const generateEmpresaOptions = (data, mapaEmpresas = {}) => {
-  return generateTiendaOptions(data, mapaEmpresas); // Misma lógica
+const generateEmpresaOptions = (data, mapaEmpresas = {}, empresasData = []) => {
+  if (!data || !data.fac_t || !Object.keys(mapaEmpresas).length) {
+    return [{ value: "todas", label: "Cargando empresas..." }];
+  }
+  
+  // Filtrar solo empresas/divisiones (es_emp: true) de empresasData
+  const empresasDisponibles = empresasData.filter(emp => emp.es_emp === true);
+  const idsValidosEmpresas = new Set(empresasDisponibles.map(e => e.id));
+  
+  // Obtener empresas únicas que tienen facturas y son empresas reales
+  const empresas = [...new Set(
+    data.fac_t.map(item => item.emp)
+      .filter(emp => emp && emp !== '' && idsValidosEmpresas.has(emp))
+  )];
+
+  return [
+    { value: "todas", label: "Todas las empresas" },
+    ...empresas
+      .sort((a, b) => {
+        const nombreA = mapaEmpresas[a] || `Empresa ${a}`;
+        const nombreB = mapaEmpresas[b] || `Empresa ${b}`;
+        return nombreA.localeCompare(nombreB);
+      })
+      .map(empresaId => ({
+        value: empresaId,
+        label: mapaEmpresas[empresaId] || `Empresa ${empresaId}`
+      }))
+  ];
 };
 
 export default useAdaptiveFilters;
