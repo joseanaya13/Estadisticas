@@ -15,6 +15,7 @@ import {
 } from "../utils/formatters";
 import { empresasService, formasPagoService } from "../services/maestros";
 import { analizarDuplicados } from "../utils/usuariosUtils";
+import { useAdaptiveFilters } from "../hooks/useAdaptiveFilters";
 
 const EstadisticasVentas = ({ data, contactos, usuarios }) => {
   const [filtros, setFiltros] = useState({
@@ -338,10 +339,11 @@ const EstadisticasVentas = ({ data, contactos, usuarios }) => {
 
       {/* ← CAMBIO: Nuevo sistema de filtros adaptables */}
       <FilterBar
-        context={getFilterContext()} // ← Cambia según activeView
+        context={getFilterContext()}
         data={data}
         mapas={mapas}
         filtros={filtros}
+        empresasData={empresas} // ← AGREGAR ESTA LÍNEA
         onChange={handleFilterChange}
         onReset={handleResetFilters}
         showAdvanced={activeView === "proveedores" || activeView === "marcas"}
