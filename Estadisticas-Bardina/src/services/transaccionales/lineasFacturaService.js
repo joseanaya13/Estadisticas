@@ -101,10 +101,7 @@ export class LineasFacturasService {
 
       lineas.forEach((linea) => {
         const proveedorId = linea.prv;
-        if (
-          proveedorId !== undefined &&
-          proveedorId !== null
-        ) {
+        if (proveedorId !== undefined && proveedorId !== null) {
           if (!proveedores[proveedorId]) {
             proveedores[proveedorId] = {
               proveedorId,
@@ -188,31 +185,36 @@ export class LineasFacturasService {
         }
       });
 
-      // También corregir el cálculo de márgenes finales
-      const proveedoresArray = Object.values(proveedores).map((proveedor) => ({
-        ...proveedor,
-        numeroFacturas: proveedor.numeroFacturas.size,
-        numeroProductos: proveedor.productos.size,
-        // ✅ MARGEN CORRECTO con el beneficio recalculado
-        margenPorcentual:
-          proveedor.ventasTotal > 0
-            ? (proveedor.beneficioTotal / proveedor.ventasTotal) * 100
-            : 0,
-        ticketPromedio:
-          proveedor.numeroFacturas > 0
-            ? proveedor.ventasTotal / proveedor.numeroFacturas
-            : 0,
-        precioPromedio:
-          proveedor.cantidadTotal > 0
-            ? proveedor.ventasTotal / proveedor.cantidadTotal
-            : 0,
-        ventasPorMes: Object.entries(proveedor.porMes)
-          .map(([mes, ventas]) => ({ mes, ventas }))
-          .sort((a, b) => a.mes.localeCompare(b.mes)),
-        topProductos: Object.values(proveedor.topProductos)
-          .sort((a, b) => b.ventasTotal - a.ventasTotal)
-          .slice(0, 5),
-      }));
+      const proveedoresArray = Object.values(proveedores).map((proveedor) => {
+        // Calcular primero los números reales
+        const numeroFacturasReal = proveedor.numeroFacturas.size;
+        const numeroProductosReal = proveedor.productos.size;
+
+        return {
+          ...proveedor,
+          numeroFacturas: numeroFacturasReal,
+          numeroProductos: numeroProductosReal,
+          margenPorcentual:
+            proveedor.ventasTotal > 0
+              ? (proveedor.beneficioTotal / proveedor.ventasTotal) * 100
+              : 0,
+          // ✅ CORREGIDO: Usar el número real de facturas
+          ticketPromedio:
+            numeroFacturasReal > 0
+              ? proveedor.ventasTotal / numeroFacturasReal
+              : 0,
+          precioPromedio:
+            proveedor.cantidadTotal > 0
+              ? proveedor.ventasTotal / proveedor.cantidadTotal
+              : 0,
+          ventasPorMes: Object.entries(proveedor.porMes)
+            .map(([mes, ventas]) => ({ mes, ventas }))
+            .sort((a, b) => a.mes.localeCompare(b.mes)),
+          topProductos: Object.values(proveedor.topProductos)
+            .sort((a, b) => b.ventasTotal - a.ventasTotal)
+            .slice(0, 5),
+        };
+      });
 
       // Comentario importante para el equipo
       console.log(
