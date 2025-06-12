@@ -1,4 +1,5 @@
 // src/components/layout/Breadcrumbs.jsx
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const ChevronRightIcon = ({ className }) => (
   <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -13,10 +14,43 @@ const HomeIcon = ({ className }) => (
 );
 
 export default function Breadcrumbs({ pages = [] }) {
-  const handleNavigation = (href, name) => {
-    console.log(`Navegando a: ${name} (${href})`);
-    // Aquí integrarías con React Router
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleNavigation = (href) => {
+    navigate(href);
   };
+
+  // Generar páginas automáticamente basándose en la ruta actual si no se proporcionan
+  const generatePages = () => {
+    const pathParts = location.pathname.split('/').filter(part => part);
+    const generatedPages = [];
+    
+    const pageNames = {
+      'sales': 'Ventas',
+      'products': 'Productos',
+      'inventory': 'Inventario',
+      'reports': 'Reportes',
+      'settings': 'Configuración'
+    };
+
+    pathParts.forEach((part, index) => {
+      const href = '/' + pathParts.slice(0, index + 1).join('/');
+      generatedPages.push({
+        name: pageNames[part] || part.charAt(0).toUpperCase() + part.slice(1),
+        href: href
+      });
+    });
+
+    return generatedPages;
+  };
+
+  const displayPages = pages.length > 0 ? pages : generatePages();
+
+  // Si estamos en el dashboard, no mostrar breadcrumbs
+  if (location.pathname === '/') {
+    return null;
+  }
 
   return (
     <nav className="flex mb-6" aria-label="Breadcrumb">
@@ -24,7 +58,7 @@ export default function Breadcrumbs({ pages = [] }) {
         {/* Home */}
         <li>
           <button
-            onClick={() => handleNavigation('/', 'Dashboard')}
+            onClick={() => handleNavigation('/')}
             className="flex items-center text-gray-500 hover:text-gray-700 transition-colors"
           >
             <HomeIcon className="h-5 w-5" />
@@ -33,10 +67,10 @@ export default function Breadcrumbs({ pages = [] }) {
         </li>
 
         {/* Páginas intermedias */}
-        {pages.map((page, index) => (
-          <li key={page.name} className="flex items-center">
+        {displayPages.map((page, index) => (
+          <li key={page.href} className="flex items-center">
             <ChevronRightIcon className="h-4 w-4 text-gray-400 mx-2" />
-            {index === pages.length - 1 ? (
+            {index === displayPages.length - 1 ? (
               // Página actual (no clickeable)
               <span className="text-sm font-medium text-gray-900" aria-current="page">
                 {page.name}
@@ -44,7 +78,7 @@ export default function Breadcrumbs({ pages = [] }) {
             ) : (
               // Páginas intermedias (clickeables)
               <button
-                onClick={() => handleNavigation(page.href, page.name)}
+                onClick={() => handleNavigation(page.href)}
                 className="text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
               >
                 {page.name}

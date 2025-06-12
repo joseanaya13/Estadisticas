@@ -1,5 +1,5 @@
 // src/components/layout/Sidebar.jsx
-import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 // Iconos SVG para el menú
 const DashboardIcon = ({ className }) => (
@@ -53,26 +53,23 @@ const DiamondIcon = ({ className }) => (
 );
 
 const menuItems = [
-  { name: 'Dashboard', href: '/', icon: DashboardIcon, current: true },
-  { name: 'Ventas', href: '/sales', icon: SalesIcon, current: false },
-  
+  { name: 'Dashboard', href: '/', icon: DashboardIcon },
+  { name: 'Ventas', href: '/sales', icon: SalesIcon },
+  { name: 'Productos', href: '/products', icon: ProductsIcon },
+  { name: 'Inventario', href: '/inventory', icon: InventoryIcon },
+  { name: 'Reportes', href: '/reports', icon: ReportsIcon },
+  { name: 'Configuración', href: '/settings', icon: SettingsIcon },
 ];
 
-{/*{ name: 'Productos', href: '/products', icon: ProductsIcon, current: false },
-  { name: 'Inventario', href: '/inventory', icon: InventoryIcon, current: false },
-  { name: 'Reportes', href: '/reports', icon: ReportsIcon, current: false },
-  { name: 'Configuración', href: '/settings', icon: SettingsIcon, current: false },*/}
-
 export default function Sidebar({ isOpen, onClose, mobile = false }) {
-  const [currentPage, setCurrentPage] = useState('/');
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleNavigation = (href, name) => {
-    setCurrentPage(href);
+  const handleNavigation = (href) => {
+    navigate(href);
     if (mobile) {
       onClose();
     }
-    // Aquí puedes agregar lógica de navegación con React Router
-    console.log(`Navegando a: ${name} (${href})`);
   };
 
   return (
@@ -104,11 +101,11 @@ export default function Sidebar({ isOpen, onClose, mobile = false }) {
       {/* Navegación */}
       <nav className="flex-1 px-4 py-4 space-y-2">
         {menuItems.map((item) => {
-          const isActive = currentPage === item.href;
+          const isActive = location.pathname === item.href;
           return (
             <button
               key={item.name}
-              onClick={() => handleNavigation(item.href, item.name)}
+              onClick={() => handleNavigation(item.href)}
               className={`
                 w-full group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200
                 ${isActive 
@@ -133,7 +130,7 @@ export default function Sidebar({ isOpen, onClose, mobile = false }) {
       </nav>
 
       {/* Footer del sidebar */}
-      {/*<div className="p-4 border-t border-gold-700">
+      <div className="p-4 border-t border-gold-700">
         <div className="flex items-center space-x-3 p-3 rounded-lg bg-gold-800/50">
           <div className="w-8 h-8 bg-gold-600 rounded-full flex items-center justify-center">
             <span className="text-sm font-medium text-gold-100">JU</span>
@@ -147,7 +144,7 @@ export default function Sidebar({ isOpen, onClose, mobile = false }) {
             </p>
           </div>
         </div>
-      </div>*/}
+      </div>
     </div>
   );
 }
