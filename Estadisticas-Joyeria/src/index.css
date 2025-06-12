@@ -1,10 +1,13 @@
+/* src/index.css - Tailwind CSS 4 */
 @import "tailwindcss";
 
-/* Importar fuente Inter de Google Fonts */
+/* Importar fuentes elegantes para joyería */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap');
 
-/* === COLORES PERSONALIZADOS === */
+/* === CONFIGURACIÓN DE TEMA === */
 @theme {
+  /* Colores de Joyería */
   --color-gold-50: #fffbeb;
   --color-gold-100: #fef3c7;
   --color-gold-200: #fde68a;
@@ -27,96 +30,374 @@
   --color-silver-800: #1f2937;
   --color-silver-900: #111827;
   
+  --color-diamond-50: #f0f9ff;
+  --color-diamond-100: #e0f2fe;
+  --color-diamond-200: #bae6fd;
+  --color-diamond-300: #7dd3fc;
+  --color-diamond-400: #38bdf8;
+  --color-diamond-500: #0ea5e9;
+  --color-diamond-600: #0284c7;
+  --color-diamond-700: #0369a1;
+  --color-diamond-800: #075985;
+  --color-diamond-900: #0c4a6e;
+  
+  --color-ruby-50: #fef2f2;
+  --color-ruby-100: #fee2e2;
+  --color-ruby-200: #fecaca;
+  --color-ruby-300: #fca5a5;
+  --color-ruby-400: #f87171;
+  --color-ruby-500: #ef4444;
+  --color-ruby-600: #dc2626;
+  --color-ruby-700: #b91c1c;
+  --color-ruby-800: #991b1b;
+  --color-ruby-900: #7f1d1d;
+  
+  --color-emerald-50: #ecfdf5;
+  --color-emerald-100: #d1fae5;
+  --color-emerald-200: #a7f3d0;
+  --color-emerald-300: #6ee7b7;
+  --color-emerald-400: #34d399;
+  --color-emerald-500: #10b981;
+  --color-emerald-600: #059669;
+  --color-emerald-700: #047857;
+  --color-emerald-800: #065f46;
+  --color-emerald-900: #064e3b;
+
+  /* Fuentes */
   --font-family-sans: 'Inter', system-ui, sans-serif;
+  --font-family-jewelry: 'Playfair Display', serif;
+  --font-family-elegant: 'Cormorant Garamond', serif;
+
+  /* Sombras personalizadas */
+  --shadow-gold: 0 4px 14px 0 rgba(217, 119, 6, 0.3);
+  --shadow-silver: 0 4px 14px 0 rgba(156, 163, 175, 0.3);
+  --shadow-diamond: 0 4px 14px 0 rgba(56, 189, 248, 0.3);
+  --shadow-luxury: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+  /* Animaciones */
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-fade-in: fadeIn 0.5s ease-in-out;
+  --animate-slide-up: slideUp 0.3s ease-out;
+  --animate-bounce-slow: bounce 3s infinite;
+}
+
+/* Variables CSS personalizadas adicionales */
+:root {
+  --gold-shimmer: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.4), transparent);
+  --silver-shimmer: linear-gradient(90deg, transparent, rgba(156, 163, 175, 0.4), transparent);
+  --diamond-sparkle: linear-gradient(45deg, transparent 30%, rgba(56, 189, 248, 0.6) 50%, transparent 70%);
+}
+
+/* === RESET Y CONFIGURACIÓN BASE === */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: theme(fontFamily.sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  @apply bg-gray-50 text-gray-900;
+  line-height: 1.6;
 }
 
 /* === COMPONENTES PERSONALIZADOS === */
-/* Clases para familias de productos */
-.familia-oro {
-  @apply bg-gold-100 text-gold-800 border-gold-200;
-}
-
-.familia-plata {
-  @apply bg-silver-100 text-silver-800 border-silver-200;
-}
-
-.familia-pilas {
-  @apply bg-blue-100 text-blue-800 border-blue-200;
-}
-
-.familia-correas {
-  @apply bg-amber-100 text-amber-800 border-amber-200;
-}
-
-/* Estados de beneficio */
-.beneficio-positivo {
-  @apply text-green-600 bg-green-50 border-green-200;
-}
-
-.beneficio-negativo {
-  @apply text-red-600 bg-red-50 border-red-200;
-}
-
-.beneficio-neutro {
-  @apply text-gray-600 bg-gray-50 border-gray-200;
-}
-
-/* Componentes base */
-.card {
-  @apply bg-white rounded-lg shadow-md border border-gray-200 p-6;
-}
-
-.card-header {
-  @apply mb-4 pb-4 border-b border-gray-200;
-}
-
-.btn-primary {
-  @apply bg-gold-600 hover:bg-gold-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200;
-}
-
-.btn-secondary {
-  @apply bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200;
-}
-
-/* Tablas */
-.table {
-  @apply w-full border-collapse bg-white rounded-lg overflow-hidden shadow-sm;
-}
-
-.table th {
-  @apply bg-gray-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
-}
-
-.table td {
-  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-b border-gray-200;
-}
-
-/* Scrollbar personalizada */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  @apply bg-gray-100 rounded-full;
-}
-
-::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 rounded-full hover:bg-gray-400;
-}
-
-/* Animaciones personalizadas */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
+  /* Botones con estilo de joyería */
+  .btn-gold {
+    @apply bg-gold-600 hover:bg-gold-700 text-white font-medium px-4 py-2 rounded-lg 
+           shadow-gold transition-all duration-200 hover:shadow-lg hover:scale-105;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  
+  .btn-silver {
+    @apply bg-silver-600 hover:bg-silver-700 text-white font-medium px-4 py-2 rounded-lg 
+           shadow-silver transition-all duration-200 hover:shadow-lg hover:scale-105;
+  }
+  
+  .btn-diamond {
+    @apply bg-diamond-500 hover:bg-diamond-600 text-white font-medium px-4 py-2 rounded-lg 
+           shadow-diamond transition-all duration-200 hover:shadow-lg hover:scale-105;
+  }
+
+  /* Cards con estilo premium */
+  .card-luxury {
+    @apply bg-white rounded-xl shadow-luxury border border-gray-100 
+           hover:shadow-xl transition-all duration-300 hover:-translate-y-1;
+  }
+
+  .card-gold {
+    @apply bg-gradient-to-br from-gold-50 to-gold-100 border-gold-200 
+           shadow-gold hover:shadow-gold;
+  }
+
+  .card-silver {
+    @apply bg-gradient-to-br from-silver-50 to-silver-100 border-silver-200 
+           shadow-silver hover:shadow-silver;
+  }
+
+  /* Efectos de shimmer para loading */
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: var(--gold-shimmer);
+    animation: shimmer 2s infinite;
+    transform: translateX(-100%);
+  }
+
+  /* Indicadores de estado para productos de joyería */
+  .status-oro {
+    @apply bg-gold-100 text-gold-800 border-gold-200 px-2 py-1 rounded-full text-xs font-medium;
+  }
+
+  .status-plata {
+    @apply bg-silver-100 text-silver-800 border-silver-200 px-2 py-1 rounded-full text-xs font-medium;
+  }
+
+  .status-diamante {
+    @apply bg-diamond-100 text-diamond-800 border-diamond-200 px-2 py-1 rounded-full text-xs font-medium;
+  }
+
+  /* Estados de carga y errores */
+.loading-spinner {
+  @apply inline-block w-6 h-6 border-2 border-gold-200 border-t-gold-600 rounded-full animate-spin;
+}
+
+.error-state {
+  @apply text-ruby-600 bg-ruby-50 border border-ruby-200 rounded-lg p-4;
+}
+
+.success-state {
+  @apply text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg p-4;
+}
+
+.warning-state {
+  @apply text-yellow-600 bg-yellow-50 border border-yellow-200 rounded-lg p-4;
+}
+
+/* Print styles para reportes */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-break {
+    page-break-after: always;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .card-luxury {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+} beneficio */
+  .beneficio-positivo {
+    @apply text-emerald-600 bg-emerald-50 border-emerald-200;
+  }
+
+  .beneficio-negativo {
+    @apply text-ruby-600 bg-ruby-50 border-ruby-200;
+  }
+
+  .beneficio-neutro {
+    @apply text-gray-600 bg-gray-50 border-gray-200;
+  }
+
+  /* Inputs con estilo premium */
+  .input-luxury {
+    @apply w-full px-4 py-3 border border-gray-300 rounded-lg 
+           focus:ring-2 focus:ring-gold-500 focus:border-transparent 
+           transition-colors bg-white shadow-sm;
+  }
+
+  /* Tablas responsive con estilo elegante */
+  .table-luxury {
+    @apply w-full bg-white rounded-lg overflow-hidden shadow-luxury;
+  }
+
+  .table-luxury thead {
+    @apply bg-gradient-to-r from-gold-50 to-gold-100;
+  }
+
+  .table-luxury th {
+    @apply px-6 py-4 text-left text-xs font-semibold text-gold-800 uppercase tracking-wider;
+  }
+
+  .table-luxury td {
+    @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100;
+  }
+
+  .table-luxury tbody tr:hover {
+    @apply bg-gold-50 transition-colors duration-150;
+  }
+
+  /* Sidebar navigation styles */
+  .nav-item {
+    @apply w-full group flex items-center px-3 py-2 text-sm font-medium rounded-lg 
+           transition-all duration-200;
+  }
+
+  .nav-item-active {
+    @apply bg-gold-700 text-white shadow-md;
+  }
+
+  .nav-item-inactive {
+    @apply text-gold-200 hover:bg-gold-700 hover:text-white;
+  }
+
+  /* Dropdown menus */
+  .dropdown-menu {
+    @apply absolute right-0 mt-2 bg-white rounded-lg shadow-luxury border border-gray-200 z-50;
+  }
+
+  .dropdown-item {
+    @apply block w-full text-left px-4 py-2 text-sm text-gray-700 
+           hover:bg-gray-50 transition-colors first:rounded-t-lg last:rounded-b-lg;
+  }
+
+  /* Notifications */
+  .notification-dot {
+    @apply absolute -top-1 -right-1 h-5 w-5 bg-ruby-500 text-white text-xs 
+           rounded-full flex items-center justify-center;
+  }
+
+  /* Loading states */
+  .skeleton {
+    @apply bg-gray-200 rounded animate-pulse;
+  }
+
+  .skeleton-text {
+    @apply h-4 bg-gray-200 rounded animate-pulse;
+  }
+
+  .skeleton-avatar {
+    @apply w-10 h-10 bg-gray-200 rounded-full animate-pulse;
   }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
+/* Utilidades personalizadas */
+@layer utilities {
+  /* Scrollbar personalizado */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #d97706 #f3f4f6;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #d97706;
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #b45309;
+  }
+
+  /* Text gradients para títulos especiales */
+  .text-gold-gradient {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-silver-gradient {
+    background: linear-gradient(135deg, #6b7280 0%, #374151 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-diamond-gradient {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Efectos especiales */
+  .glass-effect {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .glow-gold {
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+  }
+
+  .glow-silver {
+    box-shadow: 0 0 20px rgba(156, 163, 175, 0.5);
+  }
+
+  .glow-diamond {
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+  }
 }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .table-luxury {
+    font-size: 0.875rem;
+  }
+  
+  .table-luxury th,
+  .table-luxury td {
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Dark mode support (opcional) */
+@media (prefers-color-scheme: dark) {
+  .dark-mode {
+    @apply bg-gray-900 text-gray-100;
+  }
+  
+  .dark-mode .card-luxury {
+    @apply bg-gray-800 border-gray-700;
+  }
+  
+  .dark-mode .input-luxury {
+    @apply bg-gray-800 border-gray-600 text-gray-100;
+  }
+}
+
+/* Animaciones de entrada para elementos */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Focus states mejorados para accesibilidad */
+.focus-luxury:focus {
+  @apply outline-none ring-2 ring-gold-500 ring-offset-2;
+}
+
+/* Estados de
