@@ -10,7 +10,6 @@ import {
 import { 
   formatCurrency, 
   formatDate, 
-  formatDateTime, 
   getFamilyColorClass,
   getBenefitColorClass 
 } from '../../utils/formatters';
@@ -37,7 +36,7 @@ export const SalesTable = ({ data, loading = false, onExport }) => {
               {formatDate(getValue())}
             </div>
             <div className="text-gray-500">
-              {row.original.hora}
+              {row.original.hora || '-'}
             </div>
           </div>
         ),
@@ -132,7 +131,7 @@ export const SalesTable = ({ data, loading = false, onExport }) => {
           const colorClass = value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-gray-600';
           return (
             <span className={`text-sm font-medium ${colorClass}`}>
-              {value.toFixed(1)}%
+              {value?.toFixed ? value.toFixed(1) : 0}%
             </span>
           );
         },
