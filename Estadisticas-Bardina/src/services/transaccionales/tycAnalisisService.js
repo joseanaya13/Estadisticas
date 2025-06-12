@@ -1,9 +1,12 @@
 // services/transaccionales/tycAnalisisService.js
 import { apiClient, apiUtils } from '../core/apiClient.js';
+import { tallasService } from '../maestros/tallasService.js';
+import { coloresService } from '../maestros/coloresService.js';
 
 /**
  * Servicio de análisis de Tallas y Colores (TyC)
  * Replica la funcionalidad del proceso Velneo TYC_CAN3_MEM
+ * ACTUALIZADO: Usa servicios reales de tallas y colores
  */
 export class TycAnalisisService {
   constructor() {
@@ -14,66 +17,6 @@ export class TycAnalisisService {
     };
     this._cache = new Map();
     this._cacheExpiry = 10 * 60 * 1000; // 10 minutos
-    
-    // Maestros hardcodeados (luego se pueden mover a endpoints)
-    this.maestroTallas = this._initMaestroTallas();
-    this.maestroColores = this._initMaestroColores();
-  }
-
-  /**
-   * Inicializar maestro de tallas
-   */
-  _initMaestroTallas() {
-    return {
-      1: { id: 1, abr: 'XS', name: 'Extra Small', ord: 1 },
-      2: { id: 2, abr: 'S', name: 'Small', ord: 2 },
-      3: { id: 3, abr: 'M', name: 'Medium', ord: 3 },
-      4: { id: 4, abr: 'L', name: 'Large', ord: 4 },
-      5: { id: 5, abr: 'XL', name: 'Extra Large', ord: 5 },
-      6: { id: 6, abr: 'XXL', name: 'Extra Extra Large', ord: 6 },
-      7: { id: 7, abr: '34', name: 'Talla 34', ord: 7 },
-      8: { id: 8, abr: '36', name: 'Talla 36', ord: 8 },
-      9: { id: 9, abr: '38', name: 'Talla 38', ord: 9 },
-      10: { id: 10, abr: '40', name: 'Talla 40', ord: 10 },
-      11: { id: 11, abr: '42', name: 'Talla 42', ord: 11 },
-      12: { id: 12, abr: '44', name: 'Talla 44', ord: 12 },
-      13: { id: 13, abr: '46', name: 'Talla 46', ord: 13 },
-      14: { id: 14, abr: '48', name: 'Talla 48', ord: 14 },
-      15: { id: 15, abr: '50', name: 'Talla 50', ord: 15 },
-      16: { id: 16, abr: 'U', name: 'Única', ord: 16 },
-      17: { id: 17, abr: '37', name: 'Talla 37', ord: 17 },
-      18: { id: 18, abr: '39', name: 'Talla 39', ord: 18 },
-      19: { id: 19, abr: '41', name: 'Talla 41', ord: 19 },
-      20: { id: 20, abr: '43', name: 'Talla 43', ord: 20 }
-    };
-  }
-
-  /**
-   * Inicializar maestro de colores
-   */
-  _initMaestroColores() {
-    return {
-      1: { id: 1, name: 'Blanco', abr: 'BLA', ref: 'WHITE' },
-      2: { id: 2, name: 'Negro', abr: 'NEG', ref: 'BLACK' },
-      3: { id: 3, name: 'Rojo', abr: 'ROJ', ref: 'RED' },
-      4: { id: 4, name: 'Azul', abr: 'AZU', ref: 'BLUE' },
-      5: { id: 5, name: 'Verde', abr: 'VER', ref: 'GREEN' },
-      6: { id: 6, name: 'Amarillo', abr: 'AMA', ref: 'YELLOW' },
-      7: { id: 7, name: 'Rosa', abr: 'ROS', ref: 'PINK' },
-      8: { id: 8, name: 'Gris', abr: 'GRI', ref: 'GRAY' },
-      9: { id: 9, name: 'Marrón', abr: 'MAR', ref: 'BROWN' },
-      10: { id: 10, name: 'Naranja', abr: 'NAR', ref: 'ORANGE' },
-      11: { id: 11, name: 'Morado', abr: 'MOR', ref: 'PURPLE' },
-      12: { id: 12, name: 'Beige', abr: 'BEI', ref: 'BEIGE' },
-      13: { id: 13, name: 'Plateado', abr: 'PLA', ref: 'SILVER' },
-      14: { id: 14, name: 'Dorado', abr: 'DOR', ref: 'GOLD' },
-      15: { id: 15, name: 'Multicolor', abr: 'MUL', ref: 'MULTI' },
-      16: { id: 16, name: 'Transparente', abr: 'TRA', ref: 'CLEAR' },
-      17: { id: 17, name: 'Azul Marino', abr: 'AMA', ref: 'NAVY' },
-      18: { id: 18, name: 'Verde Oliva', abr: 'VOL', ref: 'OLIVE' },
-      19: { id: 19, name: 'Burdeos', abr: 'BUR', ref: 'BURGUNDY' },
-      20: { id: 20, name: 'Crema', abr: 'CRE', ref: 'CREAM' }
-    };
   }
 
   /**
@@ -96,36 +39,56 @@ export class TycAnalisisService {
 
       console.log('Iniciando análisis TyC con filtros:', filtros);
 
-      // Paso 1: Obtener artículos base
+      // Paso 1: Cargar maestros de tallas y colores
+      const [tallasActivas, coloresActivos] = await Promise.all([
+        tallasService.getTallasActivas(),
+        coloresService.getColoresActivos()
+      ]);
+
+      console.log(`Maestros cargados: ${tallasActivas.length} tallas, ${coloresActivos.length} colores`);
+
+      // Paso 2: Obtener artículos base
       const articulosBase = await this._obtenerArticulosBase(filtros);
       console.log(`Artículos base encontrados: ${articulosBase.length}`);
 
-      // Paso 2: Obtener existencias por TyC
+      // Paso 3: Obtener existencias por TyC
       const existenciasTyC = await this._obtenerExistenciasTyC(articulosBase, filtros);
       console.log(`Registros de existencias TyC: ${existenciasTyC.length}`);
 
-      // Paso 3: Obtener ventas por TyC
+      // Paso 4: Obtener ventas por TyC
       const ventasTyC = await this._obtenerVentasTyC(articulosBase, filtros);
       console.log(`Registros de ventas TyC: ${ventasTyC.length}`);
 
-      // Paso 4: Generar matriz consolidada
-      const matrizTyC = await this._generarMatrizTyC(articulosBase, existenciasTyC, ventasTyC);
+      // Paso 5: Generar matriz consolidada
+      const matrizTyC = await this._generarMatrizTyC(
+        articulosBase, 
+        existenciasTyC, 
+        ventasTyC, 
+        tallasActivas, 
+        coloresActivos
+      );
       console.log(`Matriz TyC generada: ${matrizTyC.length} filas`);
 
-      // Paso 5: Calcular estadísticas
+      // Paso 6: Calcular estadísticas
       const estadisticas = this._calcularEstadisticas(matrizTyC);
+
+      // Paso 7: Preparar maestros para respuesta
+      const maestroTallas = tallasService.tallasToMap(tallasActivas);
+      const maestroColores = coloresService.colorsToMap(coloresActivos);
 
       const resultado = {
         matriz: matrizTyC,
         estadisticas,
         maestros: {
-          tallas: this.maestroTallas,
-          colores: this.maestroColores
+          tallas: maestroTallas,
+          colores: maestroColores
         },
         metadatos: {
           totalArticulos: articulosBase.length,
           totalRegistrosStock: existenciasTyC.length,
           totalRegistrosVentas: ventasTyC.length,
+          totalTallas: tallasActivas.length,
+          totalColores: coloresActivos.length,
           fechaGeneracion: new Date().toISOString(),
           filtrosAplicados: filtros
         }
@@ -251,14 +214,18 @@ export class TycAnalisisService {
 
   /**
    * Generar matriz consolidada TyC (similar a TYC_CAN3_MEM de Velneo)
+   * ACTUALIZADO: Usa datos reales de tallas y colores
    */
-  async _generarMatrizTyC(articulosBase, existenciasTyC, ventasTyC) {
+  async _generarMatrizTyC(articulosBase, existenciasTyC, ventasTyC, tallasActivas, coloresActivos) {
     try {
-      // Mapas de artículos para referencias
+      // Mapas de artículos, tallas y colores para referencias
       const mapaArticulos = {};
       articulosBase.forEach(art => {
         mapaArticulos[art.id] = art;
       });
+
+      const mapaTallas = tallasService.tallasToMap(tallasActivas);
+      const mapaColores = coloresService.colorsToMap(coloresActivos);
 
       // Agrupar existencias por art-col
       const stockPorArtCol = {};
@@ -281,31 +248,55 @@ export class TycAnalisisService {
         ventasPorArtColTll[key] = (ventasPorArtColTll[key] || 0) + (item.can || 0);
       });
 
-      // Obtener tallas únicas y ordenarlas
+      // Obtener tallas únicas presentes en los datos y ordenarlas
       const tallasUnicas = new Set();
       Object.values(stockPorArtCol).forEach(artCol => {
-        Object.keys(artCol.tallas).forEach(talla => tallasUnicas.add(parseInt(talla)));
+        Object.keys(artCol.tallas).forEach(talla => {
+          const tallaId = parseInt(talla);
+          if (mapaTallas[tallaId]) {
+            tallasUnicas.add(tallaId);
+          }
+        });
       });
       
+      // Agregar tallas de ventas también
+      Object.keys(ventasPorArtColTll).forEach(key => {
+        const [, , tallaId] = key.split('-');
+        const tallaIdNum = parseInt(tallaId);
+        if (mapaTallas[tallaIdNum]) {
+          tallasUnicas.add(tallaIdNum);
+        }
+      });
+
+      // Ordenar tallas por el campo 'ord'
       const tallasOrdenadas = Array.from(tallasUnicas)
-        .filter(talla => this.maestroTallas[talla])
-        .sort((a, b) => this.maestroTallas[a].ord - this.maestroTallas[b].ord)
+        .filter(tallaId => mapaTallas[tallaId])
+        .sort((a, b) => (mapaTallas[a].ord || 0) - (mapaTallas[b].ord || 0))
         .slice(0, 20); // Máximo 20 tallas como Velneo
+
+      console.log(`Tallas ordenadas para matriz: ${tallasOrdenadas.length}`, 
+        tallasOrdenadas.map(id => `${id}:${mapaTallas[id].abr}`));
 
       // Generar matriz final
       const matriz = [];
       
       Object.values(stockPorArtCol).forEach(artCol => {
         const articulo = mapaArticulos[artCol.art];
-        if (!articulo) return;
+        const colorInfo = mapaColores[artCol.col];
+        
+        if (!articulo) {
+          console.warn(`Artículo no encontrado: ${artCol.art}`);
+          return;
+        }
 
         const fila = {
           // Identificadores
           art: artCol.art,
-          articuloNombre: articulo.name,
+          articuloNombre: articulo.name || `Artículo ${artCol.art}`,
           col: artCol.col,
-          colorNombre: this.maestroColores[artCol.col]?.name || `Color ${artCol.col}`,
-          colorRef: this.maestroColores[artCol.col]?.ref || '',
+          colorNombre: colorInfo?.name || `Color ${artCol.col}`,
+          colorAbr: colorInfo?.abr || '',
+          colorHex: colorInfo?.hex || '#CCCCCC',
           
           // Información del artículo
           proveedor: articulo.prv,
@@ -313,9 +304,10 @@ export class TycAnalisisService {
           familia: articulo.fam,
           temporada: articulo.temp,
           
-          // Tallas disponibles (nombres)
-          tallas: tallasOrdenadas.map(tallaId => this.maestroTallas[tallaId]?.abr || tallaId),
+          // Tallas disponibles (nombres y IDs)
+          tallas: tallasOrdenadas.map(tallaId => mapaTallas[tallaId]?.abr || tallaId),
           tallasIds: tallasOrdenadas,
+          tallasNombres: tallasOrdenadas.map(tallaId => mapaTallas[tallaId]?.name || `Talla ${tallaId}`),
           
           // Existencias por talla
           existencias: tallasOrdenadas.map(tallaId => artCol.tallas[tallaId] || 0),
@@ -334,8 +326,10 @@ export class TycAnalisisService {
           }, 0)
         };
 
-        // Calcular rotación
+        // Calcular rotación y cobertura
         fila.rotacion = fila.totalExistencias > 0 ? fila.totalVentas / fila.totalExistencias : 0;
+        fila.cobertura = fila.totalVentas > 0 ? fila.totalExistencias / fila.totalVentas : 0;
+        fila.disponibilidad = fila.totalExistencias > 0 ? 'Disponible' : 'Sin Stock';
         
         matriz.push(fila);
       });

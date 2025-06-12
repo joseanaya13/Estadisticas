@@ -446,9 +446,14 @@ const TycMatriz = ({ matriz, maestroTallas, maestroColores }) => {
                   <div className="color-info">
                     <div 
                       className="color-muestra"
-                      style={{ backgroundColor: getColorHex(fila.colorNombre) }}
+                      style={{ backgroundColor: getColorHex(fila.colorNombre, fila.colorHex) }}
                     ></div>
-                    <span>{fila.colorNombre}</span>
+                    <div className="color-details">
+                      <span className="color-name">{fila.colorNombre}</span>
+                      {fila.colorAbr && (
+                        <span className="color-code">({fila.colorAbr})</span>
+                      )}
+                    </div>
                   </div>
                 </td>
                 
@@ -625,26 +630,32 @@ const TycGraficos = ({ matriz, estadisticas }) => {
   );
 };
 
-// Función helper para colores
-const getColorHex = (colorName) => {
+// Función helper para colores - ACTUALIZADA
+const getColorHex = (colorName, colorHex) => {
+  // Si ya viene el hex del servicio, usarlo
+  if (colorHex && colorHex.startsWith('#')) {
+    return colorHex;
+  }
+  
+  // Fallback a colores por defecto
   const colores = {
-    'Blanco': '#FFFFFF',
-    'Negro': '#000000', 
-    'Rojo': '#FF0000',
-    'Azul': '#0000FF',
-    'Verde': '#00FF00',
-    'Amarillo': '#FFFF00',
-    'Rosa': '#FFC0CB',
-    'Gris': '#808080',
-    'Marrón': '#8B4513',
-    'Naranja': '#FFA500',
-    'Morado': '#800080',
-    'Beige': '#F5F5DC',
-    'Plateado': '#C0C0C0',
-    'Dorado': '#FFD700'
+    'Blanco': '#FFFFFF', 'blanco': '#FFFFFF',
+    'Negro': '#000000', 'negro': '#000000',
+    'Rojo': '#FF0000', 'rojo': '#FF0000',
+    'Azul': '#0000FF', 'azul': '#0000FF',
+    'Verde': '#00AA00', 'verde': '#00AA00',
+    'Amarillo': '#FFFF00', 'amarillo': '#FFFF00',
+    'Rosa': '#FFC0CB', 'rosa': '#FFC0CB',
+    'Gris': '#808080', 'gris': '#808080',
+    'Marrón': '#8B4513', 'marrón': '#8B4513', 'marron': '#8B4513',
+    'Naranja': '#FFA500', 'naranja': '#FFA500',
+    'Morado': '#800080', 'morado': '#800080',
+    'Beige': '#F5F5DC', 'beige': '#F5F5DC',
+    'Plateado': '#C0C0C0', 'plateado': '#C0C0C0',
+    'Dorado': '#FFD700', 'dorado': '#FFD700'
   };
   
-  return colores[colorName] || '#CCCCCC';
+  return colores[colorName] || colores[colorName?.toLowerCase()] || '#CCCCCC';
 };
 
 export default TycAnalisis;
