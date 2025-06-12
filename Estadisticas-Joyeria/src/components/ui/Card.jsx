@@ -1,6 +1,6 @@
-import { clsx } from 'clsx';
+import { clsx } from "clsx";
 
-export const Card = ({ children, className, ...props }) => {
+const Card = ({ children, className, ...props }) => {
   return (
     <div
       className={clsx(
@@ -14,13 +14,12 @@ export const Card = ({ children, className, ...props }) => {
   );
 };
 
-export const CardHeader = ({ children, className, ...props }) => {
+export { Card, CardHeader, CardTitle, CardContent };
+
+const CardHeader = ({ children, className, ...props }) => {
   return (
     <div
-      className={clsx(
-        "mb-4 pb-4 border-b border-gray-200",
-        className
-      )}
+      className={clsx("mb-4 pb-4 border-b border-gray-200", className)}
       {...props}
     >
       {children}
@@ -28,13 +27,10 @@ export const CardHeader = ({ children, className, ...props }) => {
   );
 };
 
-export const CardTitle = ({ children, className, ...props }) => {
+const CardTitle = ({ children, className, ...props }) => {
   return (
     <h3
-      className={clsx(
-        "text-lg font-semibold text-gray-900",
-        className
-      )}
+      className={clsx("text-lg font-semibold text-gray-900", className)}
       {...props}
     >
       {children}
@@ -42,12 +38,9 @@ export const CardTitle = ({ children, className, ...props }) => {
   );
 };
 
-export const CardContent = ({ children, className, ...props }) => {
+const CardContent = ({ children, className, ...props }) => {
   return (
-    <div
-      className={clsx("text-gray-600", className)}
-      {...props}
-    >
+    <div className={clsx("text-gray-600", className)} {...props}>
       {children}
     </div>
   );

@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import ConnectionTest from '../components/ConnectionTest';
 import { velneoAPI } from '../services/velneoAPI';
 import { formatCurrency, formatDate } from '../utils/formatters';
-import { TrendingUp, DollarSign, Package, Users, ShoppingCart } from 'lucide-react';
+import { TrendingUp, DollarSign, Package, Users, ShoppingCart, Settings } from 'lucide-react';
 
 const Dashboard = () => {
+  const [showConnectionTest, setShowConnectionTest] = useState(false);
   const [dateRange, setDateRange] = useState({
     from: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
     to: new Date().toISOString().split('T')[0]
@@ -55,10 +57,26 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard de Joyería</h1>
-          <p className="text-gray-600">Análisis de ventas del {formatDate(dateRange.from)} al {formatDate(dateRange.to)}</p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Joyería Rosi</h1>
+            <p className="text-gray-600">Análisis de ventas del {formatDate(dateRange.from)} al {formatDate(dateRange.to)}</p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setShowConnectionTest(!showConnectionTest)}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            {showConnectionTest ? 'Ocultar' : 'Probar'} Conexión
+          </Button>
         </div>
+
+        {/* Prueba de conexión */}
+        {showConnectionTest && (
+          <div className="mb-8">
+            <ConnectionTest />
+          </div>
+        )}
 
         {/* Filtros de fecha */}
         <Card className="mb-8">
@@ -151,7 +169,10 @@ const Dashboard = () => {
               <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                 <span className="text-blue-800 font-medium">Datos cargados</span>
                 <span className="text-blue-600 text-sm">
-                  {metrics ? `${metrics.numeroTransacciones} registros` : 'Cargando...'}
+                  {metrics ? 
+                    `${metrics.numeroTransacciones} facturas (${metrics.totalRegistros} total)` : 
+                    'Cargando...'
+                  }
                 </span>
               </div>
               <div className="flex items-center justify-between p-3 bg-gold-50 rounded-lg">
@@ -193,7 +214,8 @@ const calculateMetrics = (data) => {
       beneficioTotal: 0,
       numeroTransacciones: 0,
       ticketMedio: 0,
-      margenPorcentaje: 0
+      margenPorcentaje: 0,
+      totalRegistros: data?.metadata?.total_count || 0
     };
   }
 
@@ -208,7 +230,8 @@ const calculateMetrics = (data) => {
     beneficioTotal,
     numeroTransacciones,
     ticketMedio,
-    margenPorcentaje
+    margenPorcentaje,
+    totalRegistros: data?.metadata?.total_count || numeroTransacciones
   };
 };
 

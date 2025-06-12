@@ -32,27 +32,41 @@ export const formatDate = (dateString, options = {}) => {
   }
 };
 
-// Formateo de fechas con hora
-export const formatDateTime = (dateString, timeString = '') => {
+// Formateo de fechas específico para Velneo
+export const formatVelneoDate = (dateString) => {
   if (!dateString) return '-';
   
   try {
+    // Velneo devuelve fechas en formato ISO: "2024-10-01T00:00:00.000Z"
     const date = new Date(dateString);
-    if (timeString) {
-      const [hours, minutes] = timeString.split(':');
-      date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
-    }
-    
     return new Intl.DateTimeFormat('es-ES', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
     }).format(date);
   } catch (error) {
-    console.error('Error formatting datetime:', error);
-    return `${dateString} ${timeString}`;
+    console.error('Error formatting Velneo date:', error);
+    return dateString;
+  }
+};
+
+// Formateo de horas específico para Velneo
+export const formatVelneoTime = (timeString) => {
+  if (!timeString) return '-';
+  
+  try {
+    // Velneo devuelve horas en formato: "Thu Jun 12 13:46:44 2025 GMT+0200"
+    const date = new Date(timeString);
+    return new Intl.DateTimeFormat('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).format(date);
+  } catch (error) {
+    console.error('Error formatting Velneo time:', error);
+    // Si falla, intentar extraer solo la hora
+    const timeMatch = timeString.match(/(\d{2}):(\d{2}):(\d{2})/);
+    return timeMatch ? `${timeMatch[1]}:${timeMatch[2]}` : timeString;
   }
 };
 
