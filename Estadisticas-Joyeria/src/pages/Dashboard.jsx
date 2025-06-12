@@ -2,7 +2,7 @@ import { useEffect,useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { velneoAPI } from '../services/velneoAPI';
+import { velneoAPI, filterVentasData } from '../services/velneoAPI';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { verificarBeneficios, formatearResumenInconsistencias } from '../utils/calculations';
 import { TrendingUp, DollarSign, Package, Users, ShoppingCart, AlertTriangle } from 'lucide-react';
@@ -33,14 +33,24 @@ const Dashboard = () => {
     testApiConnection();
   }, []);
 
-  // Query para obtener datos del dashboard
+  // Query para obtener datos del dashboard con filtrado en frontend
   const { data: ventasData, isLoading, error } = useQuery({
     queryKey: ['ventas-dashboard', dateRange],
-    queryFn: () => velneoAPI.getVentasCompletas({
-      fch_desde: dateRange.from,
-      fch_hasta: dateRange.to
-    }),
+    queryFn: async () => {
+      // Obtener TODOS los datos
+      const rawData = await velneoAPI.getVentasCompletas();
+      
+      // Aplicar filtros en frontend
+      const filteredData = filterVentasData(rawData, {
+        fechaDesde: dateRange.from,
+        fechaHasta: dateRange.to,
+        soloFinalizadas: true
+      });
+      
+      return filteredData;
+    },
     enabled: true,
+    staleTime: 5 * 60 * 1000, // 5 minutos
   });
 
   // Calcular métricas del dashboard y verificar beneficios
@@ -87,9 +97,9 @@ const Dashboard = () => {
           <CardHeader>
             <CardTitle className="flex items-center">
               {connectionTest?.success ? (
-                <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
+                <span className="h-5 w-5 mr-2 text-green-600">✅</span>
               ) : (
-                <XCircle className="h-5 w-5 mr-2 text-red-600" />
+                <span className="h-5 w-5 mr-2 text-red-600">❌</span>
               )}
               Estado de Conexión API
             </CardTitle>
@@ -244,7 +254,19 @@ const Dashboard = () => {
               <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                 <span className="text-blue-800 font-medium">Datos cargados</span>
                 <span className="text-blue-600 text-sm">
-                  {metrics ? `${metrics.numeroTransacciones} registros` : 'Cargando...'}
+                  {ventasData ? (
+                    <div className="text-right">
+                      <div>Facturas: {ventasData.facturas?.length || 0}</div>
+                      <div>Líneas: {ventasData.lineas?.length || 0}</div>
+                      {ventasData.pagination && (
+                        <div className="text-xs text-blue-500 mt-1">
+                          {ventasData.pagination.facturas.total > ventasData.pagination.facturas.obtenidas && 
+                            `(${ventasData.pagination.facturas.obtenidas}/${ventasData.pagination.facturas.total} facturas)`
+                          }
+                        </div>
+                      )}
+                    </div>
+                  ) : 'Cargando...'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-3 bg-gold-50 rounded-lg">

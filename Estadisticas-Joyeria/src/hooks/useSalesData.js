@@ -1,14 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
-import { velneoAPI } from '../services/velneoAPI';
+import { velneoAPI, filterVentasData } from '../services/velneoAPI';
 import { transformSalesData } from '../utils/dataTransform';
 
-// Hook principal para datos de ventas
+// Hook principal para datos de ventas con filtrado en frontend
 export const useSalesData = (filters = {}) => {
   return useQuery({
     queryKey: ['sales-data', filters],
     queryFn: async () => {
-      const data = await velneoAPI.getVentasCompletas(filters);
-      return transformSalesData(data);
+      // Obtener TODOS los datos
+      const rawData = await velneoAPI.getVentasCompletas();
+      
+      // Aplicar filtros en frontend
+      const filteredData = filterVentasData(rawData, filters);
+      
+      // Transformar datos
+      return transformSalesData(filteredData);
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
     retry: 2,
@@ -16,71 +22,83 @@ export const useSalesData = (filters = {}) => {
   });
 };
 
-// Hook para métricas del dashboard
+// Hook para métricas del dashboard con filtrado
 export const useDashboardMetrics = (dateRange) => {
   return useQuery({
     queryKey: ['dashboard-metrics', dateRange],
     queryFn: async () => {
-      const data = await velneoAPI.getVentasCompletas({
-        fch_desde: dateRange.from,
-        fch_hasta: dateRange.to
+      // Obtener todos los datos
+      const rawData = await velneoAPI.getVentasCompletas();
+      
+      // Aplicar filtros de fecha
+      const filteredData = filterVentasData(rawData, {
+        fechaDesde: dateRange.from,
+        fechaHasta: dateRange.to,
+        soloFinalizadas: true
       });
-      return calculateDashboardMetrics(data);
+      
+      return calculateDashboardMetrics(filteredData);
     },
     staleTime: 2 * 60 * 1000, // 2 minutos
     enabled: !!(dateRange.from && dateRange.to),
   });
 };
 
-// Hook para ventas por familia
+// Hook para ventas por familia con filtrado
 export const useSalesByFamily = (dateRange) => {
   return useQuery({
     queryKey: ['sales-by-family', dateRange],
     queryFn: async () => {
-      const data = await velneoAPI.getVentasCompletas({
-        fch_desde: dateRange.from,
-        fch_hasta: dateRange.to
+      const rawData = await velneoAPI.getVentasCompletas();
+      const filteredData = filterVentasData(rawData, {
+        fechaDesde: dateRange.from,
+        fechaHasta: dateRange.to,
+        soloFinalizadas: true
       });
-      return groupSalesByFamily(data);
+      return groupSalesByFamily(filteredData);
     },
     staleTime: 5 * 60 * 1000,
     enabled: !!(dateRange.from && dateRange.to),
   });
 };
 
-// Hook para ventas por vendedor
+// Hook para ventas por vendedor con filtrado
 export const useSalesByVendor = (dateRange) => {
   return useQuery({
     queryKey: ['sales-by-vendor', dateRange],
     queryFn: async () => {
-      const data = await velneoAPI.getVentasCompletas({
-        fch_desde: dateRange.from,
-        fch_hasta: dateRange.to
+      const rawData = await velneoAPI.getVentasCompletas();
+      const filteredData = filterVentasData(rawData, {
+        fechaDesde: dateRange.from,
+        fechaHasta: dateRange.to,
+        soloFinalizadas: true
       });
-      return groupSalesByVendor(data);
+      return groupSalesByVendor(filteredData);
     },
     staleTime: 5 * 60 * 1000,
     enabled: !!(dateRange.from && dateRange.to),
   });
 };
 
-// Hook para productos más vendidos
+// Hook para productos más vendidos con filtrado
 export const useTopProducts = (dateRange, limit = 10) => {
   return useQuery({
     queryKey: ['top-products', dateRange, limit],
     queryFn: async () => {
-      const data = await velneoAPI.getVentasCompletas({
-        fch_desde: dateRange.from,
-        fch_hasta: dateRange.to
+      const rawData = await velneoAPI.getVentasCompletas();
+      const filteredData = filterVentasData(rawData, {
+        fechaDesde: dateRange.from,
+        fechaHasta: dateRange.to,
+        soloFinalizadas: true
       });
-      return getTopProducts(data, limit);
+      return getTopProducts(filteredData, limit);
     },
     staleTime: 10 * 60 * 1000, // 10 minutos
     enabled: !!(dateRange.from && dateRange.to),
   });
 };
 
-// Funciones auxiliares
+// Funciones auxiliares (ahora trabajan con datos ya filtrados)
 const calculateDashboardMetrics = (data) => {
   const { facturas, lineas } = data;
   
@@ -97,11 +115,13 @@ const calculateDashboardMetrics = (data) => {
   }
 
   const ventasTotales = facturas.reduce((sum, f) => sum + (f.tot || 0), 0);
+  
+  // BENEFICIO CALCULADO CORRECTAMENTE: imp_pvp - cos
   const beneficioTotal = lineas.reduce((sum, l) => {
-    // Calcular beneficio correctamente: imp_pvp - cos
     const beneficioReal = (l.imp_pvp || 0) - (l.cos || 0);
     return sum + beneficioReal;
   }, 0);
+  
   const numeroTransacciones = facturas.length;
   const ticketMedio = numeroTransacciones > 0 ? ventasTotales / numeroTransacciones : 0;
   const margenPorcentaje = ventasTotales > 0 ? (beneficioTotal / ventasTotales) * 100 : 0;
@@ -157,7 +177,7 @@ const groupSalesByFamily = (data) => {
 };
 
 const groupSalesByVendor = (data) => {
-  const { facturas, usuarios, lineas } = data; // Necesitamos lineas para calcular beneficio
+  const { facturas, usuarios, lineas } = data;
   
   if (!facturas?.length) return [];
   
@@ -173,7 +193,7 @@ const groupSalesByVendor = (data) => {
         ventasTotales: 0,
         numeroFacturas: 0,
         ticketMedio: 0,
-        beneficioTotal: 0 // Agregar beneficio
+        beneficioTotal: 0
       };
     }
     
