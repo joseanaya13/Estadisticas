@@ -157,7 +157,7 @@ const groupSalesByFamily = (data) => {
 };
 
 const groupSalesByVendor = (data) => {
-  const { facturas, usuarios } = data;
+  const { facturas, usuarios, lineas } = data; // Necesitamos lineas para calcular beneficio
   
   if (!facturas?.length) return [];
   
@@ -172,12 +172,20 @@ const groupSalesByVendor = (data) => {
         vendedorName,
         ventasTotales: 0,
         numeroFacturas: 0,
-        ticketMedio: 0
+        ticketMedio: 0,
+        beneficioTotal: 0 // Agregar beneficio
       };
     }
     
     acc[vendedorId].ventasTotales += factura.tot || 0;
     acc[vendedorId].numeroFacturas += 1;
+    
+    // Calcular beneficio de las líneas de esta factura
+    const lineasFactura = lineas?.filter(l => l.fac === factura.id) || [];
+    const beneficioFactura = lineasFactura.reduce((sum, linea) => {
+      return sum + ((linea.imp_pvp || 0) - (linea.cos || 0));
+    }, 0);
+    acc[vendedorId].beneficioTotal += beneficioFactura;
     
     return acc;
   }, {});

@@ -3,213 +3,195 @@ import axios from 'axios';
 // Configuración base de la API
 const api = axios.create({
   baseURL: import.meta.env.VITE_VELNEO_API_URL,
-  timeout: 30000, // 30 segundos para Velneo
   headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  }
-});
-
-// Función para añadir la API key a los parámetros
-const addApiKey = (params = {}) => ({
-  ...params,
-  api_key: import.meta.env.VITE_VELNEO_API_KEY
+    'Authorization': `Bearer ${import.meta.env.VITE_VELNEO_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  timeout: 10000, // 10 segundos
 });
 
 // Interceptor para manejo de errores
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('Error en API de Velneo:', error);
+    console.error('Error en API:', error);
     if (error.response?.status === 401) {
       console.error('Error de autenticación. Verifica tu API key.');
-    } else if (error.response?.status === 404) {
-      console.error('Endpoint no encontrado:', error.config?.url);
-    } else if (error.code === 'ECONNABORTED') {
-      console.error('Timeout de conexión con Velneo');
     }
     return Promise.reject(error);
   }
 );
 
-export const velneoAPI = {
-  // === MÉTODOS DE PRUEBA ===
-  // Probar conectividad
-  testConnection: async () => {
-    try {
-      const response = await api.get('/', { 
-        params: addApiKey() 
-      });
-      return { success: true, data: response.data };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  },
-
-  // === FACTURAS ===
-  getFacturas: async (params = {}) => {
-    const response = await api.get('/fac_t', { 
-      params: addApiKey(params) 
+// Función para construir parámetros de Velneo correctamente
+const buildVelneoParams = (filters = {}) => {
+  const params = new URLSearchParams();
+  
+  // API Key obligatorio
+  params.append('api_key', import.meta.env.VITE_VELNEO_API_KEY);
+  
+  // Campos específicos si se especifican
+  if (filters.fields) {
+    params.append('fields', Array.isArray(filters.fields) ? filters.fields.join(',') : filters.fields);
+  }
+  
+  // Filtros por índice (para búsquedas exactas)
+  if (filters.index) {
+    Object.entries(filters.index).forEach(([key, value]) => {
+      params.append(`index[${key}]`, value);
     });
+  }
+  
+  // Filtros de consulta (para filtrado adicional)
+  if (filters.filterQuery) {
+    Object.entries(filters.filterQuery).forEach(([key, value]) => {
+      params.append(`filterQuery[${key}]`, value);
+    });
+  }
+  
+  return params;
+};
+
+export const velneoAPI = {
+  // === FACTURAS ===
+  getFacturas: async (filters = {}) => {
+    const params = buildVelneoParams(filters);
+    const response = await api.get(`/fac_t?${params.toString()}`);
     return response.data;
   },
-
-  getLineasFactura: async (params = {}) => {
-    const response = await api.get('/fac_lin_t', { 
-      params: addApiKey(params) 
-    });
+  
+  getLineasFactura: async (filters = {}) => {
+    const params = buildVelneoParams(filters);
+    const response = await api.get(`/fac_lin_t?${params.toString()}`);
     return response.data;
   },
   
   // === MAESTROS ===
-  getArticulos: async (params = {}) => {
-    const response = await api.get('/art_m', { 
-      params: addApiKey(params) 
-    });
+  getArticulos: async (filters = {}) => {
+    const params = buildVelneoParams(filters);
+    const response = await api.get(`/art_m?${params.toString()}`);
     return response.data;
   },
-
+  
   getFormasPago: async () => {
-    const response = await api.get('/fpg_m', { 
-      params: addApiKey() 
-    });
+    const params = buildVelneoParams();
+    const response = await api.get(`/fpg_m?${params.toString()}`);
     return response.data;
   },
-
+  
   getUsuarios: async () => {
-    const response = await api.get('/usr_m', { 
-      params: addApiKey() 
-    });
+    const params = buildVelneoParams();
+    const response = await api.get(`/usr_m?${params.toString()}`);
     return response.data;
   },
-
+  
   getFamilias: async () => {
-    const response = await api.get('/fam_m', { 
-      params: addApiKey() 
-    });
+    const params = buildVelneoParams();
+    const response = await api.get(`/fam_m?${params.toString()}`);
     return response.data;
   },
-
+  
   getProveedores: async () => {
-    const response = await api.get('/ent_m', { 
-      params: addApiKey({ es_prv: true }) 
+    const params = buildVelneoParams({
+      filterQuery: { es_prv: true }
     });
+    const response = await api.get(`/ent_m?${params.toString()}`);
     return response.data;
   },
   
   // === CONSULTAS COMBINADAS ===
   getVentasCompletas: async (filtros = {}) => {
     try {
-      console.log('🔄 Obteniendo datos de Velneo...');
-      
-      // Preparar filtros con API key
-      const filtrosConApi = addApiKey(filtros);
-      
-      const [facturas, lineas, articulos, formasPago, usuarios, familias] = 
-        await Promise.allSettled([
-          api.get('/fac_t', { params: addApiKey({ fin: true, ...filtros }) }),
-          api.get('/fac_lin_t', { params: filtrosConApi }),
-          api.get('/art_m', { params: addApiKey() }),
-          api.get('/fpg_m', { params: addApiKey() }),
-          api.get('/usr_m', { params: addApiKey() }),
-          api.get('/fam_m', { params: addApiKey() })
-        ]);
-      
-      // Procesar respuestas según el formato de Velneo
-      const resultado = {
-        facturas: facturas.status === 'fulfilled' ? (facturas.value.data.fac_t || []) : [],
-        lineas: lineas.status === 'fulfilled' ? (lineas.value.data.fac_lin_t || []) : [],
-        articulos: articulos.status === 'fulfilled' ? (articulos.value.data.art_m || []) : [],
-        formasPago: formasPago.status === 'fulfilled' ? (formasPago.value.data.fpg_m || []) : [],
-        usuarios: usuarios.status === 'fulfilled' ? (usuarios.value.data.usr_m || []) : [],
-        familias: familias.status === 'fulfilled' ? (familias.value.data.fam_m || []) : [],
-        metadata: {
-          count: facturas.status === 'fulfilled' ? facturas.value.data.count : 0,
-          total_count: facturas.status === 'fulfilled' ? facturas.value.data.total_count : 0
+      // Construir filtros para facturas (solo finalizadas + filtros de fecha)
+      const filtrosFacturas = {
+        filterQuery: {
+          fin: true, // Solo facturas finalizadas
+          ...(filtros.fch_desde && { fch: `>=${filtros.fch_desde}` }),
+          ...(filtros.fch_hasta && { fch: `<=${filtros.fch_hasta}` }),
+          ...(filtros.emp_div && { emp_div: filtros.emp_div }),
+          ...(filtros.alt_usr && { alt_usr: filtros.alt_usr })
         }
       };
-
-      // Log de resultados para debugging
-      console.log('✅ Datos obtenidos:', {
-        facturas: resultado.facturas?.length || 0,
-        lineas: resultado.lineas?.length || 0,
-        articulos: resultado.articulos?.length || 0,
-        formasPago: resultado.formasPago?.length || 0,
-        usuarios: resultado.usuarios?.length || 0,
-        familias: resultado.familias?.length || 0,
-        total_registros: resultado.metadata.total_count
-      });
-
-      // Log de errores si los hay
-      [facturas, lineas, articulos, formasPago, usuarios, familias].forEach((result, index) => {
-        const tables = ['facturas', 'lineas', 'articulos', 'formasPago', 'usuarios', 'familias'];
-        if (result.status === 'rejected') {
-          console.warn(`⚠️ Error obteniendo ${tables[index]}:`, result.reason.message);
-        }
-      });
-
-      return resultado;
+      
+      // Obtener todas las tablas en paralelo
+      const [facturas, lineas, articulos, formasPago, usuarios, familias] = 
+        await Promise.all([
+          velneoAPI.getFacturas(filtrosFacturas),
+          velneoAPI.getLineasFactura(), // Sin filtros, lo filtraremos después
+          velneoAPI.getArticulos(),
+          velneoAPI.getFormasPago(),
+          velneoAPI.getUsuarios(),
+          velneoAPI.getFamilias()
+        ]);
+      
+      return {
+        facturas: facturas.fac_t || [],
+        lineas: lineas.fac_lin_t || [],
+        articulos: articulos.art_m || [],
+        formasPago: formasPago.fpg_m || [],
+        usuarios: usuarios.usr_m || [],
+        familias: familias.fam_m || []
+      };
     } catch (error) {
-      console.error('❌ Error obteniendo datos completos:', error);
+      console.error('Error obteniendo datos completos:', error);
       throw error;
     }
   },
 
-  // === CONSULTAS ESPECÍFICAS ===
+  // === CONSULTAS ESPECÍFICAS CON FILTROS CORRECTOS ===
   getVentasPorFecha: async (fechaInicio, fechaFin) => {
-    const response = await api.get('/fac_t', {
-      params: addApiKey({
-        fch_desde: fechaInicio,
-        fch_hasta: fechaFin,
-        fin: true
-      })
-    });
-    return response.data;
+    const filters = {
+      filterQuery: {
+        fin: true,
+        fch: `>=${fechaInicio}`,  // Velneo puede soportar rangos así
+      }
+    };
+    
+    if (fechaFin) {
+      filters.filterQuery.fch = `${fechaInicio}..${fechaFin}`; // Rango de fechas
+    }
+    
+    return velneoAPI.getFacturas(filters);
   },
 
   getVentasPorVendedor: async (vendedorId) => {
-    const response = await api.get('/fac_t', {
-      params: addApiKey({
+    const filters = {
+      filterQuery: {
         alt_usr: vendedorId,
         fin: true
-      })
-    });
-    return response.data;
+      }
+    };
+    return velneoAPI.getFacturas(filters);
   },
 
   getArticulosPorFamilia: async (familiaId) => {
-    const response = await api.get('/art_m', {
-      params: addApiKey({
+    const filters = {
+      filterQuery: {
         fam: familiaId
-      })
-    });
-    return response.data;
+      }
+    };
+    return velneoAPI.getArticulos(filters);
   },
 
-  // === UTILIDADES DE DEBUG ===
-  // Obtener información de la API
-  getApiInfo: async () => {
+  // === MÉTODO DE PRUEBA PARA VERIFICAR CONEXIÓN ===
+  testConnection: async () => {
     try {
-      const response = await api.get('/info', { 
-        params: addApiKey() 
+      const params = buildVelneoParams({
+        fields: 'id,name',
+        index: { id: '1' } // Buscar solo el primer registro
       });
-      return response.data;
+      
+      const response = await api.get(`/usr_m?${params.toString()}`);
+      return {
+        success: true,
+        data: response.data,
+        message: 'Conexión exitosa con Velneo API'
+      };
     } catch (error) {
-      console.error('Error obteniendo info de API:', error);
-      return null;
-    }
-  },
-
-  // Listar todas las tablas disponibles
-  getAvailableTables: async () => {
-    try {
-      const response = await api.get('/tables', { 
-        params: addApiKey() 
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error obteniendo tablas disponibles:', error);
-      return [];
+      return {
+        success: false,
+        error: error.message,
+        message: 'Error de conexión con Velneo API'
+      };
     }
   }
 };

@@ -188,7 +188,7 @@ export const prepareChartData = (ventasCompletas, tipo = 'ventas-por-dia') => {
   }
 };
 
-// Agrupar por familia
+// Agrupar por familia con beneficio CORREGIDO
 const groupByFamily = (ventasCompletas) => {
   const familias = {};
   
@@ -206,8 +206,9 @@ const groupByFamily = (ventasCompletas) => {
       };
     }
     
+    // Usar beneficioCalculado en lugar de beneficio
     familias[key].ventas += venta.importeTotal;
-    familias[key].beneficio += venta.beneficio;
+    familias[key].beneficio += venta.beneficioCalculado;
     familias[key].cantidad += venta.cantidad;
     familias[key].transacciones.add(venta.facturaId);
   });
@@ -221,7 +222,7 @@ const groupByFamily = (ventasCompletas) => {
     .sort((a, b) => b.ventas - a.ventas);
 };
 
-// Agrupar por vendedor
+// Agrupar por vendedor con beneficio CORREGIDO
 const groupByVendor = (ventasCompletas) => {
   const vendedores = {};
   
@@ -240,7 +241,7 @@ const groupByVendor = (ventasCompletas) => {
     }
     
     vendedores[key].ventas += venta.importeTotal;
-    vendedores[key].beneficio += venta.beneficio;
+    vendedores[key].beneficio += venta.beneficioCalculado; // Usar beneficio calculado
     vendedores[key].transacciones.add(venta.facturaId);
     vendedores[key].cantidadArticulos += venta.cantidad;
   });
@@ -255,7 +256,7 @@ const groupByVendor = (ventasCompletas) => {
     .sort((a, b) => b.ventas - a.ventas);
 };
 
-// Top productos para gráficos
+// Top productos para gráficos con beneficio CORREGIDO
 const getTopProductsChart = (ventasCompletas, limit = 10) => {
   const productos = {};
   
@@ -274,7 +275,7 @@ const getTopProductsChart = (ventasCompletas, limit = 10) => {
     
     productos[key].ventas += venta.importeTotal;
     productos[key].cantidad += venta.cantidad;
-    productos[key].beneficio += venta.beneficio;
+    productos[key].beneficio += venta.beneficioCalculado; // Usar beneficio calculado
   });
   
   return Object.values(productos)

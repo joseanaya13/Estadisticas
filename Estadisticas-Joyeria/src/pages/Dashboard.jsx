@@ -1,18 +1,37 @@
-import { useState } from 'react';
+import { useEffect,useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import ConnectionTest from '../components/ConnectionTest';
 import { velneoAPI } from '../services/velneoAPI';
 import { formatCurrency, formatDate } from '../utils/formatters';
-import { TrendingUp, DollarSign, Package, Users, ShoppingCart, Settings } from 'lucide-react';
+import { verificarBeneficios, formatearResumenInconsistencias } from '../utils/calculations';
+import { TrendingUp, DollarSign, Package, Users, ShoppingCart, AlertTriangle } from 'lucide-react';
 
 const Dashboard = () => {
-  const [showConnectionTest, setShowConnectionTest] = useState(false);
   const [dateRange, setDateRange] = useState({
     from: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
     to: new Date().toISOString().split('T')[0]
   });
+
+  const [connectionTest, setConnectionTest] = useState(null);
+
+  // Probar conexión al cargar
+  useEffect(() => {
+    const testApiConnection = async () => {
+      try {
+        const result = await velneoAPI.testConnection();
+        setConnectionTest(result);
+      } catch (error) {
+        setConnectionTest({
+          success: false,
+          error: error.message,
+          message: 'Error de conexión con Velneo API'
+        });
+      }
+    };
+    
+    testApiConnection();
+  }, []);
 
   // Query para obtener datos del dashboard
   const { data: ventasData, isLoading, error } = useQuery({
@@ -24,8 +43,9 @@ const Dashboard = () => {
     enabled: true,
   });
 
-  // Calcular métricas del dashboard
+  // Calcular métricas del dashboard y verificar beneficios
   const metrics = ventasData ? calculateMetrics(ventasData) : null;
+  const verificacionBeneficios = ventasData?.lineas ? verificarBeneficios(ventasData.lineas) : null;
 
   if (isLoading) {
     return (
@@ -57,26 +77,60 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8 flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Joyería Rosi</h1>
-            <p className="text-gray-600">Análisis de ventas del {formatDate(dateRange.from)} al {formatDate(dateRange.to)}</p>
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => setShowConnectionTest(!showConnectionTest)}
-          >
-            <Settings className="h-4 w-4 mr-2" />
-            {showConnectionTest ? 'Ocultar' : 'Probar'} Conexión
-          </Button>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard de Joyería</h1>
+          <p className="text-gray-600">Análisis de ventas del {formatDate(dateRange.from)} al {formatDate(dateRange.to)}</p>
         </div>
 
-        {/* Prueba de conexión */}
-        {showConnectionTest && (
-          <div className="mb-8">
-            <ConnectionTest />
-          </div>
-        )}
+        {/* Estado de conexión con API */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              {connectionTest?.success ? (
+                <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
+              ) : (
+                <XCircle className="h-5 w-5 mr-2 text-red-600" />
+              )}
+              Estado de Conexión API
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className={`flex items-center justify-between p-3 rounded-lg ${
+                connectionTest?.success ? 'bg-green-50' : 'bg-red-50'
+              }`}>
+                <span className={`font-medium ${
+                  connectionTest?.success ? 'text-green-800' : 'text-red-800'
+                }`}>
+                  API de Velneo
+                </span>
+                <span className={`text-sm ${
+                  connectionTest?.success ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {connectionTest?.success ? 'Conectado' : 'Desconectado'}
+                </span>
+              </div>
+              
+              {!connectionTest?.success && connectionTest?.error && (
+                <div className="p-3 bg-yellow-50 rounded-lg">
+                  <p className="text-yellow-800 text-sm">
+                    <strong>Error:</strong> {connectionTest.error}
+                  </p>
+                  <p className="text-yellow-600 text-xs mt-1">
+                    Verifica la URL y API key en el archivo .env
+                  </p>
+                </div>
+              )}
+              
+              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                <span className="text-blue-800 font-medium">Configuración</span>
+                <span className="text-blue-600 text-sm">
+                  {import.meta.env.VITE_VELNEO_API_URL ? 'Configurada' : 'Pendiente'}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Filtros de fecha */}
         <Card className="mb-8">
@@ -113,6 +167,27 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Verificación de beneficios */}
+        {verificacionBeneficios && verificacionBeneficios.incorrectos > 0 && (
+          <Card className="mb-6 border-orange-200 bg-orange-50">
+            <CardHeader>
+              <CardTitle className="flex items-center text-orange-800">
+                <AlertTriangle className="h-5 w-5 mr-2" />
+                Verificación de Beneficios
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-orange-700">
+                <p className="mb-2">{formatearResumenInconsistencias(verificacionBeneficios)}</p>
+                <p className="text-sm">
+                  ✅ <strong>Solución aplicada:</strong> Los beneficios se calculan automáticamente como (Precio - Coste) 
+                  en lugar de usar los valores de la base de datos.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Métricas principales */}
         {metrics && (
@@ -169,10 +244,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                 <span className="text-blue-800 font-medium">Datos cargados</span>
                 <span className="text-blue-600 text-sm">
-                  {metrics ? 
-                    `${metrics.numeroTransacciones} facturas (${metrics.totalRegistros} total)` : 
-                    'Cargando...'
-                  }
+                  {metrics ? `${metrics.numeroTransacciones} registros` : 'Cargando...'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-3 bg-gold-50 rounded-lg">
@@ -204,7 +276,7 @@ const MetricCard = ({ title, value, icon, color, bgColor }) => (
   </Card>
 );
 
-// Función para calcular métricas
+// Función para calcular métricas con beneficio CORREGIDO
 const calculateMetrics = (data) => {
   const { facturas, lineas } = data;
   
@@ -214,13 +286,18 @@ const calculateMetrics = (data) => {
       beneficioTotal: 0,
       numeroTransacciones: 0,
       ticketMedio: 0,
-      margenPorcentaje: 0,
-      totalRegistros: data?.metadata?.total_count || 0
+      margenPorcentaje: 0
     };
   }
 
   const ventasTotales = facturas.reduce((sum, factura) => sum + (factura.tot || 0), 0);
-  const beneficioTotal = lineas.reduce((sum, linea) => sum + (linea.ben || 0), 0);
+  
+  // BENEFICIO CALCULADO CORRECTAMENTE: imp_pvp - cos
+  const beneficioTotal = lineas.reduce((sum, linea) => {
+    const beneficioReal = (linea.imp_pvp || 0) - (linea.cos || 0);
+    return sum + beneficioReal;
+  }, 0);
+  
   const numeroTransacciones = facturas.length;
   const ticketMedio = numeroTransacciones > 0 ? ventasTotales / numeroTransacciones : 0;
   const margenPorcentaje = ventasTotales > 0 ? (beneficioTotal / ventasTotales) * 100 : 0;
@@ -230,8 +307,7 @@ const calculateMetrics = (data) => {
     beneficioTotal,
     numeroTransacciones,
     ticketMedio,
-    margenPorcentaje,
-    totalRegistros: data?.metadata?.total_count || numeroTransacciones
+    margenPorcentaje
   };
 };
 
