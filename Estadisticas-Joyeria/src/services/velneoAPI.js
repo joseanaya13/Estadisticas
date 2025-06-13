@@ -3,7 +3,7 @@ import axios from 'axios';
 // Configuración base de la API
 const api = axios.create({
   baseURL: import.meta.env.VITE_VELNEO_API_URL,
-  timeout: 30000, // 30 segundos para consultas grandes
+  timeout: 60000, // 60 segundos para consultas grandes
 });
 
 // Interceptor para manejo de errores
@@ -18,170 +18,185 @@ api.interceptors.response.use(
   }
 );
 
-// Función para construir URL con API key y parámetros de paginación
-const buildUrl = (endpoint, fields = null, limit = null) => {
+// Función para construir URL con API key
+const buildUrl = (endpoint, params = {}) => {
   const url = new URL(endpoint, api.defaults.baseURL);
   url.searchParams.append('api_key', import.meta.env.VITE_VELNEO_API_KEY);
   
-  if (fields) {
-    url.searchParams.append('fields', Array.isArray(fields) ? fields.join(',') : fields);
-  }
-  
-  // Intentar obtener más registros
-  if (limit) {
-    url.searchParams.append('limit', limit.toString());
-  } else {
-    // Por defecto, intentar obtener muchos registros
-    url.searchParams.append('limit', '5000'); // Aumentar límite
-  }
+  // Agregar parámetros adicionales
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== null && value !== undefined) {
+      url.searchParams.append(key, value.toString());
+    }
+  });
   
   return url.pathname + url.search;
 };
 
-export const velneoAPI = {
-  // === OBTENER TODOS LOS DATOS SIN FILTROS ===
-  getFacturas: async (fields = null, limit = null) => {
-    const url = buildUrl('/fac_t', fields, limit);
-    const response = await api.get(url);
-    
-    console.log('📄 Facturas response:', {
-      count: response.data.count,
-      total_count: response.data.total_count,
-      records: response.data.fac_t?.length || 0,
-      url: url
-    });
-    
-    return response.data;
-  },
+// Función genérica para obtener TODOS los registros con paginación automática
+const getAllRecords = async (endpoint, recordKey, fields = null, maxRecords = 50000) => {
+  console.log(`🔄 Obteniendo TODOS los registros de ${endpoint}...`);
   
-  getLineasFactura: async (fields = null, limit = null) => {
-    const url = buildUrl('/fac_lin_t', fields, limit);
-    const response = await api.get(url);
-    
-    console.log('📄 Líneas response:', {
-      count: response.data.count,
-      total_count: response.data.total_count,
-      records: response.data.fac_lin_t?.length || 0,
-      url: url
-    });
-    
-    return response.data;
-  },
+  let todosLosRegistros = [];
+  let offset = 0;
+  const limit = 1000; // Tamaño de página óptimo
+  let totalCount = 0;
+  let pageCount = 0;
   
-  getArticulos: async (fields = null) => {
-    console.log('🔄 Obteniendo TODOS los artículos con paginación...');
-    
-    let todosLosArticulos = [];
-    let offset = 0;
-    const limit = 1000; // Tamaño de página que la API puede manejar
-    let totalCount = 0;
-    
+  try {
     do {
-      const url = buildUrl('/art_m', fields, limit);
-      const urlWithOffset = url + `&offset=${offset}`;
+      pageCount++;
+      const params = {
+        limit,
+        offset,
+        ...(fields && { fields: Array.isArray(fields) ? fields.join(',') : fields })
+      };
       
-      const response = await api.get(urlWithOffset);
-      const articulos = response.data.art_m || [];
+      const url = buildUrl(endpoint, params);
+      console.log(`📄 Página ${pageCount}: ${url}`);
       
-      // Añadir artículos de esta página
-      todosLosArticulos = [...todosLosArticulos, ...articulos];
+      const response = await api.get(url);
+      const registros = response.data[recordKey] || [];
+      
+      // Añadir registros de esta página
+      todosLosRegistros = [...todosLosRegistros, ...registros];
       
       // Actualizar contadores
       totalCount = response.data.total_count || 0;
       offset += limit;
       
-      console.log(`📦 Página artículos: ${articulos.length} (total acumulado: ${todosLosArticulos.length}/${totalCount})`);
+      console.log(`✅ Página ${pageCount}: ${registros.length} registros (acumulado: ${todosLosRegistros.length}/${totalCount})`);
+      
+      // Protección contra bucles infinitos
+      if (todosLosRegistros.length >= maxRecords) {
+        console.warn(`⚠️ Límite máximo alcanzado: ${maxRecords} registros`);
+        break;
+      }
       
       // Continuar mientras tengamos más registros por obtener
-    } while (offset < totalCount && todosLosArticulos.length < totalCount);
+    } while (offset < totalCount && todosLosRegistros.length < totalCount);
     
-    // Contar artículos con peso para debug
-    const articulosConPeso = todosLosArticulos.filter(a => a.peso && a.peso > 0).length;
-    
-    console.log('✅ Artículos COMPLETOS:', {
-      obtenidos: todosLosArticulos.length,
+    console.log(`✅ ${endpoint} COMPLETO:`, {
+      obtenidos: todosLosRegistros.length,
       total: totalCount,
-      articulosConPeso: articulosConPeso,
-      ejemplosPeso: todosLosArticulos.filter(a => a.peso && a.peso > 0).slice(0, 3).map(a => ({ id: a.id, name: a.name, peso: a.peso }))
+      paginas: pageCount,
+      completo: todosLosRegistros.length === totalCount
     });
     
-    // Devolver estructura compatible
     return {
-      art_m: todosLosArticulos,
-      count: todosLosArticulos.length,
-      total_count: totalCount
+      [recordKey]: todosLosRegistros,
+      count: todosLosRegistros.length,
+      total_count: totalCount,
+      pages_fetched: pageCount,
+      complete: todosLosRegistros.length === totalCount
     };
+    
+  } catch (error) {
+    console.error(`❌ Error obteniendo ${endpoint}:`, error);
+    throw error;
+  }
+};
+
+export const velneoAPI = {
+  // === OBTENER TODOS LOS REGISTROS CON PAGINACIÓN COMPLETA ===
+  
+  getFacturas: async (fields = null) => {
+    return await getAllRecords('/fac_t', 'fac_t', fields);
+  },
+  
+  getLineasFactura: async (fields = null) => {
+    return await getAllRecords('/fac_lin_t', 'fac_lin_t', fields);
+  },
+  
+  getArticulos: async (fields = null) => {
+    return await getAllRecords('/art_m', 'art_m', fields);
   },
   
   getFormasPago: async (fields = null) => {
-    const url = buildUrl('/fpg_m', fields);
-    const response = await api.get(url);
-    return response.data;
+    return await getAllRecords('/fpg_m', 'fpg_m', fields);
   },
   
   getUsuarios: async (fields = null) => {
-    const url = buildUrl('/usr_m', fields);
-    const response = await api.get(url);
-    return response.data;
+    return await getAllRecords('/usr_m', 'usr_m', fields);
   },
   
   getFamilias: async (fields = null) => {
-    const url = buildUrl('/fam_m', fields);
-    const response = await api.get(url);
-    return response.data;
+    return await getAllRecords('/fam_m', 'fam_m', fields);
   },
   
   getProveedores: async (fields = null) => {
-    const url = buildUrl('/ent_m', fields);
-    const response = await api.get(url);
-    return response.data;
+    return await getAllRecords('/ent_m', 'ent_m', fields);
   },
   
-  // === OBTENER TODOS LOS DATOS COMBINADOS ===
+  // === OBTENER DATOS ESPECÍFICOS PARA VENTAS ===
   getVentasCompletas: async () => {
     try {
-      console.log('🔄 Obteniendo datos completos de Velneo...');
+      console.log('🚀 Iniciando carga COMPLETA de datos de ventas...');
+      const startTime = Date.now();
       
-      // Obtener todas las tablas en paralelo (SIN FILTROS)
-      const [facturas, lineas, articulos, formasPago, usuarios, familias, proveedores] = 
-        await Promise.all([
-          velneoAPI.getFacturas(),
-          velneoAPI.getLineasFactura(),
-          velneoAPI.getArticulos(),
-          velneoAPI.getFormasPago(),
-          velneoAPI.getUsuarios(),
-          velneoAPI.getFamilias(),
-          velneoAPI.getProveedores()
-        ]);
+      // Campos específicos basados en la respuesta real de la API
+      const facturasFields = ['id', 'emp', 'emp_div', 'fch', 'hor', 'eje', 'num_fac', 'clt', 'fpg', 'trm_tpv', 'bas_tot', 'iva_tot', 'tot', 'fin', 'alt_usr'];
+      const lineasFields = ['id', 'fac', 'fam', 'art', 'name', 'can', 'pre_pvp', 'cos', 'imp_pvp', 'ben', 'prv', 'tll_bak', 'col_bak'];
+      const articulosFields = ['id', 'name', 'fam', 'prv', 'ref', 'exs', 'pvp', 'cos', 'peso'];
       
-      // Estadísticas de paginación
+      // Obtener todas las tablas en paralelo
+      console.log('📊 Cargando tablas principales...');
+      const [facturas, lineas, articulos] = await Promise.all([
+        velneoAPI.getFacturas(facturasFields),
+        velneoAPI.getLineasFactura(lineasFields),
+        velneoAPI.getArticulos(articulosFields)
+      ]);
+      
+      console.log('📊 Cargando tablas de referencia...');
+      const [formasPago, usuarios, familias, proveedores] = await Promise.all([
+        velneoAPI.getFormasPago(['id', 'name']),
+        velneoAPI.getUsuarios(['id', 'name']),
+        velneoAPI.getFamilias(['id', 'name']),
+        velneoAPI.getProveedores(['id', 'name', 'es_prv'])
+      ]);
+      
+      const endTime = Date.now();
+      const loadTime = (endTime - startTime) / 1000;
+      
+      // Estadísticas finales
       const stats = {
         facturas: {
           obtenidas: facturas?.fac_t?.length || 0,
           total: facturas?.total_count || 0,
-          paginadas: facturas?.count || 0
+          completas: facturas?.complete || false
         },
         lineas: {
           obtenidas: lineas?.fac_lin_t?.length || 0,
           total: lineas?.total_count || 0,
-          paginadas: lineas?.count || 0
+          completas: lineas?.complete || false
         },
         articulos: {
           obtenidas: articulos?.art_m?.length || 0,
           total: articulos?.total_count || 0,
-          paginadas: articulos?.count || 0
-        }
+          completas: articulos?.complete || false
+        },
+        loadTime: loadTime
       };
       
-      console.log('✅ Datos obtenidos:', stats);
+      console.log('🎉 CARGA COMPLETA FINALIZADA:', stats);
       
-      // Verificar si hay datos paginados
-      if (stats.facturas.total > stats.facturas.obtenidas) {
-        console.warn('⚠️ Facturas paginadas:', `${stats.facturas.obtenidas}/${stats.facturas.total}`);
-      }
-      if (stats.lineas.total > stats.lineas.obtenidas) {
-        console.warn('⚠️ Líneas paginadas:', `${stats.lineas.obtenidas}/${stats.lineas.total}`);
-      }
+      // Verificar integridad de datos
+      const facturasConLineas = lineas?.fac_lin_t?.filter(l => 
+        facturas?.fac_t?.some(f => f.id === l.fac)
+      ).length || 0;
+      
+      const lineasConArticulos = lineas?.fac_lin_t?.filter(l => 
+        articulos?.art_m?.some(a => a.id === l.art)
+      ).length || 0;
+      
+      console.log('🔗 Integridad relacional:', {
+        lineasConFactura: `${facturasConLineas}/${lineas?.fac_lin_t?.length || 0}`,
+        lineasConArticulo: `${lineasConArticulos}/${lineas?.fac_lin_t?.length || 0}`
+      });
+      
+      // Verificar artículos con peso
+      const articulosConPeso = articulos?.art_m?.filter(a => a.peso && a.peso > 0).length || 0;
+      console.log('⚖️ Artículos con peso:', `${articulosConPeso}/${articulos?.art_m?.length || 0}`);
       
       return {
         facturas: facturas?.fac_t || [],
@@ -192,65 +207,114 @@ export const velneoAPI = {
         familias: familias?.fam_m || [],
         proveedores: proveedores?.ent_m || [],
         
-        // Metadatos de paginación
-        pagination: stats
+        // Metadatos de carga
+        metadata: {
+          loadTime,
+          stats,
+          timestamp: new Date().toISOString(),
+          complete: stats.facturas.completas && stats.lineas.completas && stats.articulos.completas
+        }
       };
+      
     } catch (error) {
-      console.error('❌ Error obteniendo datos completos:', error);
-      throw error;
+      console.error('❌ Error en carga completa:', error);
+      throw new Error(`Error cargando datos: ${error.message}`);
     }
   },
-
-  // === MÉTODO DE PRUEBA SIMPLE ===
+  
+  // === MÉTODO DE PRUEBA Y DIAGNÓSTICO ===
   testConnection: async () => {
     try {
-      console.log('🔄 Probando conexión con Velneo...');
+      console.log('🔍 Probando conexión...');
       console.log('URL:', import.meta.env.VITE_VELNEO_API_URL);
-      console.log('API Key:', import.meta.env.VITE_VELNEO_API_KEY ? '***configurada***' : 'NO configurada');
+      console.log('API Key:', import.meta.env.VITE_VELNEO_API_KEY ? '✓ Configurada' : '❌ No configurada');
       
-      const url = buildUrl('/usr_m');
+      const url = buildUrl('/usr_m', { limit: 5 });
       const response = await api.get(url);
-      
-      console.log('✅ Conexión exitosa:', {
-        count: response.data.count,
-        total_count: response.data.total_count,
-        records: response.data.usr_m?.length || 0
-      });
       
       return {
         success: true,
         data: response.data,
-        message: 'Conexión exitosa con Velneo API',
+        message: 'Conexión exitosa',
         recordCount: response.data?.usr_m?.length || 0,
         totalRecords: response.data?.total_count || 0
       };
     } catch (error) {
-      console.error('❌ Error de conexión:', error);
-      
       return {
         success: false,
         error: error.message,
-        message: 'Error de conexión con Velneo API',
+        message: 'Error de conexión',
         details: {
           status: error.response?.status,
-          statusText: error.response?.statusText,
-          url: error.config?.url
+          statusText: error.response?.statusText
         }
       };
+    }
+  },
+  
+  // === DIAGNÓSTICO DE DATOS ===
+  diagnosticarDatos: async () => {
+    try {
+      console.log('🔍 Ejecutando diagnóstico de datos...');
+      
+      // Obtener muestras pequeñas para diagnóstico
+      const samples = await Promise.all([
+        api.get(buildUrl('/fac_t', { limit: 10 })),
+        api.get(buildUrl('/fac_lin_t', { limit: 10 })),
+        api.get(buildUrl('/art_m', { limit: 10 }))
+      ]);
+      
+      const diagnostico = {
+        facturas: {
+          total: samples[0].data.total_count || 0,
+          muestra: samples[0].data.fac_t?.length || 0,
+          campos: samples[0].data.fac_t?.[0] ? Object.keys(samples[0].data.fac_t[0]) : [],
+          ejemplo: samples[0].data.fac_t?.[0] || null
+        },
+        lineas: {
+          total: samples[1].data.total_count || 0,
+          muestra: samples[1].data.fac_lin_t?.length || 0,
+          campos: samples[1].data.fac_lin_t?.[0] ? Object.keys(samples[1].data.fac_lin_t[0]) : [],
+          ejemplo: samples[1].data.fac_lin_t?.[0] || null
+        },
+        articulos: {
+          total: samples[2].data.total_count || 0,
+          muestra: samples[2].data.art_m?.length || 0,
+          campos: samples[2].data.art_m?.[0] ? Object.keys(samples[2].data.art_m[0]) : [],
+          ejemplo: samples[2].data.art_m?.[0] || null
+        }
+      };
+      
+      console.log('📊 Diagnóstico completo:', diagnostico);
+      return diagnostico;
+      
+    } catch (error) {
+      console.error('❌ Error en diagnóstico:', error);
+      throw error;
     }
   }
 };
 
-// === FUNCIONES DE FILTRADO EN FRONTEND ===
+// === FUNCIONES DE FILTRADO OPTIMIZADAS ===
 export const filterVentasData = (data, filtros = {}) => {
-  if (!data || !data.facturas || !data.lineas) return data;
+  if (!data || !data.facturas || !data.lineas) {
+    console.warn('⚠️ Datos incompletos para filtrar');
+    return data;
+  }
+  
+  console.log('🔍 Aplicando filtros:', filtros);
   
   let facturasFiltradas = [...data.facturas];
   let lineasFiltradas = [...data.lineas];
   
+  const startCount = {
+    facturas: facturasFiltradas.length,
+    lineas: lineasFiltradas.length
+  };
+  
   // Filtrar facturas por fecha
   if (filtros.fechaDesde) {
-    const fechaDesde = new Date(filtros.fechaDesde);
+    const fechaDesde = new Date(filtros.fechaDesde + 'T00:00:00');
     facturasFiltradas = facturasFiltradas.filter(f => {
       const fechaFactura = new Date(f.fch);
       return fechaFactura >= fechaDesde;
@@ -258,7 +322,7 @@ export const filterVentasData = (data, filtros = {}) => {
   }
   
   if (filtros.fechaHasta) {
-    const fechaHasta = new Date(filtros.fechaHasta);
+    const fechaHasta = new Date(filtros.fechaHasta + 'T23:59:59');
     facturasFiltradas = facturasFiltradas.filter(f => {
       const fechaFactura = new Date(f.fch);
       return fechaFactura <= fechaHasta;
@@ -267,33 +331,61 @@ export const filterVentasData = (data, filtros = {}) => {
   
   // Filtrar por vendedor
   if (filtros.vendedorId) {
-    facturasFiltradas = facturasFiltradas.filter(f => f.alt_usr === filtros.vendedorId);
+    facturasFiltradas = facturasFiltradas.filter(f => 
+      f.alt_usr === parseInt(filtros.vendedorId)
+    );
   }
   
-  // Filtrar por división
-  if (filtros.division) {
-    facturasFiltradas = facturasFiltradas.filter(f => f.emp_div === filtros.division);
-  }
-  
-  // Solo facturas finalizadas
+  // Solo facturas finalizadas por defecto
   if (filtros.soloFinalizadas !== false) {
     facturasFiltradas = facturasFiltradas.filter(f => f.fin === true);
   }
   
-  // Filtrar líneas que pertenecen a las facturas filtradas
+  // Filtrar líneas que pertenecen a facturas filtradas
   const idsFacturasFiltradas = new Set(facturasFiltradas.map(f => f.id));
   lineasFiltradas = lineasFiltradas.filter(l => idsFacturasFiltradas.has(l.fac));
   
   // Filtrar líneas por familia
   if (filtros.familiaId) {
-    lineasFiltradas = lineasFiltradas.filter(l => l.fam === filtros.familiaId);
+    lineasFiltradas = lineasFiltradas.filter(l => 
+      l.fam === parseInt(filtros.familiaId)
+    );
   }
+  
+  const endCount = {
+    facturas: facturasFiltradas.length,
+    lineas: lineasFiltradas.length
+  };
+  
+  console.log('✅ Filtrado completado:', {
+    antes: startCount,
+    despues: endCount,
+    reduccion: {
+      facturas: `${((1 - endCount.facturas / startCount.facturas) * 100).toFixed(1)}%`,
+      lineas: `${((1 - endCount.lineas / startCount.lineas) * 100).toFixed(1)}%`
+    }
+  });
   
   return {
     ...data,
     facturas: facturasFiltradas,
     lineas: lineasFiltradas
   };
+};
+
+// === UTILIDADES DE MONITOREO ===
+export const monitorearCarga = (callback) => {
+  const interval = setInterval(() => {
+    callback({
+      timestamp: new Date().toISOString(),
+      memory: performance.memory ? {
+        used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024),
+        total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024)
+      } : null
+    });
+  }, 1000);
+  
+  return () => clearInterval(interval);
 };
 
 export default velneoAPI;
