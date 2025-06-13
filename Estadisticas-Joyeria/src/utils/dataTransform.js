@@ -1,6 +1,6 @@
 // Transformar datos combinados de Velneo a estructura unificada
 export const transformSalesData = (rawData) => {
-  const { facturas, lineas, articulos, formasPago, usuarios, familias } = rawData;
+  const { facturas, lineas, articulos, formasPago, usuarios, familias, proveedores } = rawData;
   
   if (!facturas || !lineas) {
     return {
@@ -18,14 +18,7 @@ export const transformSalesData = (rawData) => {
   const formasPagoMap = new Map(formasPago?.map(f => [f.id, f]) || []);
   const usuariosMap = new Map(usuarios?.map(u => [u.id, u]) || []);
   const familiasMap = new Map(familias?.map(f => [f.id, f]) || []);
-  
-  // Crear mapa de proveedores
-  const proveedoresMap = new Map();
-  rawData.proveedores?.forEach(p => {
-    if (p.es_prv) {
-      proveedoresMap.set(p.id, p.name);
-    }
-  });
+  const proveedoresMap = new Map(proveedores?.map(p => [p.id, p]) || []);
 
   // Combinar facturas con líneas
   const ventasCompletas = [];
@@ -39,6 +32,7 @@ export const transformSalesData = (rawData) => {
       const formaPago = formasPagoMap.get(factura.fpg);
       const usuario = usuariosMap.get(factura.alt_usr);
       const familia = familiasMap.get(linea.fam);
+      const proveedor = proveedoresMap.get(linea.prv);
       
       const ventaCompleta = {
         // Datos de factura
@@ -77,11 +71,11 @@ export const transformSalesData = (rawData) => {
         costeMaestro: articulo?.cos || 0,
         pvpMaestro: articulo?.pvp || 0,
         
-        // Familia y proveedor - USAR NOMBRES SIEMPRE
+        // Familia y proveedor
         familiaId: linea.fam,
         familia: familia?.name || 'Sin familia',
-        proveedorId: linea.prv || articulo?.prv,
-        proveedor: proveedoresMap.get(linea.prv || articulo?.prv) || 'Sin proveedor',
+        proveedorId: linea.prv,
+        proveedor: proveedor?.name || 'Sin proveedor', // NOMBRE DEL PROVEEDOR
         
         // Campos calculados CORRECTAMENTE (no usar linea.ben que está mal)
         beneficioCalculado: (linea.imp_pvp || 0) - (linea.cos || 0),
@@ -115,242 +109,4 @@ export const transformSalesData = (rawData) => {
       }
     }
   };
-};
-
-// Agrupar datos por período (día, semana, mes)
-export const groupByPeriod = (ventasCompletas, periodo = 'day') => {
-  const grupos = {};
-  
-  ventasCompletas.forEach(venta => {
-    let clave;
-    const fecha = new Date(venta.fecha);
-    
-    switch (periodo) {
-      case 'day':
-        clave = fecha.toISOString().split('T')[0]; // YYYY-MM-DD
-        break;
-      case 'week':
-        const inicioSemana = getStartOfWeek(fecha);
-        clave = inicioSemana.toISOString().split('T')[0];
-        break;
-      case 'month':
-        clave = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
-        break;
-      case 'year':
-        clave = fecha.getFullYear().toString();
-        break;
-      default:
-        clave = fecha.toISOString().split('T')[0];
-    }
-    
-    if (!grupos[clave]) {
-      grupos[clave] = {
-        periodo: clave,
-        ventas: 0,
-        beneficio: 0,
-        transacciones: new Set(),
-        cantidadArticulos: 0,
-        detalles: []
-      };
-    }
-    
-    grupos[clave].ventas += venta.importeTotal;
-    grupos[clave].beneficio += (venta.importeTotal - venta.coste * venta.cantidad); // Calcular beneficio correcto
-    grupos[clave].transacciones.add(venta.facturaId);
-    grupos[clave].cantidadArticulos += venta.cantidad;
-    grupos[clave].detalles.push(venta);
-  });
-  
-  // Convertir Sets a números y ordenar
-  return Object.values(grupos)
-    .map(grupo => ({
-      ...grupo,
-      transacciones: grupo.transacciones.size,
-      ticketMedio: grupo.transacciones.size > 0 ? grupo.ventas / grupo.transacciones.size : 0
-    }))
-    .sort((a, b) => a.periodo.localeCompare(b.periodo));
-};
-
-// Crear datos para gráficos
-export const prepareChartData = (ventasCompletas, tipo = 'ventas-por-dia') => {
-  switch (tipo) {
-    case 'ventas-por-dia':
-      return groupByPeriod(ventasCompletas, 'day').map(grupo => ({
-        fecha: grupo.periodo,
-        ventas: grupo.ventas,
-        beneficio: grupo.beneficio,
-        transacciones: grupo.transacciones
-      }));
-      
-    case 'ventas-por-familia':
-      return groupByFamily(ventasCompletas);
-      
-    case 'ventas-por-vendedor':
-      return groupByVendor(ventasCompletas);
-      
-    case 'top-productos':
-      return getTopProductsChart(ventasCompletas);
-      
-    default:
-      return [];
-  }
-};
-
-// Agrupar por familia con beneficio CORREGIDO
-const groupByFamily = (ventasCompletas) => {
-  const familias = {};
-  
-  ventasCompletas.forEach(venta => {
-    const key = venta.familiaId || 'sin-familia';
-    const nombre = venta.familia || 'Sin Familia';
-    
-    if (!familias[key]) {
-      familias[key] = {
-        familia: nombre,
-        ventas: 0,
-        beneficio: 0,
-        cantidad: 0,
-        transacciones: new Set()
-      };
-    }
-    
-    // Usar beneficioCalculado en lugar de beneficio
-    familias[key].ventas += venta.importeTotal;
-    familias[key].beneficio += venta.beneficioCalculado;
-    familias[key].cantidad += venta.cantidad;
-    familias[key].transacciones.add(venta.facturaId);
-  });
-  
-  return Object.values(familias)
-    .map(f => ({
-      ...f,
-      transacciones: f.transacciones.size,
-      margenPorcentaje: f.ventas > 0 ? (f.beneficio / f.ventas) * 100 : 0
-    }))
-    .sort((a, b) => b.ventas - a.ventas);
-};
-
-// Agrupar por vendedor con beneficio CORREGIDO
-const groupByVendor = (ventasCompletas) => {
-  const vendedores = {};
-  
-  ventasCompletas.forEach(venta => {
-    const key = venta.vendedorId || 0;
-    const nombre = venta.vendedor || 'Sin Vendedor';
-    
-    if (!vendedores[key]) {
-      vendedores[key] = {
-        vendedor: nombre,
-        ventas: 0,
-        beneficio: 0,
-        transacciones: new Set(),
-        cantidadArticulos: 0
-      };
-    }
-    
-    vendedores[key].ventas += venta.importeTotal;
-    vendedores[key].beneficio += venta.beneficioCalculado; // Usar beneficio calculado
-    vendedores[key].transacciones.add(venta.facturaId);
-    vendedores[key].cantidadArticulos += venta.cantidad;
-  });
-  
-  return Object.values(vendedores)
-    .map(v => ({
-      ...v,
-      transacciones: v.transacciones.size,
-      ticketMedio: v.transacciones.size > 0 ? v.ventas / v.transacciones.size : 0,
-      margenPorcentaje: v.ventas > 0 ? (v.beneficio / v.ventas) * 100 : 0
-    }))
-    .sort((a, b) => b.ventas - a.ventas);
-};
-
-// Top productos para gráficos con beneficio CORREGIDO
-const getTopProductsChart = (ventasCompletas, limit = 10) => {
-  const productos = {};
-  
-  ventasCompletas.forEach(venta => {
-    const key = venta.articuloId;
-    const nombre = venta.nombreArticulo;
-    
-    if (!productos[key]) {
-      productos[key] = {
-        producto: nombre,
-        ventas: 0,
-        cantidad: 0,
-        beneficio: 0
-      };
-    }
-    
-    productos[key].ventas += venta.importeTotal;
-    productos[key].cantidad += venta.cantidad;
-    productos[key].beneficio += venta.beneficioCalculado; // Usar beneficio calculado
-  });
-  
-  return Object.values(productos)
-    .sort((a, b) => b.ventas - a.ventas)
-    .slice(0, limit);
-};
-
-// Utilidades auxiliares
-const combineDateTime = (fecha, hora) => {
-  if (!fecha) return null;
-  
-  try {
-    const fechaObj = new Date(fecha);
-    if (hora) {
-      const [horas, minutos] = hora.split(':').map(n => parseInt(n, 10));
-      fechaObj.setHours(horas || 0, minutos || 0, 0, 0);
-    }
-    return fechaObj.toISOString();
-  } catch (error) {
-    console.error('Error combinando fecha/hora:', error);
-    return fecha;
-  }
-};
-
-const getStartOfWeek = (fecha) => {
-  const fecha2 = new Date(fecha);
-  const dia = fecha2.getDay();
-  const diferencia = fecha2.getDate() - dia + (dia === 0 ? -6 : 1); // Lunes como inicio
-  return new Date(fecha2.setDate(diferencia));
-};
-
-// Filtrar datos por criterios
-export const filterSalesData = (ventasCompletas, filtros = {}) => {
-  return ventasCompletas.filter(venta => {
-    // Filtro por fechas
-    if (filtros.fechaDesde) {
-      const fechaVenta = new Date(venta.fecha);
-      const fechaDesde = new Date(filtros.fechaDesde);
-      if (fechaVenta < fechaDesde) return false;
-    }
-    
-    if (filtros.fechaHasta) {
-      const fechaVenta = new Date(venta.fecha);
-      const fechaHasta = new Date(filtros.fechaHasta);
-      if (fechaVenta > fechaHasta) return false;
-    }
-    
-    // Filtro por vendedor
-    if (filtros.vendedorId && venta.vendedorId !== filtros.vendedorId) {
-      return false;
-    }
-    
-    // Filtro por familia
-    if (filtros.familiaId && venta.familiaId !== filtros.familiaId) {
-      return false;
-    }
-    
-    // Filtro por forma de pago
-    if (filtros.formaPagoId && venta.formaPagoId !== filtros.formaPagoId) {
-      return false;
-    }
-    
-    // Filtro por monto mínimo
-    if (filtros.montoMinimo && venta.importeTotal < filtros.montoMinimo) {
-      return false;
-    }
-    
-    return true;
-  });
 };

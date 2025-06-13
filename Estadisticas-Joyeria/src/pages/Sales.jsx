@@ -76,15 +76,19 @@ const Sales = () => {
   }, [rawData, filters]);
 
   // Datos para filtros
-  const filterOptions = useMemo(() => {
-    if (!rawData) return { vendedores: [], familias: [], formasPago: [] };
+   const filterOptions = useMemo(() => {
+    if (!rawData) return { vendedores: [], familias: [], formasPago: [], proveedores: [] };
+    
+    // Extraer proveedores únicos de los datos transformados
+    const proveedoresUnicos = [...new Set(tableData.map(row => row.proveedor))].filter(Boolean);
     
     return {
       vendedores: rawData.usuarios?.map(u => ({ id: u.id, name: u.name })) || [],
       familias: rawData.familias?.map(f => ({ id: f.id, name: f.name })) || [],
-      formasPago: rawData.formasPago?.map(f => ({ id: f.id, name: f.name })) || []
+      formasPago: rawData.formasPago?.map(f => ({ id: f.id, name: f.name })) || [],
+      proveedores: proveedoresUnicos.map(nombre => ({ id: nombre, name: nombre })) || []
     };
-  }, [rawData]);
+  }, [rawData, tableData]);
 
   // Métricas de la tabla actual
   const summaryMetrics = useMemo(() => {
