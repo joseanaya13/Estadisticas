@@ -110,3 +110,43 @@ export const transformSalesData = (rawData) => {
     }
   };
 };
+
+// Filtrar datos por criterios
+export const filterSalesData = (ventasCompletas, filtros = {}) => {
+  return ventasCompletas.filter(venta => {
+    // Filtro por fechas
+    if (filtros.fechaDesde) {
+      const fechaVenta = new Date(venta.fecha);
+      const fechaDesde = new Date(filtros.fechaDesde);
+      if (fechaVenta < fechaDesde) return false;
+    }
+    
+    if (filtros.fechaHasta) {
+      const fechaVenta = new Date(venta.fecha);
+      const fechaHasta = new Date(filtros.fechaHasta);
+      if (fechaVenta > fechaHasta) return false;
+    }
+    
+    // Filtro por vendedor
+    if (filtros.vendedorId && venta.vendedorId !== filtros.vendedorId) {
+      return false;
+    }
+    
+    // Filtro por familia
+    if (filtros.familiaId && venta.familiaId !== filtros.familiaId) {
+      return false;
+    }
+    
+    // Filtro por forma de pago
+    if (filtros.formaPagoId && venta.formaPagoId !== filtros.formaPagoId) {
+      return false;
+    }
+    
+    // Filtro por monto mínimo
+    if (filtros.montoMinimo && venta.importeTotal < filtros.montoMinimo) {
+      return false;
+    }
+    
+    return true;
+  });
+};
