@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import React from 'react';
 import { 
   useReactTable, 
   getCoreRowModel, 
@@ -15,45 +16,134 @@ import {
   formatWeight
 } from '../../utils/formatters';
 import { Button } from '../ui/Button';
-import { ChevronUp, ChevronDown, Search, Download, Eye, EyeOff } from 'lucide-react';
+import { ChevronUp, ChevronDown, Search, Download, Eye, EyeOff, Filter } from 'lucide-react';
 
-export const SalesTable = ({ data, loading = false, onExport }) => {
+export const SalesTable = ({ data, loading = false, onExport, filterOptions = {} }) => {
   const [sorting, setSorting] = useState([]);
   const [filtering, setFiltering] = useState('');
   const [columnVisibility, setColumnVisibility] = useState({
-    division: true,
+    division: false,
     fecha: true,
     cliente: false,
-    vendedor: true,
+    vendedor: false,
     mes: false,
     trimestre: false,
-    hora: true,
-    numeroFactura: true,
-    proveedor: false,
-    articulo: true,
-    referencia: true,
+    hora: false,
+    numeroFactura: false,
+    proveedor: true,
+    articulo: false,
+    referencia: false,
     codigoPS: false,
     talla: false,
     color: false,
-    cantidad: true,
-    precioUnitario: true,
+    cantidad: false,
+    precioUnitario: false,
     descuento: false,
-    importe: true,
+    importe: false,
     marca: false,
     nombre: false,
     coste: true,
     formaPago: true,
-    beneficio: true,
+    beneficio: false,
     familiaN1: false,
     familiaN2: false,
     familia: true,
     peso: true
   });
   const [showColumnSelector, setShowColumnSelector] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 50
   });
+  
+  // Filtros locales de la tabla
+  const [tableFilters, setTableFilters] = useState({
+    fecha: '',
+    proveedor: '',
+    formaPago: '',
+    familia: ''
+  });
+
+  // Aplicar filtros locales a los datos
+  const filteredData = useMemo(() => {
+    if (!data) return [];
+    
+    return data.filter(row => {
+      // Filtro por fecha
+      if (tableFilters.fecha && !row.fecha?.includes(tableFilters.fecha)) {
+        return false;
+      }
+      
+      // Filtro por proveedor
+      if (tableFilters.proveedor && !row.proveedor?.toLowerCase().includes(tableFilters.proveedor.toLowerCase())) {
+        return false;
+      }
+      
+      // Filtro por forma de pago
+      if (tableFilters.formaPago && row.formaPago !== tableFilters.formaPago) {
+        return false;
+      }
+      
+      // Filtro por familia
+      if (tableFilters.familia && row.familia !== tableFilters.familia) {
+        return false;
+      }
+      
+      return true;
+    });
+  }, [data, tableFilters]);
+  
+  // Calcular totales por día y general
+  const totales = useMemo(() => {
+    if (!filteredData.length) return { porDia: {}, general: {} };
+    
+    const porDia = {};
+    const general = {
+      ventas: 0,
+      coste: 0,
+      beneficio: 0,
+      peso: 0,
+      transacciones: new Set()
+    };
+    
+    filteredData.forEach(row => {
+      const fecha = row.fecha?.split('T')[0] || 'sin-fecha';
+      
+      // Inicializar totales del día
+      if (!porDia[fecha]) {
+        porDia[fecha] = {
+          ventas: 0,
+          coste: 0,
+          beneficio: 0,
+          peso: 0,
+          transacciones: new Set()
+        };
+      }
+      
+      // Sumar al día
+      porDia[fecha].ventas += row.importeTotal || 0;
+      porDia[fecha].coste += row.coste || 0;
+      porDia[fecha].beneficio += row.beneficioCalculado || 0;
+      porDia[fecha].peso += row.pesoTotalLinea || 0;
+      porDia[fecha].transacciones.add(row.facturaId);
+      
+      // Sumar al general
+      general.ventas += row.importeTotal || 0;
+      general.coste += row.coste || 0;
+      general.beneficio += row.beneficioCalculado || 0;
+      general.peso += row.pesoTotalLinea || 0;
+      general.transacciones.add(row.facturaId);
+    });
+    
+    // Convertir Sets a números
+    Object.keys(porDia).forEach(fecha => {
+      porDia[fecha].transacciones = porDia[fecha].transacciones.size;
+    });
+    general.transacciones = general.transacciones.size;
+    
+    return { porDia, general };
+  }, [filteredData]);
 
   // Definir todas las columnas según el Excel
   const columns = useMemo(
@@ -325,7 +415,7 @@ export const SalesTable = ({ data, loading = false, onExport }) => {
   );
 
   const table = useReactTable({
-    data: data || [],
+    data: filteredData || [],
     columns: visibleColumns,
     state: {
       sorting,
@@ -390,6 +480,16 @@ export const SalesTable = ({ data, loading = false, onExport }) => {
               />
             </div>
             
+            {/* Botón de filtros */}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <Filter className="h-4 w-4 mr-1" />
+              Filtros
+            </Button>
+            
             {/* Selector de columnas */}
             <div className="relative">
               <Button 
@@ -434,6 +534,111 @@ export const SalesTable = ({ data, loading = false, onExport }) => {
             )}
           </div>
         </div>
+        
+        {/* Panel de filtros */}
+        {showFilters && (
+          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Filtro de fecha */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Fecha
+                </label>
+                <input
+                  type="date"
+                  value={tableFilters.fecha}
+                  onChange={(e) => setTableFilters(prev => ({ ...prev, fecha: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-gold-500"
+                />
+              </div>
+              
+              {/* Filtro de proveedor */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Proveedor
+                </label>
+                <input
+                  type="text"
+                  placeholder="Buscar proveedor..."
+                  value={tableFilters.proveedor}
+                  onChange={(e) => setTableFilters(prev => ({ ...prev, proveedor: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-gold-500"
+                />
+              </div>
+              
+              {/* Filtro de forma de pago */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Forma de Pago
+                </label>
+                <select
+                  value={tableFilters.formaPago}
+                  onChange={(e) => setTableFilters(prev => ({ ...prev, formaPago: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-gold-500"
+                >
+                  <option value="">Todas</option>
+                  {filterOptions.formasPago?.map(fp => (
+                    <option key={fp.id} value={fp.name}>{fp.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Filtro de familia */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Familia
+                </label>
+                <select
+                  value={tableFilters.familia}
+                  onChange={(e) => setTableFilters(prev => ({ ...prev, familia: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-gold-500"
+                >
+                  <option value="">Todas</option>
+                  {filterOptions.familias?.map(fam => (
+                    <option key={fam.id} value={fam.name}>{fam.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex justify-end mt-3 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setTableFilters({ fecha: '', proveedor: '', formaPago: '', familia: '' })}
+              >
+                Limpiar
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* Resumen de totales */}
+      <div className="p-4 bg-gold-50 border-b border-gold-200">
+        <div className="flex flex-wrap gap-6 justify-between">
+          <div className="text-sm">
+            <span className="font-medium text-gold-800">Total General:</span>
+            <div className="mt-1 grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div>
+                <span className="text-gray-600">Ventas: </span>
+                <span className="font-bold text-gold-700">{formatCurrency(totales.general.ventas)}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Coste: </span>
+                <span className="font-bold text-red-600">{formatCurrency(totales.general.coste)}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Beneficio: </span>
+                <span className="font-bold text-green-600">{formatCurrency(totales.general.beneficio)}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Peso: </span>
+                <span className="font-bold text-blue-600">{formatWeight(totales.general.peso)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Tabla */}
@@ -474,15 +679,41 @@ export const SalesTable = ({ data, loading = false, onExport }) => {
                 </td>
               </tr>
             ) : (
-              table.getRowModel().rows.map(row => (
-                <tr key={row.id} className="hover:bg-gray-50 transition-colors">
-                  {row.getVisibleCells().map(cell => (
-                    <td key={cell.id} className="px-4 py-3 whitespace-nowrap">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  ))}
-                </tr>
-              ))
+              <>
+                {/* Agrupar filas por día */}
+                {Object.entries(
+                  table.getRowModel().rows.reduce((groups, row) => {
+                    const fecha = row.original.fecha?.split('T')[0] || 'sin-fecha';
+                    if (!groups[fecha]) groups[fecha] = [];
+                    groups[fecha].push(row);
+                    return groups;
+                  }, {})
+                ).map(([fecha, rows]) => (
+                  <React.Fragment key={fecha}>
+                    {/* Fila de separador de día */}
+                    <tr className="bg-gray-100">
+                      <td colSpan={visibleColumns.length} className="px-4 py-2 font-semibold text-gray-700">
+                        {formatDate(fecha)} - {rows.length} registros
+                        <span className="ml-4 text-sm font-normal">
+                          Ventas: {formatCurrency(totales.porDia[fecha]?.ventas || 0)} | 
+                          Beneficio: {formatCurrency(totales.porDia[fecha]?.beneficio || 0)} | 
+                          Peso: {formatWeight(totales.porDia[fecha]?.peso || 0)}
+                        </span>
+                      </td>
+                    </tr>
+                    {/* Filas de datos del día */}
+                    {rows.map(row => (
+                      <tr key={row.id} className="hover:bg-gray-50 transition-colors">
+                        {row.getVisibleCells().map(cell => (
+                          <td key={cell.id} className="px-4 py-3 whitespace-nowrap">
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </>
             )}
           </tbody>
         </table>

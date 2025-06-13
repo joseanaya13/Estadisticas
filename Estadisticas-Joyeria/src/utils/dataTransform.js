@@ -18,6 +18,14 @@ export const transformSalesData = (rawData) => {
   const formasPagoMap = new Map(formasPago?.map(f => [f.id, f]) || []);
   const usuariosMap = new Map(usuarios?.map(u => [u.id, u]) || []);
   const familiasMap = new Map(familias?.map(f => [f.id, f]) || []);
+  
+  // Crear mapa de proveedores
+  const proveedoresMap = new Map();
+  rawData.proveedores?.forEach(p => {
+    if (p.es_prv) {
+      proveedoresMap.set(p.id, p.name);
+    }
+  });
 
   // Combinar facturas con líneas
   const ventasCompletas = [];
@@ -69,11 +77,11 @@ export const transformSalesData = (rawData) => {
         costeMaestro: articulo?.cos || 0,
         pvpMaestro: articulo?.pvp || 0,
         
-        // Familia y proveedor
+        // Familia y proveedor - USAR NOMBRES SIEMPRE
         familiaId: linea.fam,
         familia: familia?.name || 'Sin familia',
-        proveedorId: linea.prv,
-        proveedor: 'Por definir', // Se puede agregar tabla de proveedores
+        proveedorId: linea.prv || articulo?.prv,
+        proveedor: proveedoresMap.get(linea.prv || articulo?.prv) || 'Sin proveedor',
         
         // Campos calculados CORRECTAMENTE (no usar linea.ben que está mal)
         beneficioCalculado: (linea.imp_pvp || 0) - (linea.cos || 0),
