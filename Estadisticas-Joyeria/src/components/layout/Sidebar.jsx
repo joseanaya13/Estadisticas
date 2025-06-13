@@ -55,11 +55,9 @@ const DiamondIcon = ({ className }) => (
 const menuItems = [
   { name: 'Dashboard', href: '/', icon: DashboardIcon },
   { name: 'Ventas', href: '/sales', icon: SalesIcon },
-  { name: 'Productos', href: '/products', icon: ProductsIcon },
-  { name: 'Inventario', href: '/inventory', icon: InventoryIcon },
-  { name: 'Reportes', href: '/reports', icon: ReportsIcon },
-  { name: 'Configuración', href: '/settings', icon: SettingsIcon },
 ];
+
+
 
 export default function Sidebar({ isOpen, onClose, mobile = false }) {
   const navigate = useNavigate();
