@@ -53,7 +53,6 @@ const DiamondIcon = ({ className }) => (
 );
 
 const menuItems = [
-  { name: 'Dashboard', href: '/', icon: DashboardIcon },
   { name: 'Ventas', href: '/sales', icon: SalesIcon },
 ];
 
@@ -126,23 +125,6 @@ export default function Sidebar({ isOpen, onClose, mobile = false }) {
           );
         })}
       </nav>
-
-      {/* Footer del sidebar */}
-      <div className="p-4 border-t border-gold-700">
-        <div className="flex items-center space-x-3 p-3 rounded-lg bg-gold-800/50">
-          <div className="w-8 h-8 bg-gold-600 rounded-full flex items-center justify-center">
-            <span className="text-sm font-medium text-gold-100">JU</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gold-100 truncate">
-              Joyería Usuario
-            </p>
-            <p className="text-xs text-gold-300 truncate">
-              admin@joyeria.com
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

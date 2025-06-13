@@ -69,16 +69,48 @@ export const velneoAPI = {
   },
   
   getArticulos: async (fields = null) => {
-    const url = buildUrl('/art_m', fields);
-    const response = await api.get(url);
+    console.log('🔄 Obteniendo TODOS los artículos con paginación...');
     
-    console.log('📄 Artículos response:', {
-      count: response.data.count,
-      total_count: response.data.total_count,
-      records: response.data.art_m?.length || 0
+    let todosLosArticulos = [];
+    let offset = 0;
+    const limit = 1000; // Tamaño de página que la API puede manejar
+    let totalCount = 0;
+    
+    do {
+      const url = buildUrl('/art_m', fields, limit);
+      const urlWithOffset = url + `&offset=${offset}`;
+      
+      const response = await api.get(urlWithOffset);
+      const articulos = response.data.art_m || [];
+      
+      // Añadir artículos de esta página
+      todosLosArticulos = [...todosLosArticulos, ...articulos];
+      
+      // Actualizar contadores
+      totalCount = response.data.total_count || 0;
+      offset += limit;
+      
+      console.log(`📦 Página artículos: ${articulos.length} (total acumulado: ${todosLosArticulos.length}/${totalCount})`);
+      
+      // Continuar mientras tengamos más registros por obtener
+    } while (offset < totalCount && todosLosArticulos.length < totalCount);
+    
+    // Contar artículos con peso para debug
+    const articulosConPeso = todosLosArticulos.filter(a => a.peso && a.peso > 0).length;
+    
+    console.log('✅ Artículos COMPLETOS:', {
+      obtenidos: todosLosArticulos.length,
+      total: totalCount,
+      articulosConPeso: articulosConPeso,
+      ejemplosPeso: todosLosArticulos.filter(a => a.peso && a.peso > 0).slice(0, 3).map(a => ({ id: a.id, name: a.name, peso: a.peso }))
     });
     
-    return response.data;
+    // Devolver estructura compatible
+    return {
+      art_m: todosLosArticulos,
+      count: todosLosArticulos.length,
+      total_count: totalCount
+    };
   },
   
   getFormasPago: async (fields = null) => {

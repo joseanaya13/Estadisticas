@@ -1,7 +1,6 @@
 // src/App.jsx
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/layout/Layout';
-import Dashboard from './pages/Dashboard';
 import Sales from './pages/Sales';
 
 // Componentes temporales para las otras páginas
@@ -61,7 +60,6 @@ export default function App() {
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<Dashboard />} />
         <Route path="/sales" element={<Sales />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

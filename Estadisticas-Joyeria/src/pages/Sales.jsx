@@ -28,6 +28,7 @@ const Sales = () => {
     vendedorId: '',
     familiaId: '',
     formaPagoId: '',
+    proveedorId: '',
     montoMinimo: ''
   });
 
@@ -79,16 +80,16 @@ const Sales = () => {
    const filterOptions = useMemo(() => {
     if (!rawData) return { vendedores: [], familias: [], formasPago: [], proveedores: [] };
     
-    // Extraer proveedores únicos de los datos transformados
-    const proveedoresUnicos = [...new Set(tableData.map(row => row.proveedor))].filter(Boolean);
+    // Filtrar solo entidades que son proveedores (es_prv: true)
+    const proveedoresReales = rawData.proveedores?.filter(p => p.es_prv === true) || [];
     
     return {
       vendedores: rawData.usuarios?.map(u => ({ id: u.id, name: u.name })) || [],
       familias: rawData.familias?.map(f => ({ id: f.id, name: f.name })) || [],
       formasPago: rawData.formasPago?.map(f => ({ id: f.id, name: f.name })) || [],
-      proveedores: proveedoresUnicos.map(nombre => ({ id: nombre, name: nombre })) || []
+      proveedores: proveedoresReales.map(p => ({ id: p.id, name: p.name })) || []
     };
-  }, [rawData, tableData]);
+  }, [rawData]);
 
   // Métricas de la tabla actual
   const summaryMetrics = useMemo(() => {
@@ -123,6 +124,7 @@ const Sales = () => {
       vendedorId: '',
       familiaId: '',
       formaPagoId: '',
+      proveedorId: '',
       montoMinimo: ''
     });
   };
@@ -196,54 +198,6 @@ const Sales = () => {
           </Button>
         </div>
       </div>
-
-      {/* Métricas resumen */}
-      {summaryMetrics && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-          <SummaryCard
-            title="Total Ventas"
-            value={formatCurrency(summaryMetrics.totalVentas)}
-            icon={<TrendingUp className="h-5 w-5" />}
-            color="text-green-600"
-            bgColor="bg-green-50"
-          />
-          <SummaryCard
-            title="Total Beneficio"
-            value={formatCurrency(summaryMetrics.totalBeneficio)}
-            icon={<TrendingUp className="h-5 w-5" />}
-            color="text-blue-600"
-            bgColor="bg-blue-50"
-          />
-          <SummaryCard
-            title="Transacciones"
-            value={summaryMetrics.transaccionesUnicas.toString()}
-            icon={<Package className="h-5 w-5" />}
-            color="text-purple-600"
-            bgColor="bg-purple-50"
-          />
-          <SummaryCard
-            title="Artículos"
-            value={summaryMetrics.totalArticulos.toString()}
-            icon={<Package className="h-5 w-5" />}
-            color="text-orange-600"
-            bgColor="bg-orange-50"
-          />
-          <SummaryCard
-            title="Ticket Medio"
-            value={formatCurrency(summaryMetrics.ticketMedio)}
-            icon={<Users className="h-5 w-5" />}
-            color="text-indigo-600"
-            bgColor="bg-indigo-50"
-          />
-          <SummaryCard
-            title="Margen Medio"
-            value={`${summaryMetrics.margenPromedio.toFixed(1)}%`}
-            icon={<TrendingUp className="h-5 w-5" />}
-            color="text-pink-600"
-            bgColor="bg-pink-50"
-          />
-        </div>
-      )}
 
       {/* Panel de filtros */}
       <Card className={`transition-all duration-300 ${showFilters ? 'block' : 'hidden'}`}>
@@ -337,19 +291,23 @@ const Sales = () => {
               </select>
             </div>
             
-            {/* Monto mínimo */}
+            {/* Proveedor */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Monto Mínimo €
+                Proveedor
               </label>
-              <input
-                type="number"
-                step="0.01"
-                value={filters.montoMinimo}
-                onChange={(e) => handleFilterChange('montoMinimo', e.target.value)}
-                placeholder="0.00"
+              <select
+                value={filters.proveedorId}
+                onChange={(e) => handleFilterChange('proveedorId', e.target.value)}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-gold-500"
-              />
+              >
+                <option value="">Todos</option>
+                {filterOptions.proveedores.map(proveedor => (
+                  <option key={proveedor.id} value={proveedor.id}>
+                    {proveedor.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           
@@ -369,25 +327,11 @@ const Sales = () => {
         data={tableData}
         loading={isLoading}
         onExport={handleExport}
+        filterOptions={filterOptions}
       />
     </div>
   );
 };
-
-// Componente de tarjeta de resumen
-const SummaryCard = ({ title, value, icon, color, bgColor }) => (
-  <Card className="p-3">
-    <div className="flex items-center justify-between mb-2">
-      <div className={`p-2 rounded-lg ${bgColor} ${color}`}>
-        {icon}
-      </div>
-    </div>
-    <div>
-      <p className="text-xs font-medium text-gray-600 mb-1">{title}</p>
-      <p className={`text-lg font-bold ${color}`}>{value}</p>
-    </div>
-  </Card>
-);
 
 // Estados de carga y error
 const LoadingSales = () => (

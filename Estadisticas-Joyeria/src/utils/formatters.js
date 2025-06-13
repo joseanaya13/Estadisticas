@@ -93,6 +93,11 @@ export const formatPercentage = (value, decimals = 1) => {
 
 // Formateo de peso
 export const formatWeight = (grams) => {
+  // DEBUG: Log para ver qué valores llegan al formatter
+  if (grams !== 0 && grams !== null && grams !== undefined) {
+    console.log('🔍 DEBUG formatWeight - Input:', { grams, type: typeof grams, isNaN: isNaN(grams) });
+  }
+  
   if (!grams || isNaN(grams)) return '0g';
   
   if (grams >= 1000) {
