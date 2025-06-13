@@ -128,7 +128,7 @@ export const velneoAPI = {
     return await getAllRecords('/ent_m', 'ent_m', fields);
   },
   
-  // === OBTENER DATOS ESPECÍFICOS PARA VENTAS ===
+  // === OBTENER DATOS ESPECÍFICOS PARA VENTAS CON PAGINACIÓN COMPLETA ===
   getVentasCompletas: async () => {
     try {
       console.log('🚀 Iniciando carga COMPLETA de datos de ventas...');
@@ -139,15 +139,15 @@ export const velneoAPI = {
       const lineasFields = ['id', 'fac', 'fam', 'art', 'name', 'can', 'pre_pvp', 'cos', 'imp_pvp', 'ben', 'prv', 'tll_bak', 'col_bak'];
       const articulosFields = ['id', 'name', 'fam', 'prv', 'ref', 'exs', 'pvp', 'cos', 'peso'];
       
-      // Obtener todas las tablas en paralelo
-      console.log('📊 Cargando tablas principales...');
+      // Obtener todas las tablas en paralelo CON PAGINACIÓN COMPLETA
+      console.log('📊 Cargando tablas principales con paginación completa...');
       const [facturas, lineas, articulos] = await Promise.all([
         velneoAPI.getFacturas(facturasFields),
         velneoAPI.getLineasFactura(lineasFields),
         velneoAPI.getArticulos(articulosFields)
       ]);
       
-      console.log('📊 Cargando tablas de referencia...');
+      console.log('📊 Cargando tablas de referencia con paginación completa...');
       const [formasPago, usuarios, familias, proveedores] = await Promise.all([
         velneoAPI.getFormasPago(['id', 'name']),
         velneoAPI.getUsuarios(['id', 'name']),
